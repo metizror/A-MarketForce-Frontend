@@ -72,7 +72,7 @@ export function ActivityLogsPanel({ logs }: ActivityLogsPanelProps) {
   };
 
   return (
-    <Card className="relative overflow-hidden border-0 shadow-lg">
+    <Card className="relative overflow-hidden border-0 shadow-lg new">
       {/* Top Gradient Border */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500" />
       
