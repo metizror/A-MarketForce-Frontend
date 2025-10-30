@@ -8,7 +8,7 @@ import { Badge } from './ui/badge';
 import { Switch } from './ui/switch';
 import { Settings, Shield, Users, Bell, Database, Key } from 'lucide-react';
 import { User } from '../App';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface SettingsPanelProps {
   user: User;

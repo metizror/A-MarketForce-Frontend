@@ -11,29 +11,34 @@ import { ViewContactDetails } from './ViewContactDetails';
 import { SupportContactForm } from './SupportContactForm';
 import { Button } from './ui/button';
 import { LogOut, Filter } from 'lucide-react';
-import { User, Contact, Company, ActivityLog } from '../App';
+import { User, Contact, Company, ActivityLog, ApprovalRequest } from '../App';
+import { ApprovalRequests } from './ApprovalRequests';
 
 interface AdminDashboardProps {
   user: User;
   contacts: Contact[];
   companies: Company[];
   activityLogs: ActivityLog[];
+  approvalRequests: ApprovalRequest[];
   setContacts: (contacts: Contact[]) => void;
   setCompanies: (companies: Company[]) => void;
   setActivityLogs: (logs: ActivityLog[]) => void;
+  setApprovalRequests: (requests: ApprovalRequest[]) => void;
   onLogout: () => void;
 }
 
-type ViewType = 'dashboard' | 'contacts' | 'companies' | 'users' | 'activity' | 'settings' | 'view-company' | 'view-contact';
+type ViewType = 'dashboard' | 'contacts' | 'companies' | 'approve-requests' | 'users' | 'activity' | 'settings' | 'view-company' | 'view-contact';
 
 export function AdminDashboard({
   user,
   contacts,
   companies,
   activityLogs,
+  approvalRequests,
   setContacts,
   setCompanies,
   setActivityLogs,
+  setApprovalRequests,
   onLogout
 }: AdminDashboardProps) {
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
@@ -43,10 +48,18 @@ export function AdminDashboard({
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showSupportModal, setShowSupportModal] = useState(false);
 
+  const pendingRequestsCount = approvalRequests.filter(req => req.status === 'pending').length;
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
     { id: 'contacts', label: 'Contacts', icon: 'Users' },
     { id: 'companies', label: 'Companies', icon: 'Building2' },
+    { 
+      id: 'approve-requests', 
+      label: 'Approve Requests', 
+      icon: 'CheckCircle2', 
+      ...(pendingRequestsCount > 0 && { badge: pendingRequestsCount })
+    },
     { id: 'users', label: 'Users', icon: 'UserCheck' },
     { id: 'activity', label: 'Activity Logs', icon: 'Activity' },
     { id: 'settings', label: 'Settings', icon: 'Settings' }
@@ -188,6 +201,26 @@ export function AdminDashboard({
             <p className="text-gray-600">Access restricted. Contact Super Admin for user management.</p>
           </div>
         );
+      case 'approve-requests':
+        return (
+          <ApprovalRequests
+            approvalRequests={approvalRequests}
+            setApprovalRequests={setApprovalRequests}
+            currentUser={{ name: user.name, role: user.role || '' }}
+            onApprove={(request) => {
+              // Add activity log when approving
+              const newLog: ActivityLog = {
+                id: Date.now().toString(),
+                action: 'Customer Approved',
+                details: `Approved customer registration for ${request.firstName} ${request.lastName} (${request.businessEmail})`,
+                user: user.name,
+                role: user.role || '',
+                timestamp: new Date().toISOString()
+              };
+              setActivityLogs([newLog, ...activityLogs]);
+            }}
+          />
+        );
       case 'activity':
         return <ActivityLogsPanel logs={userLogs} />;
       case 'settings':
@@ -206,6 +239,7 @@ export function AdminDashboard({
         user={user}
         onLogout={onLogout}
         onSupportClick={() => setShowSupportModal(true)}
+        pendingRequestsCount={pendingRequestsCount}
       />
       
       {/* Support Modal */}
@@ -223,7 +257,7 @@ export function AdminDashboard({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <h1 className="text-2xl font-semibold text-gray-900 capitalize">
-                  {activeView === 'dashboard' ? 'Admin Dashboard' : activeView}
+                  {activeView === 'dashboard' ? 'Admin Dashboard' : activeView === 'approve-requests' ? 'Approve Requests' : activeView}
                 </h1>
                 {(activeView === 'contacts' || activeView === 'companies') && (
                   <Button

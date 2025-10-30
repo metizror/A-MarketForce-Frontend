@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Plus, Edit, Trash2, Download, Search, Eye, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ArrowUpDown, MoreVertical, LayoutList, Table2 } from 'lucide-react';
 import { Contact, User, Company } from '../App';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { ContactsListView } from './ContactsListView';
 
 interface ContactsTableProps {

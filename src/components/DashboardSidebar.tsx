@@ -11,16 +11,18 @@ import {
   Settings,
   LogOut,
   Shield,
-  MessageCircle
+  MessageCircle,
+  CheckCircle2
 } from 'lucide-react';
 import { User } from '../App';
-import marketForceLogo from 'figma:asset/cf01cb1f3c35e00a009f17e0c1fd4855e8cb9ad1.png';
+import marketForceLogo from '../assets/cf01cb1f3c35e00a009f17e0c1fd4855e8cb9ad1.png';
 
 interface MenuItem {
   id: string;
   label: string;
   icon: string;
   exclusive?: boolean;
+  badge?: number;
 }
 
 interface SidebarProps {
@@ -30,6 +32,7 @@ interface SidebarProps {
   user: User;
   onLogout: () => void;
   onSupportClick?: () => void;
+  pendingRequestsCount?: number;
 }
 
 const iconMap = {
@@ -40,10 +43,11 @@ const iconMap = {
   Upload,
   Activity,
   Settings,
-  MessageCircle
+  MessageCircle,
+  CheckCircle2
 };
 
-export function Sidebar({ activeView, setActiveView, menuItems, user, onLogout, onSupportClick }: SidebarProps) {
+export function Sidebar({ activeView, setActiveView, menuItems, user, onLogout, onSupportClick, pendingRequestsCount = 0 }: SidebarProps) {
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
       {/* Logo & User Info */}
@@ -82,7 +86,7 @@ export function Sidebar({ activeView, setActiveView, menuItems, user, onLogout, 
             <Button
               key={item.id}
               variant={isActive ? 'default' : 'ghost'}
-              className={`w-full justify-start h-10 ${
+              className={`w-full justify-start h-10 relative ${
                 isActive 
                   ? user.role === 'superadmin' 
                     ? 'bg-orange-500 hover:bg-orange-600' 
@@ -93,7 +97,12 @@ export function Sidebar({ activeView, setActiveView, menuItems, user, onLogout, 
             >
               <Icon className="w-4 h-4 mr-3" />
               {item.label}
-              {item.exclusive && (
+              {item.badge && item.badge > 0 && (
+                <Badge className="ml-auto bg-red-500 text-white text-xs h-5 min-w-5 px-1.5 flex items-center justify-center">
+                  {item.badge}
+                </Badge>
+              )}
+              {item.exclusive && !item.badge && (
                 <Badge variant="secondary" className="ml-auto text-xs">
                   Pro
                 </Badge>

@@ -79,12 +79,26 @@ export interface ActivityLog {
   timestamp: string;
 }
 
+export interface ApprovalRequest {
+  id: string;
+  firstName: string;
+  lastName: string;
+  businessEmail: string;
+  companyName: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  notes?: string;
+}
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [approvalRequests, setApprovalRequests] = useState<ApprovalRequest[]>([]);
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
@@ -283,7 +297,21 @@ export default function App() {
   if (!currentUser) {
     return (
       <>
-        <LoginPage onLogin={handleLogin} />
+        <LoginPage 
+          onLogin={handleLogin} 
+          onCreateApprovalRequest={(request) => {
+            const approvalRequest: ApprovalRequest = {
+              id: Date.now().toString(),
+              firstName: request.firstName,
+              lastName: request.lastName,
+              businessEmail: request.businessEmail,
+              companyName: request.companyName,
+              status: 'pending',
+              createdAt: new Date().toISOString()
+            };
+            setApprovalRequests([...approvalRequests, approvalRequest]);
+          }}
+        />
         <Toaster />
       </>
     );
@@ -298,10 +326,12 @@ export default function App() {
           companies={companies}
           users={users}
           activityLogs={activityLogs}
+          approvalRequests={approvalRequests}
           setContacts={setContacts}
           setCompanies={setCompanies}
           setUsers={setUsers}
           setActivityLogs={setActivityLogs}
+          setApprovalRequests={setApprovalRequests}
           onLogout={handleLogout}
         />
       ) : currentUser.role === 'admin' ? (
@@ -310,9 +340,11 @@ export default function App() {
           contacts={contacts}
           companies={companies}
           activityLogs={activityLogs}
+          approvalRequests={approvalRequests}
           setContacts={setContacts}
           setCompanies={setCompanies}
           setActivityLogs={setActivityLogs}
+          setApprovalRequests={setApprovalRequests}
           onLogout={handleLogout}
         />
       ) : currentUser.role === 'customer' ? (

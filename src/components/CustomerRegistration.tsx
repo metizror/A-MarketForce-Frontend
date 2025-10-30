@@ -4,16 +4,22 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { User, Mail, Lock, Building, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface CustomerRegistrationProps {
   onRegistrationComplete: () => void;
   onBackToLogin: () => void;
+  onCreateApprovalRequest?: (request: {
+    firstName: string;
+    lastName: string;
+    businessEmail: string;
+    companyName: string;
+  }) => void;
 }
 
-type RegistrationStep = 'form' | 'verification' | 'success';
+type RegistrationStep = 'form' | 'success';
 
-export function CustomerRegistration({ onRegistrationComplete, onBackToLogin }: CustomerRegistrationProps) {
+export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, onCreateApprovalRequest }: CustomerRegistrationProps) {
   const [currentStep, setCurrentStep] = useState<RegistrationStep>('form');
   const [formData, setFormData] = useState({
     firstName: '',
@@ -24,7 +30,6 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin }: 
     confirmPassword: ''
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
 
   const validateBusinessEmail = (email: string): boolean => {
     // Check if email is from a business domain (not free email providers)
@@ -64,113 +69,27 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin }: 
 
     setIsLoading(true);
     
+    // Create approval request instead of auto-approving
+    if (onCreateApprovalRequest) {
+      onCreateApprovalRequest({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        businessEmail: formData.businessEmail,
+        companyName: formData.companyName
+      });
+    }
+    
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      toast.success('Verification email sent! Please check your inbox.');
-      setCurrentStep('verification');
-    }, 2000);
-  };
-
-  const handleVerification = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!verificationCode || verificationCode.length !== 6) {
-      toast.error('Please enter a valid 6-digit verification code');
-      return;
-    }
-
-    setIsLoading(true);
-    
-    // Simulate verification
-    setTimeout(() => {
-      setIsLoading(false);
+      toast.success('Registration submitted! Your request is pending approval from Super Admin.');
       setCurrentStep('success');
-      toast.success('Email verified successfully!');
-    }, 1500);
+    }, 2000);
   };
 
   const handleCompleteRegistration = () => {
     onRegistrationComplete();
   };
-
-  if (currentStep === 'verification') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50 p-4">
-        <div className="w-full max-w-md">
-          <Card className="shadow-lg border-0">
-            <CardHeader>
-              <div className="text-center mb-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-gradient-to-br from-orange-500 to-amber-500">
-                  <Mail className="w-8 h-8 text-white" />
-                </div>
-                <CardTitle>Verify Your Email</CardTitle>
-                <p className="text-gray-600 text-sm mt-2">
-                  We've sent a 6-digit verification code to<br />
-                  <span className="font-medium text-gray-900">{formData.businessEmail}</span>
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleVerification} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="verification-code">Verification Code</Label>
-                  <Input
-                    id="verification-code"
-                    type="text"
-                    maxLength={6}
-                    placeholder="000000"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                    className="h-12 text-center text-2xl tracking-widest"
-                  />
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full h-11"
-                  style={{ backgroundColor: '#EF8037' }}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Verify Email
-                    </>
-                  )}
-                </Button>
-
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => toast.success('Verification code resent!')}
-                    className="text-sm text-orange-600 hover:text-orange-700"
-                  >
-                    Didn't receive the code? Resend
-                  </button>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => setCurrentStep('form')}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Registration
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   if (currentStep === 'success') {
     return (
@@ -182,25 +101,25 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin }: 
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 bg-gradient-to-br from-green-500 to-emerald-500">
                   <CheckCircle className="w-10 h-10 text-white" />
                 </div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-3">Registration Complete!</h2>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-3">Registration Submitted!</h2>
                 <p className="text-gray-600 mb-6">
-                  Your account has been successfully created and verified.<br />
-                  You can now access aMFAccess.
+                  Your registration request has been submitted successfully.<br />
+                  Super Admin will review your request and you'll be notified once approved.
                 </p>
                 
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                   <div className="space-y-2 text-sm text-left">
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span className="text-gray-700">Email verified</span>
+                      <CheckCircle className="w-4 h-4 text-yellow-600" />
+                      <span className="text-gray-700">Registration submitted</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span className="text-gray-700">Account activated</span>
+                      <CheckCircle className="w-4 h-4 text-yellow-600" />
+                      <span className="text-gray-700">Pending approval</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span className="text-gray-700">Ready to use</span>
+                      <CheckCircle className="w-4 h-4 text-yellow-600" />
+                      <span className="text-gray-700">You'll be notified via email</span>
                     </div>
                   </div>
                 </div>
@@ -210,7 +129,7 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin }: 
                   className="w-full h-11"
                   style={{ backgroundColor: '#EF8037' }}
                 >
-                  Continue to aMFAccess
+                  Back to Login
                 </Button>
               </div>
             </CardContent>

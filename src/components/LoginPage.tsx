@@ -6,14 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { User } from '../App';
 import { Shield, Users, UserCircle } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { CustomerRegistration } from './CustomerRegistration';
 
 interface LoginPageProps {
   onLogin: (user: User) => void;
+  onCreateApprovalRequest?: (request: {
+    firstName: string;
+    lastName: string;
+    businessEmail: string;
+    companyName: string;
+  }) => void;
 }
 
-export function LoginPage({ onLogin }: LoginPageProps) {
+export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('superadmin');
@@ -46,7 +52,11 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   };
 
   if (showRegistration) {
-    return <CustomerRegistration onRegistrationComplete={handleRegistrationComplete} onBackToLogin={() => setShowRegistration(false)} />;
+    return <CustomerRegistration 
+      onRegistrationComplete={handleRegistrationComplete} 
+      onBackToLogin={() => setShowRegistration(false)}
+      onCreateApprovalRequest={onCreateApprovalRequest}
+    />;
   }
 
   return (

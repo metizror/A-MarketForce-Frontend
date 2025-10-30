@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from './ui/dropdown-menu';
 import { Plus, Edit, Trash2, Download, Search, Eye, ChevronLeft, ChevronRight, MoreVertical, Building2 } from 'lucide-react';
 import { Company, User } from '../App';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface CompaniesTableProps {
   companies: Company[];

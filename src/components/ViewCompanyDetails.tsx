@@ -16,7 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { ArrowLeft, Edit, Trash2, Download, Search, Eye, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ArrowUpDown, Filter, Building2, BarChart3, MoreVertical, Plus, FileText, ChevronDown as ChevronDownIcon, Mail, Phone, Globe, MapPin, Users, DollarSign, TrendingUp, Briefcase, Link as LinkIcon } from 'lucide-react';
 import { Company, Contact, User } from '../App';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface ViewCompanyDetailsProps {
   company: Company;

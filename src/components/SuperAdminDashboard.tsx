@@ -13,7 +13,8 @@ import { ViewContactDetails } from './ViewContactDetails';
 import { SupportContactForm } from './SupportContactForm';
 import { Button } from './ui/button';
 import { LogOut, Filter } from 'lucide-react';
-import { User, Contact, Company, ActivityLog } from '../App';
+import { User, Contact, Company, ActivityLog, ApprovalRequest } from '../App';
+import { ApprovalRequests } from './ApprovalRequests';
 
 interface SuperAdminDashboardProps {
   user: User;
@@ -21,14 +22,16 @@ interface SuperAdminDashboardProps {
   companies: Company[];
   users: User[];
   activityLogs: ActivityLog[];
+  approvalRequests: ApprovalRequest[];
   setContacts: (contacts: Contact[]) => void;
   setCompanies: (companies: Company[]) => void;
   setUsers: (users: User[]) => void;
   setActivityLogs: (logs: ActivityLog[]) => void;
+  setApprovalRequests: (requests: ApprovalRequest[]) => void;
   onLogout: () => void;
 }
 
-type ViewType = 'dashboard' | 'contacts' | 'companies' | 'users' | 'import' | 'activity' | 'settings' | 'view-company' | 'view-contact';
+type ViewType = 'dashboard' | 'contacts' | 'companies' | 'approve-requests' | 'users' | 'import' | 'activity' | 'settings' | 'view-company' | 'view-contact';
 
 export function SuperAdminDashboard({
   user,
@@ -36,10 +39,12 @@ export function SuperAdminDashboard({
   companies,
   users,
   activityLogs,
+  approvalRequests,
   setContacts,
   setCompanies,
   setUsers,
   setActivityLogs,
+  setApprovalRequests,
   onLogout
 }: SuperAdminDashboardProps) {
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
@@ -49,10 +54,18 @@ export function SuperAdminDashboard({
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showSupportModal, setShowSupportModal] = useState(false);
 
+  const pendingRequestsCount = approvalRequests.filter(req => req.status === 'pending').length;
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
     { id: 'contacts', label: 'Contacts', icon: 'Users' },
     { id: 'companies', label: 'Companies', icon: 'Building2' },
+    { 
+      id: 'approve-requests', 
+      label: 'Approve Requests', 
+      icon: 'CheckCircle2', 
+      ...(pendingRequestsCount > 0 && { badge: pendingRequestsCount })
+    },
     { id: 'users', label: 'Users', icon: 'UserCheck' },
     { id: 'import', label: 'Import Data', icon: 'Upload', exclusive: true },
     { id: 'activity', label: 'Activity Logs', icon: 'Activity' },
@@ -172,6 +185,26 @@ export function SuperAdminDashboard({
         ) : null;
       case 'users':
         return <UsersTable users={users} setUsers={setUsers} />;
+      case 'approve-requests':
+        return (
+          <ApprovalRequests
+            approvalRequests={approvalRequests}
+            setApprovalRequests={setApprovalRequests}
+            currentUser={{ name: user.name, role: user.role || '' }}
+            onApprove={(request) => {
+              // Add activity log when approving
+              const newLog: ActivityLog = {
+                id: Date.now().toString(),
+                action: 'Customer Approved',
+                details: `Approved customer registration for ${request.firstName} ${request.lastName} (${request.businessEmail})`,
+                user: user.name,
+                role: user.role || '',
+                timestamp: new Date().toISOString()
+              };
+              setActivityLogs([newLog, ...activityLogs]);
+            }}
+          />
+        );
       case 'import':
         return (
           <ImportDataModule 
@@ -199,6 +232,7 @@ export function SuperAdminDashboard({
         user={user}
         onLogout={onLogout}
         onSupportClick={() => setShowSupportModal(true)}
+        pendingRequestsCount={pendingRequestsCount}
       />
       
       {/* Support Modal */}
@@ -216,7 +250,7 @@ export function SuperAdminDashboard({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <h1 className="text-2xl font-semibold text-gray-900 capitalize">
-                  {activeView === 'dashboard' ? 'Super Admin Dashboard' : activeView}
+                  {activeView === 'dashboard' ? 'Super Admin Dashboard' : activeView === 'approve-requests' ? 'Approve Requests' : activeView}
                 </h1>
                 {(activeView === 'contacts' || activeView === 'companies') && (
                   <Button
