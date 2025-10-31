@@ -37,12 +37,21 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
-    // Handle 401 Unauthorized - Token expired or invalid
-    if (error.response?.status === 401) {
+    const requestUrl = error.config?.url || "";
+    
+    // Don't redirect for login/registration endpoints - let them handle errors themselves
+    const isAuthEndpoint = 
+      requestUrl.includes("/auth/login") || 
+      requestUrl.includes("/auth/register") ||
+      requestUrl.includes("/auth/verify-otp") ||
+      requestUrl.includes("/auth/send-otp");
+    
+    // Handle 401 Unauthorized - Token expired or invalid (only for authenticated endpoints)
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       if (typeof window !== "undefined") {
         localStorage.removeItem("authToken");
         // Redirect to login page or dispatch logout action
-        window.location.href = "/login";
+        window.location.href = "/";
       }
     }
 

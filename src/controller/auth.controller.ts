@@ -99,29 +99,91 @@ export const loginController = async (
 
     // Admin or Superadmin login
     if (role === "admin" || role === "superadmin") {
-      const admin = await adminAuthModel.findOne({ email, role });
+      // First find admin by email (role might be null/undefined in DB)
+      // Email is stored in lowercase in the model, so convert to lowercase
+      const normalizedEmail = email.toLowerCase().trim();
+      const admin = await adminAuthModel.findOne({ email: normalizedEmail });
+      
       if (!admin) {
+        console.log(`Admin not found for email: ${email}`);
         return {
           status: 404,
-          message: "Account not found",
+          message: "Account not found with this email",
           customer: null,
           admin: null,
         } as LoginFailResponse;
       }
-      const isPasswordCorrect = await bcrypt.compare(password, admin.password);
-      if (!isPasswordCorrect) {
+
+      console.log(`Admin found: ${admin.email}, role: ${admin.role}, requested role: ${role}`);
+
+      // Check if admin has a role assigned and if it matches the requested role
+      // If role is null/undefined in DB, we can update it to match the login request
+      if (admin.role && admin.role !== role) {
+        console.log(`Role mismatch: admin role is ${admin.role}, but ${role} was requested`);
         return {
-          status: 401,
-          message: "Invalid credentials",
+          status: 403,
+          message: `Access denied. This account is registered as ${admin.role}, not ${role}`,
           customer: null,
           admin: null,
         } as LoginFailResponse;
       }
+
+      // If role is not set in DB, update it to match the login role
+      if (!admin.role) {
+        console.log(`Updating admin role from null to ${role}`);
+        admin.role = role as "admin" | "superadmin";
+        await admin.save();
+      }
+
+      // Verify password
+      console.log("Verifying password...");
+      console.log(`Comparing password for admin: ${admin.email}`);
+      
+      // Check if password is already hashed (bcrypt hashes start with $2a$, $2b$, or $2y$)
+      const isHashed = admin.password && admin.password.startsWith('$2');
+      
+      if (!isHashed) {
+        console.log("WARNING: Admin password is not hashed! Stored password:", admin.password);
+        // If password is stored as plain text, compare directly (should only happen during development)
+        if (admin.password === password) {
+          // Re-hash the password for security
+          console.log("Re-hashing plain text password...");
+          admin.password = await bcrypt.hash(password, 10);
+          await admin.save();
+          console.log("Password has been re-hashed and saved");
+        } else {
+          console.log("Plain text password mismatch");
+          return {
+            status: 401,
+            message: "Invalid credentials. Please check your email and password.",
+            customer: null,
+            admin: null,
+          } as LoginFailResponse;
+        }
+      } else {
+        // Password is hashed, use bcrypt.compare
+        const isPasswordCorrect = await bcrypt.compare(password, admin.password);
+        if (!isPasswordCorrect) {
+          console.log("Password mismatch - bcrypt comparison failed");
+          return {
+            status: 401,
+            message: "Invalid credentials. Please check your email and password.",
+            customer: null,
+            admin: null,
+          } as LoginFailResponse;
+        }
+      }
+      
+      console.log("Password verified successfully");
+
+      // Generate JWT token
       const token = jwt.sign(
         { adminId: admin._id, role: admin.role },
         process.env.JWT_SECRET as string,
         { expiresIn: "1d" }
       );
+
+      // Prepare admin object for response
       const adminObject = {
         _id: admin._id.toString(),
         name: admin.name,
@@ -130,6 +192,7 @@ export const loginController = async (
         createdAt: admin.createdAt?.toString(),
         updatedAt: admin.updatedAt?.toString(),
       };
+
       return {
         status: 200,
         message: "Logged in successfully",
@@ -148,29 +211,29 @@ export const loginController = async (
           customer: null,
           admin: null,
         } as LoginFailResponse;
-      }
-      const isPasswordCorrect = await bcrypt.compare(password, customer.password);
-      if (!isPasswordCorrect) {
-        return {
+    }
+    const isPasswordCorrect = await bcrypt.compare(password, customer.password);
+    if (!isPasswordCorrect) {
+      return {
           status: 401,
-          message: "Invalid credentials",
-          customer: null,
+        message: "Invalid credentials",
+        customer: null,
           admin: null,
         } as LoginFailResponse;
-      }
-      if (!customer.isActive) {
-        return {
+    }
+    if (!customer.isActive) {
+      return {
           status: 403,
-          message: "You are not activated, please wait for approval",
-          customer: null,
+        message: "You are not activated, please wait for approval",
+        customer: null,
           admin: null,
         } as LoginFailResponse;
-      }
-      const token = jwt.sign(
+    }
+    const token = jwt.sign(
         { customerId: customer._id, role: "customer" },
-        process.env.JWT_SECRET as string,
-        { expiresIn: "1d" }
-      );
+      process.env.JWT_SECRET as string,
+      { expiresIn: "1d" }
+    );
       const customerObject = {
         _id: customer._id.toString(),
         firstName: customer.firstName,
@@ -182,10 +245,10 @@ export const loginController = async (
         createdAt: customer.createdAt?.toString(),
         updatedAt: customer.updatedAt?.toString(),
       };
-      return {
+    return {
         status: 200,
-        message: "Logged in successfully",
-        token,
+      message: "Logged in successfully",
+      token,
         customer: customerObject,
       } as LoginSuccessResponse;
     }
@@ -198,9 +261,10 @@ export const loginController = async (
       admin: null,
     } as LoginFailResponse;
   } catch (error: any) {
+    console.error("Login controller error:", error);
     return {
       status: 500,
-      message: "Failed to login",
+      message: error.message || "Failed to login",
       customer: null,
       admin: null,
     } as LoginFailResponse;

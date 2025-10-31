@@ -10,7 +10,11 @@ import CustomerInvoices from './CustomerInvoices';
 import CustomerSettings from './CustomerSettings';
 import { SupportContactForm } from './SupportContactForm';
 
-export default function CustomerDashboard() {
+interface CustomerDashboardProps {
+  onLogout: () => void;
+}
+
+export default function CustomerDashboard({ onLogout }: CustomerDashboardProps) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
@@ -48,6 +52,7 @@ export default function CustomerDashboard() {
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
         onSupportClick={() => setShowSupportModal(true)}
+        onLogout={onLogout}
       />
 
       {activeTab === 'dashboard' && (

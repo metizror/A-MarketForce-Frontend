@@ -1,6 +1,7 @@
 import { publicApiPost, setAuthToken, removeAuthToken } from "@/lib/api";
 import { LoginPayload, LoginSuccessResponse, LoginFailResponse } from "@/types/auth.types";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { saveAuthState, clearAuthState } from "@/utils/authStorage";
 
 
 export interface AuthState {
@@ -45,7 +46,7 @@ export const login = createAsyncThunk<
       }
     );
 
-    // Check if login was successful
+    // Check if login was successful (response has token)
     if ("token" in response && response.token) {
       const successResponse = response as LoginSuccessResponse;
       
@@ -54,19 +55,27 @@ export const login = createAsyncThunk<
       
       return successResponse;
     } else {
-      // Login failed
+      // Login failed - response has status and message but no token
       const failResponse = response as LoginFailResponse;
+      console.log("Login failed:", failResponse);
       return rejectWithValue(failResponse);
     }
   } catch (error: any) {
     // Handle API errors
+    console.error("Login API error:", error);
     let errorMessage = "Failed to login";
     let statusCode = 500;
 
     if (error.response) {
       // Server responded with error status
-      statusCode = error.response.status;
+      statusCode = error.response.status || error.response.data?.status || 500;
       errorMessage = error.response.data?.message || error.message || "Failed to login";
+      
+      // If response data has the full LoginFailResponse structure, use it
+      if (error.response.data && typeof error.response.data === 'object' && 'status' in error.response.data) {
+        const failResponse = error.response.data as LoginFailResponse;
+        return rejectWithValue(failResponse);
+      }
     } else if (error.request) {
       // Request was made but no response received
       errorMessage = "Network error. Please check your connection.";
@@ -131,8 +140,27 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
       state.isLoading = false;
-      // Remove token from localStorage
+      // Remove all tokens and auth state from localStorage
       removeAuthToken();
+      clearAuthState();
+    },
+    // Initialize auth from localStorage on page refresh
+    initializeAuth: (state) => {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("authState");
+        if (stored) {
+          try {
+            const storedState = JSON.parse(stored);
+            if (storedState.isAuthenticated && storedState.user && storedState.token) {
+              state.user = storedState.user;
+              state.token = storedState.token;
+              state.isAuthenticated = storedState.isAuthenticated;
+            }
+          } catch (error) {
+            console.error("Error initializing auth:", error);
+          }
+        }
+      }
     },
     clearError: (state) => {
       state.error = null;
@@ -174,6 +202,13 @@ const authSlice = createSlice({
       }
       
       state.error = null;
+      
+      // Save auth state to localStorage (including role) for persistence after refresh
+      saveAuthState({
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
+      });
     });
 
     // Handle login failure
@@ -187,7 +222,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError } = authSlice.actions;
+export const { logout, clearError, initializeAuth } = authSlice.actions;
 
 export default authSlice.reducer;
 

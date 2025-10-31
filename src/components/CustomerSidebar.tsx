@@ -7,9 +7,10 @@ interface CustomerSidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
   onSupportClick: () => void;
+  onLogout: () => void;
 }
 
-export default function CustomerSidebar({ activeTab, setActiveTab, isCollapsed, setIsCollapsed, onSupportClick }: CustomerSidebarProps) {
+export default function CustomerSidebar({ activeTab, setActiveTab, isCollapsed, setIsCollapsed, onSupportClick, onLogout }: CustomerSidebarProps) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'search-contacts', label: 'Contact Search Filters', icon: Search },
@@ -79,10 +80,7 @@ export default function CustomerSidebar({ activeTab, setActiveTab, isCollapsed, 
           {!isCollapsed && <span>Support</span>}
         </button>
         <button
-          onClick={() => {
-            // Handle logout
-            window.location.href = '/';
-          }}
+          onClick={onLogout}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-100 transition-all`}
         >
           <LogOut size={20} />

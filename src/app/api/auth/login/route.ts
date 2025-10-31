@@ -9,15 +9,19 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
     const response = await loginController(data as LoginPayload);
-    if (response.customer || response.admin) {
-      return NextResponse.json(response, { status: response.status });
-    } else {
-      return NextResponse.json(
-        { message: response.message },
-        { status: response.status }
-      );
-    }
+    
+    // Return the full response (success or failure) with proper status
+    return NextResponse.json(response, { status: response.status });
   } catch (error: any) {
-    return NextResponse.json({ message: "Failed to login" }, { status: 500 });
+    console.error("Login route error:", error);
+    return NextResponse.json(
+      { 
+        status: 500,
+        message: error.message || "Failed to login",
+        customer: null,
+        admin: null,
+      },
+      { status: 500 }
+    );
   }
 }

@@ -91,6 +91,7 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
     // Dispatch Redux login action
     try {
       await dispatch(login(loginPayload)).unwrap();
+      router.push('/dashboard');
     } catch (err) {
       // Error is handled by useEffect above
       console.error('Login failed:', err);
