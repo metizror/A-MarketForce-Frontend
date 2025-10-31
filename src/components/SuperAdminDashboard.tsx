@@ -13,7 +13,6 @@ import { ViewContactDetails } from './ViewContactDetails';
 import { SupportContactForm } from './SupportContactForm';
 import { Button } from './ui/button';
 import { LogOut, Filter } from 'lucide-react';
-import { User, Contact, Company, ActivityLog, ApprovalRequest } from '../App';
 import { ApprovalRequests } from './ApprovalRequests';
 
 interface SuperAdminDashboardProps {

@@ -5,6 +5,7 @@ export const metadata = {
 
 import '../styles/globals.css';
 import '../index.css';
+import StoreProvider from '../store/Provider';
 
 export default function RootLayout({
   children,
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <StoreProvider>{children}</StoreProvider>
+      </body>
     </html>
   );
 }

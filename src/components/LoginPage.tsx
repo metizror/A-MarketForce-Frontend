@@ -1,13 +1,28 @@
-import React, { useState } from 'react';
+"use client";
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { User } from '../App';
 import { Shield, Users, UserCircle } from 'lucide-react';
+
+// User type definition (matching app/page.tsx)
+export type UserRole = 'superadmin' | 'admin' | 'customer' | null;
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+}
 import { toast } from 'sonner';
 import { CustomerRegistration } from './CustomerRegistration';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { login } from '@/store/slices/auth.slice';
+import { LoginPayload } from '@/types/auth.types';
 
 interface LoginPageProps {
   onLogin: (user: User) => void;
@@ -20,12 +35,45 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('superadmin');
   const [showRegistration, setShowRegistration] = useState(false);
 
-  const handleLogin = (e: React.FormEvent, role: 'superadmin' | 'admin' | 'customer') => {
+  // Redux hooks
+  const dispatch = useAppDispatch();
+  const { isLoading, error, isAuthenticated, user, token } = useAppSelector((state) => state.auth);
+
+  // Handle successful login
+  useEffect(() => {
+    if (isAuthenticated && user && token) {
+      const userData: User = {
+        id: user.id,
+        email: user.email,
+        name: user.name || `${user.firstName} ${user.lastName}`.trim() || user.email,
+        role: user.role || 'customer',
+      };
+      toast.success(`Welcome back, ${userData.name}!`);
+      onLogin(userData);
+    }
+  }, [isAuthenticated, user, token, onLogin]);
+
+  // Handle login errors
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  // Map tab value to role
+  const getRoleFromTab = (tab: string): 'superadmin' | 'admin' | 'customer' => {
+    if (tab === 'superadmin') return 'superadmin';
+    if (tab === 'admin') return 'admin';
+    return 'customer';
+  };
+
+  const handleLogin = async (e: { preventDefault: () => void }, role: 'superadmin' | 'admin' | 'customer') => {
     e.preventDefault();
     
     if (!email || !password) {
@@ -33,16 +81,20 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
       return;
     }
 
-    // Mock authentication
-    const mockUser: User = {
-      id: role === 'superadmin' ? '1' : role === 'admin' ? '2' : '3',
+    // Create login payload with dynamic role
+    const loginPayload: LoginPayload = {
       email,
-      name: role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Admin User' : 'John Doe',
-      role
+      password,
+      role,
     };
 
-    toast.success(`Welcome back, ${mockUser.name}!`);
-    onLogin(mockUser);
+    // Dispatch Redux login action
+    try {
+      await dispatch(login(loginPayload)).unwrap();
+    } catch (err) {
+      // Error is handled by useEffect above
+      console.error('Login failed:', err);
+    }
   };
 
   const handleRegistrationComplete = () => {
@@ -101,7 +153,7 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                       type="email"
                       placeholder="superadmin@company.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e: any) => setEmail(e.target.value)}
                       className="h-11"
                     />
                   </div>
@@ -112,7 +164,7 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                       type="password"
                       placeholder="Enter your password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e: any) => setPassword(e.target.value)}
                       className="h-11"
                     />
                   </div>
@@ -120,9 +172,10 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                     type="submit" 
                     className="w-full h-11"
                     style={{ backgroundColor: '#EF8037' }}
+                    disabled={isLoading}
                   >
                     <Shield className="w-4 h-4 mr-2" />
-                    Login as Super Admin
+                    {isLoading ? 'Logging in...' : 'Login as Super Admin'}
                   </Button>
                 </form>
               </TabsContent>
@@ -136,7 +189,7 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                       type="email"
                       placeholder="admin@company.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e: any) => setEmail(e.target.value)}
                       className="h-11"
                     />
                   </div>
@@ -147,7 +200,7 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                       type="password"
                       placeholder="Enter your password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e: any) => setPassword(e.target.value)}
                       className="h-11"
                     />
                   </div>
@@ -155,9 +208,10 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                     type="submit" 
                     className="w-full h-11"
                     style={{ backgroundColor: '#EB432F' }}
+                    disabled={isLoading}
                   >
                     <Users className="w-4 h-4 mr-2" />
-                    Login as Admin
+                    {isLoading ? 'Logging in...' : 'Login as Admin'}
                   </Button>
                 </form>
               </TabsContent>
@@ -171,7 +225,7 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                       type="email"
                       placeholder="customer@company.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e: any) => setEmail(e.target.value)}
                       className="h-11"
                     />
                   </div>
@@ -182,7 +236,7 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                       type="password"
                       placeholder="Enter your password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e: any) => setPassword(e.target.value)}
                       className="h-11"
                     />
                   </div>
@@ -190,9 +244,10 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                     type="submit" 
                     className="w-full h-11"
                     style={{ backgroundColor: '#EF8037' }}
+                    disabled={isLoading}
                   >
                     <UserCircle className="w-4 h-4 mr-2" />
-                    Login as Customer
+                    {isLoading ? 'Logging in...' : 'Login as Customer'}
                   </Button>
 
                   <div className="text-center pt-4 border-t border-gray-200">
@@ -203,7 +258,7 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                       type="button"
                       variant="outline"
                       className="w-full"
-                      onClick={() => setShowRegistration(true)}
+                      onClick={() => router.push('/customer-signup')}
                     >
                       Create Customer Account
                     </Button>
