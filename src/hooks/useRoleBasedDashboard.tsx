@@ -12,14 +12,22 @@ import { useAppSelector } from "@/store/hooks";
  */
 export function useRoleBasedDashboard() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated, isLoading, token } = useAppSelector((state) => state.auth);
 
-  // Redirect to login if not authenticated (after loading)
+  // Redirect to login ONLY if loading is complete AND user is not authenticated
+  // Wait for initialization from localStorage before redirecting
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    // Don't redirect while still loading auth state
+    if (isLoading) {
+      return;
+    }
+
+    // Only redirect if definitely not authenticated (no user, no token, not authenticated)
+    if (!isAuthenticated || !user || !token) {
+      console.log("User not authenticated, redirecting to login");
       router.push("/");
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, user, token, router]);
 
   // Get user role from Redux state (saved from login API)
   const role = user?.role || null;

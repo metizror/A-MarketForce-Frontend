@@ -62,7 +62,7 @@ export async function POST(request: Request) {
         message: "Admin account updated successfully",
         admin: {
           email: existingAdmin.email,
-          name: existingAdmin.name,
+          name: existingAdmin.name, 
           role: existingAdmin.role,
         },
       });

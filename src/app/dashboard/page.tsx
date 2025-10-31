@@ -12,7 +12,7 @@ import type { User, Contact, Company, ActivityLog, ApprovalRequest } from "@/typ
 
 const DashboardPage = () => {
   const role = useRoleBasedDashboard(); // Get role from hook
-  const { user, isLoading } = useAppSelector((state) => state.auth);
+  const { user, isLoading, isAuthenticated, token } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const router = useRouter();
 
@@ -41,7 +41,7 @@ const DashboardPage = () => {
       }
     : null;
 
-  // Show loading state
+  // Show loading state while initializing auth from localStorage
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -53,9 +53,17 @@ const DashboardPage = () => {
     );
   }
 
-  // Show nothing if no role (will redirect in hook)
-  if (!role || !dashboardUser) {
-    return null;
+  // Show nothing if not authenticated (will redirect in hook)
+  // Wait for hook to handle redirect after loading completes
+  if (!isAuthenticated || !user || !token || !role || !dashboardUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
   // Render dashboard based on role

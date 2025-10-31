@@ -26,7 +26,7 @@ const initialState: AuthState = {
   user: null,
   token: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true, // Start with true to wait for initialization from localStorage
   error: null,
 };
 
@@ -147,19 +147,29 @@ const authSlice = createSlice({
     // Initialize auth from localStorage on page refresh
     initializeAuth: (state) => {
       if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("authState");
-        if (stored) {
-          try {
+        try {
+          const stored = localStorage.getItem("authState");
+          if (stored) {
             const storedState = JSON.parse(stored);
             if (storedState.isAuthenticated && storedState.user && storedState.token) {
               state.user = storedState.user;
               state.token = storedState.token;
               state.isAuthenticated = storedState.isAuthenticated;
+              console.log("Auth state restored from localStorage:", {
+                email: storedState.user?.email,
+                role: storedState.user?.role,
+              });
             }
-          } catch (error) {
-            console.error("Error initializing auth:", error);
           }
+        } catch (error) {
+          console.error("Error initializing auth:", error);
+        } finally {
+          // Always set isLoading to false after initialization attempt
+          state.isLoading = false;
         }
+      } else {
+        // Server-side: no localStorage, mark as not loading
+        state.isLoading = false;
       }
     },
     clearError: (state) => {

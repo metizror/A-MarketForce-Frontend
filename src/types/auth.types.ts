@@ -33,6 +33,13 @@ export interface VerifyOtpResponse {
   isEmailVerified: boolean;
 }
 
+export interface UserObject {
+  _id: string;
+  email: string;
+  role: "admin" | "superadmin" | "customer";
+  name?: string;
+}
+
 export interface CustomerObject {
   _id: string;
   firstName: string;
