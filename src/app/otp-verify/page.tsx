@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { publicApiPost } from '@/lib/api';
 import { VerifyOtpPayload, VerifyOtpResponse, SendOtpResponse } from '@/types/auth.types';
@@ -148,6 +148,12 @@ export default function OtpVerifyPage() {
       <div className="w-full max-w-md">
         <Card className="shadow-lg border-0">
           <CardContent className="pt-8 pb-8">
+            {/* Logo */}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4" style={{ backgroundColor: '#EF8037' }}>
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+            </div>
             <form onSubmit={handleVerifyOtp} className="space-y-6">
               {/* OTP Input */}
               <div className="space-y-4">

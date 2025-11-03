@@ -9,7 +9,7 @@ import type {
 } from "../types/auth.types";
 import jwt from "jsonwebtoken";
 import Otp from "../models/otp.model";
-import { sendMail } from "@/services/email.service";
+import { sendMail } from "../services/email.service";
 
 // sendOtp now saves OTP to DB with 5-min expiry
 export const sendOtp = async (req: Request) => {

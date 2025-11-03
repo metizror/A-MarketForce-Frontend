@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { User, Mail, Lock, Building, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { User, Mail, Lock, Building, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { registerCustomer } from '@/store/slices/customerRegister.slice';
@@ -19,12 +20,10 @@ interface CustomerRegistrationProps {
   }) => void;
 }
 
-type RegistrationStep = 'form' | 'success';
-
 export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, onCreateApprovalRequest }: CustomerRegistrationProps) {
+  const router = useRouter();
   const dispatch = useAppDispatch();
   const { pending } = useAppSelector((state) => state.customerRegister);
-  const [currentStep, setCurrentStep] = useState('form' as RegistrationStep);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -95,65 +94,15 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
         });
       }
 
-      toast.success(result.message || 'Registration submitted! Your request is pending approval from Super Admin.');
-      setCurrentStep('success');
+      toast.success(result.message || 'Registration successful! Please verify your email.');
+      
+      // Navigate to OTP verify page with email
+      router.push(`/otp-verify?email=${encodeURIComponent(formData.businessEmail)}`);
     } catch (err: any) {
       console.error('Registration error:', err);
       toast.error(err.message || 'Registration failed. Please try again.');
     }
   };
-
-  const handleCompleteRegistration = () => {
-    onRegistrationComplete();
-  };
-
-  if (currentStep === 'success') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50 p-4">
-        <div className="w-full max-w-md">
-          <Card className="shadow-lg border-0">
-            <CardContent className="pt-8 pb-8">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 bg-gradient-to-br from-green-500 to-emerald-500">
-                  <CheckCircle className="w-10 h-10 text-white" />
-                </div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-3">Registration Submitted!</h2>
-                <p className="text-gray-600 mb-6">
-                  Your registration request has been submitted successfully.<br />
-                  Super Admin will review your request and you'll be notified once approved.
-                </p>
-                
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                  <div className="space-y-2 text-sm text-left">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-yellow-600" />
-                      <span className="text-gray-700">Registration submitted</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-yellow-600" />
-                      <span className="text-gray-700">Pending approval</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-yellow-600" />
-                      <span className="text-gray-700">You'll be notified via email</span>
-                    </div>
-                  </div>
-                </div>
-
-                <Button 
-                  onClick={handleCompleteRegistration}
-                  className="w-full h-11"
-                  style={{ backgroundColor: '#EF8037' }}
-                >
-                  Back to Login
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50 p-4">
