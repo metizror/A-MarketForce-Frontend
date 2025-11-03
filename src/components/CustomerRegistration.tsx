@@ -5,6 +5,8 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { User, Mail, Lock, Building, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { registerCustomer } from '@/store/slices/customerRegister.slice';
 
 interface CustomerRegistrationProps {
   onRegistrationComplete: () => void;
@@ -20,7 +22,9 @@ interface CustomerRegistrationProps {
 type RegistrationStep = 'form' | 'success';
 
 export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, onCreateApprovalRequest }: CustomerRegistrationProps) {
-  const [currentStep, setCurrentStep] = useState<RegistrationStep>('form');
+  const dispatch = useAppDispatch();
+  const { pending } = useAppSelector((state) => state.customerRegister);
+  const [currentStep, setCurrentStep] = useState('form' as RegistrationStep);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -29,7 +33,6 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
     password: '',
     confirmPassword: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   const validateBusinessEmail = (email: string): boolean => {
     // Check if email is from a business domain (not free email providers)
@@ -42,8 +45,9 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
     return !freeEmailProviders.includes(domain);
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: any) => {
     e.preventDefault();
+    console.log('Form submitted', formData);
     
     // Validation
     if (!formData.firstName || !formData.lastName || !formData.businessEmail || 
@@ -67,24 +71,36 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
       return;
     }
 
-    setIsLoading(true);
-    
-    // Create approval request instead of auto-approving
-    if (onCreateApprovalRequest) {
-      onCreateApprovalRequest({
+    console.log('Validation passed, calling API...');
+    try {
+      const payload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        businessEmail: formData.businessEmail,
-        companyName: formData.companyName
-      });
-    }
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success('Registration submitted! Your request is pending approval from Super Admin.');
+        email: formData.businessEmail,
+        companyName: formData.companyName,
+        password: formData.password,
+      };
+      console.log('Dispatching registerCustomer with payload:', payload);
+      
+      const result = await dispatch(registerCustomer(payload)).unwrap();
+      console.log('Registration successful:', result);
+
+      // Create approval request
+      if (onCreateApprovalRequest) {
+        onCreateApprovalRequest({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          businessEmail: formData.businessEmail,
+          companyName: formData.companyName
+        });
+      }
+
+      toast.success(result.message || 'Registration submitted! Your request is pending approval from Super Admin.');
       setCurrentStep('success');
-    }, 2000);
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      toast.error(err.message || 'Registration failed. Please try again.');
+    }
   };
 
   const handleCompleteRegistration = () => {
@@ -168,7 +184,7 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
                     type="text"
                     placeholder="John"
                     value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    onChange={(e: any) => setFormData({ ...formData, firstName: e.target.value })}
                     className="h-11"
                   />
                 </div>
@@ -180,7 +196,7 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
                     type="text"
                     placeholder="Doe"
                     value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    onChange={(e: any) => setFormData({ ...formData, lastName: e.target.value })}
                     className="h-11"
                   />
                 </div>
@@ -195,7 +211,7 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
                     type="email"
                     placeholder="john.doe@company.com"
                     value={formData.businessEmail}
-                    onChange={(e) => setFormData({ ...formData, businessEmail: e.target.value })}
+                    onChange={(e: any) => setFormData({ ...formData, businessEmail: e.target.value })}
                     className="h-11 pl-10"
                   />
                 </div>
@@ -213,7 +229,7 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
                     type="text"
                     placeholder="Your Company Inc."
                     value={formData.companyName}
-                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                    onChange={(e: any) => setFormData({ ...formData, companyName: e.target.value })}
                     className="h-11 pl-10"
                   />
                 </div>
@@ -229,7 +245,7 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
                       type="password"
                       placeholder="Min. 8 characters"
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      onChange={(e: any) => setFormData({ ...formData, password: e.target.value })}
                       className="h-11 pl-10"
                     />
                   </div>
@@ -244,7 +260,7 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
                       type="password"
                       placeholder="Re-enter password"
                       value={formData.confirmPassword}
-                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      onChange={(e: any) => setFormData({ ...formData, confirmPassword: e.target.value })}
                       className="h-11 pl-10"
                     />
                   </div>
@@ -265,9 +281,9 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
                 type="submit" 
                 className="w-full h-11"
                 style={{ backgroundColor: '#EF8037' }}
-                disabled={isLoading}
+                disabled={pending}
               >
-                {isLoading ? (
+                {pending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Creating Account...

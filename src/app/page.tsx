@@ -1,6 +1,5 @@
 'use client'
 
-import App from '../App'
 
 import React, { useState } from 'react';
 import { LoginPage } from '../components/LoginPage';
@@ -97,13 +96,12 @@ export interface ApprovalRequest {
 }
 
 export default function Page() {
-
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
-  const [approvalRequests, setApprovalRequests] = useState<ApprovalRequest[]>([]);
+  const [currentUser, setCurrentUser] = useState(null as User | null);
+  const [contacts, setContacts] = useState([] as Contact[]);
+  const [companies, setCompanies] = useState([] as Company[]);
+  const [users, setUsers] = useState([] as User[]);
+  const [activityLogs, setActivityLogs] = useState([] as ActivityLog[]);
+  const [approvalRequests, setApprovalRequests] = useState([] as ApprovalRequest[]);
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
@@ -354,7 +352,7 @@ export default function Page() {
           onLogout={handleLogout}
         />
       ) : currentUser.role === 'customer' ? (
-        <CustomerDashboard />
+        <CustomerDashboard onLogout={handleLogout} />
       ) : null}
       <Toaster />
     </div>

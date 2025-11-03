@@ -1,10 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/auth.slice";
+import customerRegisterReducer from "./slices/customerRegister.slice";
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
       auth: authReducer,
+      customerRegister: customerRegisterReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({

@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { OTPInput, OTPInputContext } from "input-otp@1.4.2";
-import { MinusIcon } from "lucide-react@0.487.0";
+import { OTPInput, OTPInputContext } from "input-otp";
+import { MinusIcon } from "lucide-react";
 
 import { cn } from "./utils";
 
@@ -45,21 +45,54 @@ function InputOTPSlot({
 }) {
   const inputOTPContext = React.useContext(OTPInputContext);
   const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {};
+  const isEmpty = !char;
+  
+  // Check if all slots are filled (OTP is complete)
+  const allSlotsFilled = inputOTPContext?.slots?.every(slot => slot?.char) ?? false;
 
   return (
     <div
       data-slot="input-otp-slot"
       data-active={isActive}
       className={cn(
-        "data-[active=true]:border-ring data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:ring-destructive/20 dark:data-[active=true]:aria-invalid:ring-destructive/40 aria-invalid:border-destructive data-[active=true]:aria-invalid:border-destructive dark:bg-input/30 border-input relative flex h-9 w-9 items-center justify-center border-y border-r text-sm bg-input-background transition-all outline-none first:rounded-l-md first:border-l last:rounded-r-md data-[active=true]:z-10 data-[active=true]:ring-[3px]",
+        "data-[active=true]:border-[#EF8037] data-[active=true]:ring-[#EF8037]/30 data-[active=true]:ring-[2px] data-[active=true]:aria-invalid:ring-destructive/20 dark:data-[active=true]:aria-invalid:ring-destructive/40 aria-invalid:border-destructive data-[active=true]:aria-invalid:border-destructive dark:bg-input/30 border-input relative flex h-9 w-9 items-center justify-center border-y border-r text-sm bg-input-background transition-all outline-none first:rounded-l-md first:border-l last:rounded-r-md data-[active=true]:z-10",
         className,
       )}
       {...props}
     >
-      {char}
-      {hasFakeCaret && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="animate-caret-blink bg-foreground h-4 w-px duration-1000" />
+      <span className="relative z-0">{char}</span>
+      {/* Show cursor only when OTP is not complete */}
+      {!allSlotsFilled && (isActive || hasFakeCaret) && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-20">
+          {!char ? (
+            <div 
+              className="bg-[#EF8037] rounded-full shadow-lg animate-caret-blink" 
+              style={{ 
+                width: '3px', 
+                height: '32px',
+                minWidth: '3px',
+                minHeight: '32px'
+              }} 
+            />
+          ) : (
+            <div 
+              className="absolute right-1 top-1/2 -translate-y-1/2 bg-[#EF8037] rounded-full animate-caret-blink shadow-md" 
+              style={{ 
+                width: '3px', 
+                height: '24px',
+                minWidth: '3px'
+              }} 
+            />
+          )}
+        </div>
+      )}
+      {/* Show dim cursor in empty non-active fields only when OTP is not complete */}
+      {!allSlotsFilled && !isActive && !hasFakeCaret && isEmpty && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-0">
+          <div 
+            className="bg-gray-400 rounded-full animate-caret-blink opacity-40" 
+            style={{ width: '2px', height: '20px' }} 
+          />
         </div>
       )}
     </div>
