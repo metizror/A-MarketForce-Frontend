@@ -268,14 +268,6 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
               </TabsContent>
             </Tabs>
 
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 mb-2">Demo Credentials:</p>
-              <div className="text-xs text-gray-500 space-y-1">
-                <div><strong>Super Admin:</strong> Any email/password</div>
-                <div><strong>Admin:</strong> Any email/password</div>
-                <div><strong>Customer:</strong> Any email/password</div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
