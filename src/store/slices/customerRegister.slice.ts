@@ -79,6 +79,13 @@ const customerRegisterSlice = createSlice({
       state.pending = false;
       state.customer = action.payload.customer;
       state.error = null;
+      // Store email and customer data in sessionStorage for OTP verification
+      if (typeof window !== "undefined" && action.payload.customer) {
+        sessionStorage.setItem("registrationEmail", action.payload.customer.email);
+        sessionStorage.setItem("registeredCustomer", JSON.stringify(action.payload.customer));
+        // Set flag to allow access to OTP verify page
+        sessionStorage.setItem("canAccessOtpVerify", "true");
+      }
     });
     builder.addCase(registerCustomer.rejected, (state, action) => {
       state.pending = false;
