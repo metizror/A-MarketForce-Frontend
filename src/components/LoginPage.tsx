@@ -254,6 +254,20 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                     <Shield className="w-4 h-4 mr-2" />
                     {isLoading ? 'Logging in...' : 'Login as Super Admin'}
                   </Button>
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof window !== "undefined") {
+                          sessionStorage.setItem("resetPasswordRole", "superadmin");
+                        }
+                        router.push("/reset-password");
+                      }}
+                      className="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
                 </form>
               </TabsContent>
 
@@ -298,6 +312,20 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                     <Users className="w-4 h-4 mr-2" />
                     {isLoading ? 'Logging in...' : 'Login as Admin'}
                   </Button>
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof window !== "undefined") {
+                          sessionStorage.setItem("resetPasswordRole", "admin");
+                        }
+                        router.push("/reset-password");
+                      }}
+                      className="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
                 </form>
               </TabsContent>
 
@@ -342,6 +370,20 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                     <UserCircle className="w-4 h-4 mr-2" />
                     {isLoading ? 'Logging in...' : 'Login as Customer'}
                   </Button>
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof window !== "undefined") {
+                          sessionStorage.setItem("resetPasswordRole", "customer");
+                        }
+                        router.push("/reset-password");
+                      }}
+                      className="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
 
                   <div className="text-center pt-4 border-t border-gray-200">
                     <p className="text-sm text-gray-600 mb-3">
