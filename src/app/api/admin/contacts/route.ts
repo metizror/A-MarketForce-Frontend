@@ -6,11 +6,90 @@ await connectToDatabase();
 
 export async function GET(request: NextRequest) {
   try {
-    const contacts = await Contacts.find();
-    return NextResponse.json(contacts);
-  } catch (error) {
+    await connectToDatabase();
+    
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const search = searchParams.get("search") || "";
+    const comapnyName = searchParams.get("companyName") || "";
+    const employeeSize = searchParams.get("employeeSize") || "";
+    const revenue = searchParams.get("revenue") || "";
+    const industry = searchParams.get("industry") || "";
+    const country = searchParams.get("country") || "";
+    const state = searchParams.get("state") || "";
+    const jobTitle = searchParams.get("jobTitle") || "";
+    const jobLevel = searchParams.get("jobLevel") || "";
+    const jobRole = searchParams.get("jobRole") || "";
+    
+    const pageNumber = Math.max(1, page);
+    const limitNumber = Math.min(Math.max(1, limit), 100);
+    const skip = (pageNumber - 1) * limitNumber;
+    
+    const query: any = {};
+    
+    if (employeeSize) {
+      query.employeeSize = { $regex: employeeSize, $options: "i" };
+    }
+    if (comapnyName) {
+      query.companyName = { $regex: comapnyName, $options: "i" };
+    }
+    if (revenue) {
+      query.revenue = { $regex: revenue, $options: "i" };
+    }
+    if (industry) {
+      query.industry = { $regex: industry, $options: "i" };
+    }
+    if (country) {
+      query.country = { $regex: country, $options: "i" };
+    }
+    if (state) {
+      query.state = { $regex: state, $options: "i" };
+    }
+    if (jobTitle) {
+      query.jobTitle = { $regex: jobTitle, $options: "i" };
+    }
+    if (jobLevel) {
+      query.jobLevel = { $regex: jobLevel, $options: "i" };
+    }
+    if (jobRole) {
+      query.jobRole = { $regex: jobRole, $options: "i" };
+    }
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { companyName: { $regex: search, $options: "i" } },
+        { jobTitle: { $regex: search, $options: "i" } },
+      ];
+    }
+    
+    const [contacts, totalCount] = await Promise.all([
+      Contacts.find(query)
+        .skip(skip)
+        .limit(limitNumber)
+        .sort({ createdAt: -1 }), 
+      Contacts.countDocuments(query),
+    ]);
+    
+    const totalPages = Math.ceil(totalCount / limitNumber);
+    
+    return NextResponse.json({
+      contacts,
+      pagination: {
+        currentPage: pageNumber,
+        totalPages,
+        totalCount,
+        limit: limitNumber,
+        hasNextPage: pageNumber < totalPages,
+        hasPreviousPage: pageNumber > 1,
+      },
+    });
+  } catch (error: any) {
+    console.error("Error fetching contacts:", error);
     return NextResponse.json(
-      { message: "Error fetching contacts" },
+      { message: "Error fetching contacts", error: error.message },
       { status: 500 }
     );
   }
