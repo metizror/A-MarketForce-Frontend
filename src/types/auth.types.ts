@@ -31,6 +31,7 @@ export interface SendOtpResponse {
 export interface VerifyOtpResponse {
   message: string;
   isEmailVerified: boolean;
+  customer?: CustomerObject;
 }
 
 export interface UserObject {

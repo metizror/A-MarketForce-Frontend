@@ -8,6 +8,7 @@ import { User, Mail, Lock, Building, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { registerCustomer } from '@/store/slices/customerRegister.slice';
+import { clearVerifiedCustomer } from '@/store/slices/auth.slice';
 
 interface CustomerRegistrationProps {
   onRegistrationComplete: () => void;
@@ -72,6 +73,9 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
 
     console.log('Validation passed, calling API...');
     try {
+      // Clear any previous verifiedCustomer state before starting new registration
+      dispatch(clearVerifiedCustomer());
+      
       const payload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -96,8 +100,8 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
 
       toast.success(result.message || 'Registration successful! Please verify your email.');
       
-      // Navigate to OTP verify page with email
-      router.push(`/otp-verify?email=${encodeURIComponent(formData.businessEmail)}`);
+      // Navigate to OTP verify page (email is stored in sessionStorage)
+      router.push('/otp-verify');
     } catch (err: any) {
       console.error('Registration error:', err);
       toast.error(err.message || 'Registration failed. Please try again.');

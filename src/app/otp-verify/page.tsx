@@ -1,23 +1,23 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { Loader2, CheckCircle, Shield } from 'lucide-react';
+import { Loader2, CheckCircle, Shield, User, Mail, Building } from 'lucide-react';
 import { toast } from 'sonner';
-import { publicApiPost } from '@/lib/api';
-import { VerifyOtpPayload, VerifyOtpResponse, SendOtpResponse } from '@/types/auth.types';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { verifyOtp, clearVerifiedCustomer, resetAuthState } from '@/store/slices/auth.slice';
 
 export default function OtpVerifyPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { isLoading, verifiedCustomer, error } = useAppSelector((state) => state.auth);
   const [otp, setOtp] = useState('');
   const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isResending, setIsResending] = useState(false);
-  const [countdown, setCountdown] = useState(0);
-  const [isVerified, setIsVerified] = useState(false);
+  const isVerified = verifiedCustomer !== null;
 
   const handleOtpChange = (value: string) => {
     // Only allow numbers and limit to 6 digits
@@ -43,19 +43,61 @@ export default function OtpVerifyPage() {
   };
 
   useEffect(() => {
-    // Get email from URL params (required)
+    // Check if user has permission to access this page (only after registration)
+    if (typeof window !== "undefined") {
+      const canAccess = sessionStorage.getItem("canAccessOtpVerify");
+      const storedEmail = sessionStorage.getItem("registrationEmail");
+      
+      // If canAccessOtpVerify exists (new registration), clear any old verifiedCustomer
+      // This ensures we show OTP input form, not old success screen
+      if (canAccess && verifiedCustomer) {
+        dispatch(clearVerifiedCustomer());
+      }
+      
+      // If verifiedCustomer exists but email doesn't match current registration, clear it
+      // This handles the case where user registered a new customer after previous verification
+      if (verifiedCustomer && storedEmail && verifiedCustomer.email !== storedEmail) {
+        dispatch(clearVerifiedCustomer());
+      }
+      
+      // If user doesn't have permission and hasn't verified yet, redirect to home
+      if (!canAccess && !verifiedCustomer) {
+        toast.error("Please register first to access OTP verification");
+        router.push("/");
+        return;
+      }
+
+      // Get email from sessionStorage (prioritized) or URL params (fallback)
+      if (storedEmail) {
+        setEmail(storedEmail);
+        return;
+      }
+    }
+    
+    // Fallback to URL params if sessionStorage doesn't have email
     const emailParam = searchParams.get('email');
     if (emailParam) {
       setEmail(emailParam);
+    } else {
+      // No email found and no permission - redirect
+      if (typeof window !== "undefined" && !verifiedCustomer) {
+        toast.error("Please register first to access OTP verification");
+        router.push("/");
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, router, verifiedCustomer, dispatch]);
 
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [countdown]);
+  // Only show success screen if verifiedCustomer exists AND canAccessOtpVerify is cleared
+  // This ensures success screen only appears immediately after verification, not for new registrations
+  // If canAccessOtpVerify exists, it means user just registered, so show OTP input form
+  const canAccess = typeof window !== "undefined" ? sessionStorage.getItem("canAccessOtpVerify") : null;
+  const shouldShowSuccess = isVerified && verifiedCustomer && !canAccess;
+
+  // Handle page refresh after successful verification
+  // If user refreshes after verification, Redux state resets (verifiedCustomer becomes null)
+  // and canAccessOtpVerify flag is cleared, so they'll be redirected by the main useEffect
+  // This prevents access to OTP verify page after successful verification
+
 
   const handleVerifyOtp = async (e: any) => {
     e.preventDefault();
@@ -70,57 +112,18 @@ export default function OtpVerifyPage() {
       return;
     }
 
-    setIsLoading(true);
     try {
-      const response = await publicApiPost<VerifyOtpResponse>(
-        '/auth/verify-otp',
-        {
-          email,
-          otp,
-        } as VerifyOtpPayload
-      );
-
-      if (response.isEmailVerified) {
-        setIsVerified(true);
-        toast.success(response.message || 'Email verified successfully!');
-      } else {
-        toast.error(response.message || 'Invalid OTP. Please try again.');
-        setOtp('');
-      }
-    } catch (error: any) {
-      console.error('OTP verification error:', error);
-      toast.error(error.response?.data?.message || error.message || 'Failed to verify OTP. Please try again.');
+      const result = await dispatch(verifyOtp({ email, otp })).unwrap();
+      toast.success(result.message || 'Email verified successfully!');
+    } catch (err: any) {
+      console.error('OTP verification error:', err);
+      toast.error(err.message || 'Failed to verify OTP. Please try again.');
       setOtp('');
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleResendOtp = async () => {
-    if (!email) {
-      toast.error('Email not found. Please try again from the registration page.');
-      return;
-    }
 
-    setIsResending(true);
-    try {
-      const response = await publicApiPost<SendOtpResponse>(
-        '/auth/send-otp',
-        { email }
-      );
-      
-      toast.success(response.message || 'OTP sent to your email');
-      setCountdown(60); // 60 seconds countdown
-      setOtp('');
-    } catch (error: any) {
-      console.error('Resend OTP error:', error);
-      toast.error(error.response?.data?.message || error.message || 'Failed to send OTP. Please try again.');
-    } finally {
-      setIsResending(false);
-    }
-  };
-
-  if (isVerified) {
+  if (shouldShowSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50 p-4">
         <div className="w-full max-w-md">
@@ -130,11 +133,53 @@ export default function OtpVerifyPage() {
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 bg-gradient-to-br from-green-500 to-emerald-500">
                   <CheckCircle className="w-10 h-10 text-white" />
                 </div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-3">Email Verified!</h2>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-3">Registration Successful!</h2>
                 <p className="text-gray-600 mb-6">
-                  Your email has been successfully verified.<br />
-                  Redirecting to login...
+                  Your email has been successfully verified.
                 </p>
+                
+                {/* Customer Information */}
+                <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Registered Customer Details</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <User className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500">Name</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {verifiedCustomer.firstName} {verifiedCustomer.lastName}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500">Email</p>
+                        <p className="text-sm font-medium text-gray-900">{verifiedCustomer.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Building className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500">Company</p>
+                        <p className="text-sm font-medium text-gray-900">{verifiedCustomer.companyName}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    // Reset auth state to initial state and clear all sessionStorage
+                    // This ensures clean state for next registration
+                    dispatch(resetAuthState());
+                    router.push('/');
+                  }}
+                  className="w-full h-11"
+                  style={{ backgroundColor: '#EF8037' }}
+                >
+                  Go to Login
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -201,7 +246,7 @@ export default function OtpVerifyPage() {
               </Button>
 
               {/* Resend OTP */}
-              <div className="text-center">
+             {/* <div className="text-center">
                 <button
                   type="button"
                   onClick={handleResendOtp}
@@ -219,7 +264,7 @@ export default function OtpVerifyPage() {
                     'Resend code'
                   )}
                 </button>
-              </div>
+              </div> */}
             </form>
           </CardContent>
         </Card>
