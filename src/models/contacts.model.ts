@@ -5,14 +5,32 @@ const contactsSchema = new mongoose.Schema(
     firstName: {
       type: String,
       required: true,
+      validate: {
+        validator: function (v: string) {
+          return v.length > 0;
+        },
+        message: "First name is required",
+      },
     },
     lastName: {
       type: String,
       required: true,
+      validate: {
+        validator: function (v: string) {
+          return v.length > 0;
+        },
+        message: "Last name is required",
+      },
     },
     jobTitle: {
       type: String,
       required: true,
+      validate: {
+        validator: function (v: string) {
+          return v.length > 0;
+        },
+        message: "Job title is required",
+      },
     },
     jobLevel: {
       type: String,
@@ -24,6 +42,12 @@ const contactsSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      validate: {
+        validator: function (v: string) {
+          return v.length > 0;
+        },
+        message: "Email is required",
+      },
     },
     phone: {
       type: String,
@@ -67,14 +91,32 @@ const contactsSchema = new mongoose.Schema(
     companyName: {
       type: String,
       required: true,
+      validate: {
+        validator: function (v: string) {
+          return v.length > 0;
+        },
+        message: "Company name is required",
+      },
     },
     employeeSize: {
       type: String,
       required: true,
+      validate: {
+        validator: function (v: string) {
+          return v.length > 0;
+        },
+        message: "Employee size is required",
+      },
     },
     revenue: {
       type: String,
       required: true,
+      validate: {
+        validator: function (v: string) {
+          return v.length > 0;
+        },
+        message: "Revenue is required",
+      },
     },
     amfNotes: {
       type: String,
@@ -86,6 +128,6 @@ const contactsSchema = new mongoose.Schema(
   }
 );
 
-const Contacts = mongoose.models.Contacts ||
-  mongoose.model("Contacts", contactsSchema);
+const Contacts =
+  mongoose.models.Contacts || mongoose.model("Contacts", contactsSchema);
 export default Contacts;
