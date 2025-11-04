@@ -2,12 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useFormik } from 'formik';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Shield, Users, UserCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { CustomerRegistration } from './CustomerRegistration';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { login } from '@/store/slices/auth.slice';
+import { LoginPayload } from '@/types/auth.types';
+import {
+  SuperadminLoginSchema,
+  AdminLoginSchema,
+  CustomerLoginSchema,
+  SuperadminLoginFormValues,
+  AdminLoginFormValues,
+  CustomerLoginFormValues,
+} from '@/validation-schemas';
 
 // User type definition (matching app/page.tsx)
 export type UserRole = 'superadmin' | 'admin' | 'customer' | null;
@@ -18,11 +32,6 @@ export interface User {
   name: string;
   role: UserRole;
 }
-import { toast } from 'sonner';
-import { CustomerRegistration } from './CustomerRegistration';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { login } from '@/store/slices/auth.slice';
-import { LoginPayload } from '@/types/auth.types';
 
 interface LoginPageProps {
   onLogin: (user: User) => void;
@@ -36,14 +45,105 @@ interface LoginPageProps {
 
 export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('superadmin');
   const [showRegistration, setShowRegistration] = useState(false);
 
   // Redux hooks
   const dispatch = useAppDispatch();
   const { isLoading, error, isAuthenticated, user, token } = useAppSelector((state) => state.auth);
+
+  // Superadmin Login Form
+  const superadminInitialValues: SuperadminLoginFormValues = {
+    email: '',
+    password: '',
+  };
+
+  const {
+    handleChange: handleSuperadminChange,
+    handleSubmit: handleSuperadminSubmit,
+    values: superadminValues,
+    errors: superadminErrors,
+    touched: superadminTouched,
+  } = useFormik({
+    initialValues: superadminInitialValues,
+    validationSchema: SuperadminLoginSchema,
+    onSubmit: async (value, action) => {
+      const loginPayload: LoginPayload = {
+        email: value.email,
+        password: value.password,
+        role: 'superadmin',
+      };
+      try {
+        await dispatch(login(loginPayload)).unwrap();
+        action.resetForm();
+        router.push('/dashboard');
+      } catch (err) {
+        console.error('Login failed:', err);
+      }
+    },
+  });
+
+  // Admin Login Form
+  const adminInitialValues: AdminLoginFormValues = {
+    email: '',
+    password: '',
+  };
+
+  const {
+    handleChange: handleAdminChange,
+    handleSubmit: handleAdminSubmit,
+    values: adminValues,
+    errors: adminErrors,
+    touched: adminTouched,
+  } = useFormik({
+    initialValues: adminInitialValues,
+    validationSchema: AdminLoginSchema,
+    onSubmit: async (value, action) => {
+      const loginPayload: LoginPayload = {
+        email: value.email,
+        password: value.password,
+        role: 'admin',
+      };
+      try {
+        await dispatch(login(loginPayload)).unwrap();
+        action.resetForm();
+        router.push('/dashboard');
+      } catch (err) {
+        console.error('Login failed:', err);
+      }
+    },
+  });
+
+  // Customer Login Form
+  const customerInitialValues: CustomerLoginFormValues = {
+    email: '',
+    password: '',
+  };
+
+  const {
+    handleChange: handleCustomerChange,
+    handleSubmit: handleCustomerSubmit,
+    values: customerValues,
+    errors: customerErrors,
+    touched: customerTouched,
+  } = useFormik({
+    initialValues: customerInitialValues,
+    validationSchema: CustomerLoginSchema,
+    onSubmit: async (value, action) => {
+      const loginPayload: LoginPayload = {
+        email: value.email,
+        password: value.password,
+        role: 'customer',
+      };
+      try {
+        await dispatch(login(loginPayload)).unwrap();
+        action.resetForm();
+        router.push('/dashboard');
+      } catch (err) {
+        console.error('Login failed:', err);
+      }
+    },
+  });
 
   // Handle successful login
   useEffect(() => {
@@ -65,38 +165,6 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
       toast.error(error);
     }
   }, [error]);
-
-  // Map tab value to role
-  const getRoleFromTab = (tab: string): 'superadmin' | 'admin' | 'customer' => {
-    if (tab === 'superadmin') return 'superadmin';
-    if (tab === 'admin') return 'admin';
-    return 'customer';
-  };
-
-  const handleLogin = async (e: { preventDefault: () => void }, role: 'superadmin' | 'admin' | 'customer') => {
-    e.preventDefault();
-    
-    if (!email || !password) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
-    // Create login payload with dynamic role
-    const loginPayload: LoginPayload = {
-      email,
-      password,
-      role,
-    };
-
-    // Dispatch Redux login action
-    try {
-      await dispatch(login(loginPayload)).unwrap();
-      router.push('/dashboard');
-    } catch (err) {
-      // Error is handled by useEffect above
-      console.error('Login failed:', err);
-    }
-  };
 
   const handleRegistrationComplete = () => {
     setShowRegistration(false);
@@ -146,28 +214,36 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
               </TabsList>
 
               <TabsContent value="superadmin">
-                <form onSubmit={(e) => handleLogin(e, 'superadmin')} className="space-y-4">
+                <form onSubmit={handleSuperadminSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="superadmin-email">Email</Label>
                     <Input
-                      id="email"
+                      id="superadmin-email"
+                      name="email"
                       type="email"
                       placeholder="superadmin@company.com"
-                      value={email}
-                      onChange={(e: any) => setEmail(e.target.value)}
-                      className="h-11"
+                      value={superadminValues.email}
+                      onChange={handleSuperadminChange}
+                      className={`h-11 ${superadminErrors.email && superadminTouched.email ? 'border-red-500' : ''}`}
                     />
+                    {superadminErrors.email && superadminTouched.email && (
+                      <p className="text-xs text-red-600 font-medium">{superadminErrors.email}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="superadmin-password">Password</Label>
                     <Input
-                      id="password"
+                      id="superadmin-password"
+                      name="password"
                       type="password"
                       placeholder="Enter your password"
-                      value={password}
-                      onChange={(e: any) => setPassword(e.target.value)}
-                      className="h-11"
+                      value={superadminValues.password}
+                      onChange={handleSuperadminChange}
+                      className={`h-11 ${superadminErrors.password && superadminTouched.password ? 'border-red-500' : ''}`}
                     />
+                    {superadminErrors.password && superadminTouched.password && (
+                      <p className="text-xs text-red-600 font-medium">{superadminErrors.password}</p>
+                    )}
                   </div>
                   <Button 
                     type="submit" 
@@ -182,28 +258,36 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
               </TabsContent>
 
               <TabsContent value="admin">
-                <form onSubmit={(e) => handleLogin(e, 'admin')} className="space-y-4">
+                <form onSubmit={handleAdminSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email-admin">Email</Label>
+                    <Label htmlFor="admin-email">Email</Label>
                     <Input
-                      id="email-admin"
+                      id="admin-email"
+                      name="email"
                       type="email"
                       placeholder="admin@company.com"
-                      value={email}
-                      onChange={(e: any) => setEmail(e.target.value)}
-                      className="h-11"
+                      value={adminValues.email}
+                      onChange={handleAdminChange}
+                      className={`h-11 ${adminErrors.email && adminTouched.email ? 'border-red-500' : ''}`}
                     />
+                    {adminErrors.email && adminTouched.email && (
+                      <p className="text-xs text-red-600 font-medium">{adminErrors.email}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password-admin">Password</Label>
+                    <Label htmlFor="admin-password">Password</Label>
                     <Input
-                      id="password-admin"
+                      id="admin-password"
+                      name="password"
                       type="password"
                       placeholder="Enter your password"
-                      value={password}
-                      onChange={(e: any) => setPassword(e.target.value)}
-                      className="h-11"
+                      value={adminValues.password}
+                      onChange={handleAdminChange}
+                      className={`h-11 ${adminErrors.password && adminTouched.password ? 'border-red-500' : ''}`}
                     />
+                    {adminErrors.password && adminTouched.password && (
+                      <p className="text-xs text-red-600 font-medium">{adminErrors.password}</p>
+                    )}
                   </div>
                   <Button 
                     type="submit" 
@@ -218,28 +302,36 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
               </TabsContent>
 
               <TabsContent value="customer">
-                <form onSubmit={(e) => handleLogin(e, 'customer')} className="space-y-4">
+                <form onSubmit={handleCustomerSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email-customer">Email</Label>
+                    <Label htmlFor="customer-email">Email</Label>
                     <Input
-                      id="email-customer"
+                      id="customer-email"
+                      name="email"
                       type="email"
                       placeholder="customer@company.com"
-                      value={email}
-                      onChange={(e: any) => setEmail(e.target.value)}
-                      className="h-11"
+                      value={customerValues.email}
+                      onChange={handleCustomerChange}
+                      className={`h-11 ${customerErrors.email && customerTouched.email ? 'border-red-500' : ''}`}
                     />
+                    {customerErrors.email && customerTouched.email && (
+                      <p className="text-xs text-red-600 font-medium">{customerErrors.email}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password-customer">Password</Label>
+                    <Label htmlFor="customer-password">Password</Label>
                     <Input
-                      id="password-customer"
+                      id="customer-password"
+                      name="password"
                       type="password"
                       placeholder="Enter your password"
-                      value={password}
-                      onChange={(e: any) => setPassword(e.target.value)}
-                      className="h-11"
+                      value={customerValues.password}
+                      onChange={handleCustomerChange}
+                      className={`h-11 ${customerErrors.password && customerTouched.password ? 'border-red-500' : ''}`}
                     />
+                    {customerErrors.password && customerTouched.password && (
+                      <p className="text-xs text-red-600 font-medium">{customerErrors.password}</p>
+                    )}
                   </div>
                   <Button 
                     type="submit" 

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
+import { useFormik } from 'formik';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -9,6 +10,7 @@ import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { registerCustomer } from '@/store/slices/customerRegister.slice';
 import { clearVerifiedCustomer } from '@/store/slices/auth.slice';
+import { CustomerRegistrationSchema, CustomerRegistrationFormValues } from '@/validation-schemas';
 
 interface CustomerRegistrationProps {
   onRegistrationComplete: () => void;
@@ -25,88 +27,58 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { pending } = useAppSelector((state) => state.customerRegister);
-  const [formData, setFormData] = useState({
+
+  const initialValues: CustomerRegistrationFormValues = {
     firstName: '',
     lastName: '',
     businessEmail: '',
     companyName: '',
     password: '',
-    confirmPassword: ''
-  });
-
-  const validateBusinessEmail = (email: string): boolean => {
-    // Check if email is from a business domain (not free email providers)
-    const freeEmailProviders = [
-      'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 
-      'aol.com', 'icloud.com', 'mail.com', 'protonmail.com'
-    ];
-    
-    const domain = email.split('@')[1]?.toLowerCase();
-    return !freeEmailProviders.includes(domain);
+    confirmPassword: '',
   };
 
-  const handleRegister = async (e: any) => {
-    e.preventDefault();
-    console.log('Form submitted', formData);
-    
-    // Validation
-    if (!formData.firstName || !formData.lastName || !formData.businessEmail || 
-        !formData.companyName || !formData.password || !formData.confirmPassword) {
-      toast.error('Please fill in all fields');
-      return;
-    }
+  const { handleChange, handleSubmit, values, errors, touched } = useFormik({
+    initialValues,
+    validationSchema: CustomerRegistrationSchema,
+    onSubmit: async (value, action) => {
+      console.log('Form submitted', value);
+      try {
+        // Clear any previous verifiedCustomer state before starting new registration
+        dispatch(clearVerifiedCustomer());
+        
+        const payload = {
+          firstName: value.firstName,
+          lastName: value.lastName,
+          email: value.businessEmail,
+          companyName: value.companyName,
+          password: value.password,
+        };
+        console.log('Dispatching registerCustomer with payload:', payload);
+        
+        const result = await dispatch(registerCustomer(payload)).unwrap();
+        console.log('Registration successful:', result);
 
-    if (!validateBusinessEmail(formData.businessEmail)) {
-      toast.error('Please use a business email address. Free email providers are not accepted.');
-      return;
-    }
+        // Create approval request
+        if (onCreateApprovalRequest) {
+          onCreateApprovalRequest({
+            firstName: value.firstName,
+            lastName: value.lastName,
+            businessEmail: value.businessEmail,
+            companyName: value.companyName
+          });
+        }
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      toast.error('Password must be at least 8 characters long');
-      return;
-    }
-
-    console.log('Validation passed, calling API...');
-    try {
-      // Clear any previous verifiedCustomer state before starting new registration
-      dispatch(clearVerifiedCustomer());
-      
-      const payload = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.businessEmail,
-        companyName: formData.companyName,
-        password: formData.password,
-      };
-      console.log('Dispatching registerCustomer with payload:', payload);
-      
-      const result = await dispatch(registerCustomer(payload)).unwrap();
-      console.log('Registration successful:', result);
-
-      // Create approval request
-      if (onCreateApprovalRequest) {
-        onCreateApprovalRequest({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          businessEmail: formData.businessEmail,
-          companyName: formData.companyName
-        });
+        toast.success(result.message || 'Registration successful! Please verify your email.');
+        
+        // Reset form and navigate to OTP verify page
+        action.resetForm();
+        router.push('/otp-verify');
+      } catch (err: any) {
+        console.error('Registration error:', err);
+        toast.error(err.message || 'Registration failed. Please try again.');
       }
-
-      toast.success(result.message || 'Registration successful! Please verify your email.');
-      
-      // Navigate to OTP verify page (email is stored in sessionStorage)
-      router.push('/otp-verify');
-    } catch (err: any) {
-      console.error('Registration error:', err);
-      toast.error(err.message || 'Registration failed. Please try again.');
-    }
-  };
+    },
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50 p-4">
@@ -128,30 +100,38 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
             </p>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleRegister} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name *</Label>
                   <Input
                     id="firstName"
+                    name="firstName"
                     type="text"
                     placeholder="John"
-                    value={formData.firstName}
-                    onChange={(e: any) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="h-11"
+                    value={values.firstName}
+                    onChange={handleChange}
+                    className={`h-11 ${errors.firstName && touched.firstName ? 'border-red-500' : ''}`}
                   />
+                  {errors.firstName && touched.firstName && (
+                    <p className="text-xs text-red-600 font-medium">{errors.firstName}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name *</Label>
                   <Input
                     id="lastName"
+                    name="lastName"
                     type="text"
                     placeholder="Doe"
-                    value={formData.lastName}
-                    onChange={(e: any) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="h-11"
+                    value={values.lastName}
+                    onChange={handleChange}
+                    className={`h-11 ${errors.lastName && touched.lastName ? 'border-red-500' : ''}`}
                   />
+                  {errors.lastName && touched.lastName && (
+                    <p className="text-xs text-red-600 font-medium">{errors.lastName}</p>
+                  )}
                 </div>
               </div>
 
@@ -161,16 +141,21 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <Input
                     id="businessEmail"
+                    name="businessEmail"
                     type="email"
                     placeholder="john.doe@company.com"
-                    value={formData.businessEmail}
-                    onChange={(e: any) => setFormData({ ...formData, businessEmail: e.target.value })}
-                    className="h-11 pl-10"
+                    value={values.businessEmail}
+                    onChange={handleChange}
+                    className={`h-11 pl-10 ${errors.businessEmail && touched.businessEmail ? 'border-red-500' : ''}`}
                   />
                 </div>
-                <p className="text-xs text-gray-500">
-                  Only business email addresses are accepted (no Gmail, Yahoo, etc.)
-                </p>
+                {errors.businessEmail && touched.businessEmail ? (
+                  <p className="text-xs text-red-600 font-medium">{errors.businessEmail}</p>
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    Only business email addresses are accepted (no Gmail, Yahoo, etc.)
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -179,13 +164,17 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
                   <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <Input
                     id="companyName"
+                    name="companyName"
                     type="text"
                     placeholder="Your Company Inc."
-                    value={formData.companyName}
-                    onChange={(e: any) => setFormData({ ...formData, companyName: e.target.value })}
-                    className="h-11 pl-10"
+                    value={values.companyName}
+                    onChange={handleChange}
+                    className={`h-11 pl-10 ${errors.companyName && touched.companyName ? 'border-red-500' : ''}`}
                   />
                 </div>
+                {errors.companyName && touched.companyName && (
+                  <p className="text-xs text-red-600 font-medium">{errors.companyName}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -195,13 +184,17 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <Input
                       id="password"
+                      name="password"
                       type="password"
                       placeholder="Min. 8 characters"
-                      value={formData.password}
-                      onChange={(e: any) => setFormData({ ...formData, password: e.target.value })}
-                      className="h-11 pl-10"
+                      value={values.password}
+                      onChange={handleChange}
+                      className={`h-11 pl-10 ${errors.password && touched.password ? 'border-red-500' : ''}`}
                     />
                   </div>
+                  {errors.password && touched.password && (
+                    <p className="text-xs text-red-600 font-medium">{errors.password}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -210,13 +203,17 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <Input
                       id="confirmPassword"
+                      name="confirmPassword"
                       type="password"
                       placeholder="Re-enter password"
-                      value={formData.confirmPassword}
-                      onChange={(e: any) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                      className="h-11 pl-10"
+                      value={values.confirmPassword}
+                      onChange={handleChange}
+                      className={`h-11 pl-10 ${errors.confirmPassword && touched.confirmPassword ? 'border-red-500' : ''}`}
                     />
                   </div>
+                  {errors.confirmPassword && touched.confirmPassword && (
+                    <p className="text-xs text-red-600 font-medium">{errors.confirmPassword}</p>
+                  )}
                 </div>
               </div>
 
