@@ -19,8 +19,28 @@ export function FilterPanel({ filters, setFilters, onClose }: FilterPanelProps) 
   const [companyExpanded, setCompanyExpanded] = useState(true);
   const [contactExpanded, setContactExpanded] = useState(true);
 
-  const employeeSizes = ['1-10', '11-50', '51-200', '201-1000', '1000-5000', '5000+'];
-  const revenues = ['< $1M', '$1M-$10M', '$10M-$50M', '$50M-$100M', '$100M+'];
+  const employeeSizes = [
+    '1 - 25',
+    '26 - 50',
+    '51 - 100',
+    '101 - 250',
+    '251 - 500',
+    '501 - 1000',
+    '1001 - 2500',
+    '2501 - 5000',
+    '5001 - 10000',
+    'over 10,001'
+  ];
+  const revenues = ['Less than 1M',
+    '1M - 5M',
+    '5M - 10M',
+    '10M - 50M',
+    '50M - 100M',
+    '100M - 250M',
+    '250M - 500M',
+    '500M - 1B',
+    'More than 1B',
+  ];
   const industries = ['Technology', 'Healthcare', 'Finance', 'Marketing', 'Education', 'Manufacturing'];
   const countries = ['United States', 'Canada', 'United Kingdom', 'Germany', 'France', 'Australia'];
   const states = ['California', 'New York', 'Texas', 'Florida', 'Illinois', 'Washington'];
