@@ -1,4 +1,6 @@
 import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import {
@@ -22,13 +24,13 @@ interface MenuItem {
   id: string;
   label: string;
   icon: string;
+  path: string;
   exclusive?: boolean;
   badge?: number;
 }
 
 interface SidebarProps {
   activeView: string;
-  setActiveView: (view: string) => void;
   menuItems: MenuItem[];
   user: UserObject;
   onLogout: () => void;
@@ -48,21 +50,22 @@ const iconMap = {
   CheckCircle2,
 };
 
-export function Sidebar({
+export function DashboardSidebar({
   activeView,
-  setActiveView,
   menuItems,
   user,
   onLogout,
   onSupportClick,
   pendingRequestsCount = 0,
 }: SidebarProps) {
+  const pathname = usePathname();
+
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
       {/* Logo & User Info */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-center mb-4 px-2">
-          <Image src={marketForceLogo} alt="Market Force" width={150} height={150} />
+          <Image src={marketForceLogo} alt="Market Force" width={180} height={180} />
         </div>
 
         <div>
@@ -82,37 +85,37 @@ export function Sidebar({
       <nav className="flex-1 p-4 space-y-2">
         {menuItems.map((item) => {
           const Icon = iconMap[item.icon as keyof typeof iconMap];
-          const isActive = activeView === item.id;
+          const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
           const isExclusive = item.exclusive && user.role !== "superadmin";
 
           if (isExclusive) return null;
 
           return (
-            <Button
-              key={item.id}
-              variant={isActive ? "default" : "ghost"}
-              className={`w-full justify-start h-10 relative ${
-                isActive
-                  ? user.role === "superadmin"
-                    ? "bg-orange-500 hover:bg-orange-600"
-                    : "bg-red-500 hover:bg-red-600"
-                  : "hover:bg-gray-100"
-              }`}
-              onClick={() => setActiveView(item.id)}
-            >
-              <Icon className="w-4 h-4 mr-3" />
-              {item.label}
-              {item.badge && item.badge > 0 && (
-                <Badge className="ml-auto bg-red-500 text-white text-xs h-5 min-w-5 px-1.5 flex items-center justify-center">
-                  {item.badge}
-                </Badge>
-              )}
-              {item.exclusive && !item.badge && (
-                <Badge variant="secondary" className="ml-auto text-xs">
-                  Pro
-                </Badge>
-              )}
-            </Button>
+            <Link key={item.id} href={item.path}>
+              <Button
+                variant={isActive ? "default" : "ghost"}
+                className={`w-full justify-start h-10 relative ${
+                  isActive
+                    ? user.role === "superadmin"
+                      ? "bg-orange-500 hover:bg-orange-600"
+                      : "bg-red-500 hover:bg-red-600"
+                    : "hover:bg-gray-100"
+                }`}
+              >
+                <Icon className="w-4 h-4 mr-3" />
+                {item.label}
+                {item.badge && item.badge > 0 && (
+                  <Badge className="ml-auto bg-red-500 text-white text-xs h-5 min-w-5 px-1.5 flex items-center justify-center">
+                    {item.badge}
+                  </Badge>
+                )}
+                {item.exclusive && !item.badge && (
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    Pro
+                  </Badge>
+                )}
+              </Button>
+            </Link>
           );
         })}
       </nav>
@@ -132,11 +135,7 @@ export function Sidebar({
         <Button
           variant="ghost"
           className="w-full justify-start h-10 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-          onClick={() => {
-            localStorage.removeItem("authState");
-            localStorage.removeItem("authToken");
-            window.location.href = "/";
-          }}
+          onClick={onLogout}
         >
           <LogOut className="w-4 h-4 mr-3" />
           Sign Out

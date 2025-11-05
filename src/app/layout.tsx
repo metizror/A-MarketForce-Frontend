@@ -6,6 +6,7 @@ export const metadata = {
 import '../styles/globals.css';
 import '../index.css';
 import StoreProvider from '../store/Provider';
+import { Toaster } from '../components/ui/sonner';
 
 export default function RootLayout({
   children,
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <StoreProvider>{children}</StoreProvider>
+        <Toaster />
       </body>
     </html>
   );

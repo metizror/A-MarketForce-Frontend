@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/auth.slice";
 import customerRegisterReducer from "./slices/customerRegister.slice";
 import resetPasswordReducer from "./slices/resetPassword.slice";
+import contactsReducer from "./slices/contacts.slice";
 
 export const makeStore = () => {
   return configureStore({
@@ -9,6 +10,7 @@ export const makeStore = () => {
       auth: authReducer,
       customerRegister: customerRegisterReducer,
       resetPassword: resetPasswordReducer,
+      contacts: contactsReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({

@@ -23,9 +23,18 @@ export interface VerifyOtpPayload {
   otp: string;
 }
 
+export interface ResendOtpPayload {
+  email: string;
+  role: "admin" | "superadmin" | "customer";
+}
+
 export interface SendOtpResponse {
   message: string;
   otp: string; // for dev/testing only, remove in production
+}
+
+export interface ResendOtpResponse {
+  message: string;
 }
 
 export interface VerifyOtpResponse {

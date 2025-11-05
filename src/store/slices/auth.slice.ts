@@ -1,5 +1,5 @@
 import { publicApiPost, setAuthToken, removeAuthToken } from "@/lib/api";
-import { LoginPayload, LoginSuccessResponse, LoginFailResponse, VerifyOtpPayload, VerifyOtpResponse } from "@/types/auth.types";
+import { LoginPayload, LoginSuccessResponse, LoginFailResponse, VerifyOtpPayload, VerifyOtpResponse, ResendOtpPayload, ResendOtpResponse } from "@/types/auth.types";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { saveAuthState, clearAuthState } from "@/utils/authStorage";
 
@@ -19,6 +19,8 @@ export interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isVerifyingOtp: boolean;
+  isResendingOtp: boolean;
   error: string | null;
   verifiedCustomer: any | null;
 }
@@ -28,6 +30,8 @@ const initialState: AuthState = {
   token: null,
   isAuthenticated: false,
   isLoading: true, // Start with true to wait for initialization from localStorage
+  isVerifyingOtp: false,
+  isResendingOtp: false,
   error: null,
   verifiedCustomer: null,
 };
@@ -108,9 +112,57 @@ export const verifyOtp = createAsyncThunk<
       };
     }
 
+    // If response doesn't have isEmailVerified: true, treat as error
     return rejectWithValue({ message: response.message || "Invalid OTP" });
   } catch (error: any) {
-    const errorMessage = error.response?.data?.message || error.message || "Failed to verify OTP";
+    // Extract error message from API response
+    // handleApiError already extracts the message from error.response.data.message
+    // So we can directly use error.message
+    // But also check if it's still an axios error (in case handleApiError didn't process it)
+    let errorMessage = "Failed to verify OTP";
+    
+    if (error.response?.data?.message) {
+      // Still an axios error, extract directly
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      // Already processed by handleApiError
+      errorMessage = error.message;
+    }
+    
+    console.error("Verify OTP error:", error);
+    return rejectWithValue({ message: errorMessage });
+  }
+});
+
+export const resendOtp = createAsyncThunk<
+  ResendOtpResponse,
+  ResendOtpPayload,
+  { rejectValue: { message: string } }
+>("auth/resendOtp", async (data: ResendOtpPayload, { rejectWithValue }) => {
+  try {
+    const response = await publicApiPost<ResendOtpResponse>(
+      "/auth/resend-otp",
+      {
+        email: data.email,
+        role: data.role,
+      }
+    );
+
+    return response;
+  } catch (error: any) {
+    // Extract error message from API response
+    // handleApiError already extracts the message from error.response.data.message
+    let errorMessage = "Failed to resend OTP";
+    
+    if (error.response?.data?.message) {
+      // Still an axios error, extract directly
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      // Already processed by handleApiError
+      errorMessage = error.message;
+    }
+    
+    console.error("Resend OTP error:", error);
     return rejectWithValue({ message: errorMessage });
   }
 });
@@ -129,6 +181,11 @@ const authSlice = createSlice({
       // Remove all tokens and auth state from localStorage
       removeAuthToken();
       clearAuthState();
+      // Clear all localStorage and sessionStorage
+      if (typeof window !== "undefined") {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
     },
     // Initialize auth from localStorage on page refresh
     initializeAuth: (state) => {
@@ -216,11 +273,11 @@ const authSlice = createSlice({
       state.error = action.payload?.message || "Login failed";
     });
     builder.addCase(verifyOtp.pending, (state) => {
-      state.isLoading = true;
+      state.isVerifyingOtp = true;
       state.error = null;
     });
     builder.addCase(verifyOtp.fulfilled, (state, action) => {
-      state.isLoading = false;
+      state.isVerifyingOtp = false;
       state.error = null;
       // Update customer with verified status
       if (action.payload.customer) {
@@ -240,9 +297,21 @@ const authSlice = createSlice({
       }
     });
     builder.addCase(verifyOtp.rejected, (state, action) => {
-      state.isLoading = false;
+      state.isVerifyingOtp = false;
       state.error = action.payload?.message || "OTP verification failed";
       state.verifiedCustomer = null;
+    });
+    builder.addCase(resendOtp.pending, (state) => {
+      state.isResendingOtp = true;
+      state.error = null;
+    });
+    builder.addCase(resendOtp.fulfilled, (state) => {
+      state.isResendingOtp = false;
+      state.error = null;
+    });
+    builder.addCase(resendOtp.rejected, (state, action) => {
+      state.isResendingOtp = false;
+      state.error = action.payload?.message || "Failed to resend OTP";
     });
   },
 });

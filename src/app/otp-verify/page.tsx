@@ -8,15 +8,17 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Loader2, CheckCircle, Shield, User, Mail, Building } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { verifyOtp, clearVerifiedCustomer, resetAuthState } from '@/store/slices/auth.slice';
+import { verifyOtp, clearVerifiedCustomer, resetAuthState, resendOtp } from '@/store/slices/auth.slice';
 
 export default function OtpVerifyPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isLoading, verifiedCustomer, error } = useAppSelector((state) => state.auth);
+  const { isVerifyingOtp, isResendingOtp, verifiedCustomer, error } = useAppSelector((state) => state.auth);
   const [otp, setOtp] = useState('');
   const [email, setEmail] = useState('');
+  const [countdown, setCountdown] = useState(60); // 60 seconds countdown
+  const [isResendDisabled, setIsResendDisabled] = useState(true);
   const isVerified = verifiedCustomer !== null;
 
   const handleOtpChange = (value: string) => {
@@ -41,6 +43,18 @@ export default function OtpVerifyPage() {
     }
     // Ignore other changes (editing middle digits)
   };
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (countdown > 0 && isResendDisabled) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0 && isResendDisabled) {
+      setIsResendDisabled(false);
+    }
+  }, [countdown, isResendDisabled]);
 
   useEffect(() => {
     // Check if user has permission to access this page (only after registration)
@@ -117,8 +131,53 @@ export default function OtpVerifyPage() {
       toast.success(result.message || 'Email verified successfully!');
     } catch (err: any) {
       console.error('OTP verification error:', err);
-      toast.error(err.message || 'Failed to verify OTP. Please try again.');
+      // Extract error message from API response
+      // When using rejectWithValue, .unwrap() throws the rejectValue directly
+      // So err should be { message: string } or the error message itself
+      let errorMessage = 'Failed to verify OTP. Please try again.';
+      
+      if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (err) {
+        // If err is the rejectValue object directly
+        errorMessage = err.message || JSON.stringify(err);
+      }
+      
+      toast.error(errorMessage);
       setOtp('');
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!email) {
+      toast.error('Email not found. Please try again from the registration page.');
+      return;
+    }
+
+    try {
+      const result = await dispatch(resendOtp({ email, role: 'customer' })).unwrap();
+      toast.success(result.message || 'OTP sent to your email successfully!');
+      // Reset countdown and disable button
+      setCountdown(60);
+      setIsResendDisabled(true);
+      // Clear current OTP input
+      setOtp('');
+    } catch (err: any) {
+      console.error('Resend OTP error:', err);
+      // Extract error message from API response
+      let errorMessage = 'Failed to resend OTP. Please try again.';
+      
+      if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (err) {
+        errorMessage = err.message || JSON.stringify(err);
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -212,7 +271,7 @@ export default function OtpVerifyPage() {
                     maxLength={6}
                     value={otp}
                     onChange={handleOtpChange}
-                    disabled={isLoading}
+                    disabled={isVerifyingOtp || isResendingOtp}
                     containerClassName="w-full justify-center"
                     pattern={/^[0-9]*$/}
                   >
@@ -233,9 +292,9 @@ export default function OtpVerifyPage() {
                 type="submit"
                 className="w-full h-11"
                 style={{ backgroundColor: '#EF8037' }}
-                disabled={isLoading || otp.length !== 6}
+                disabled={isVerifyingOtp || isResendingOtp || otp.length !== 6}
               >
-                {isLoading ? (
+                {isVerifyingOtp ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Verifying...
@@ -246,25 +305,26 @@ export default function OtpVerifyPage() {
               </Button>
 
               {/* Resend OTP */}
-             {/* <div className="text-center">
-                <button
+              <div className="text-center">
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={handleResendOtp}
-                  disabled={isResending || countdown > 0 || !email}
+                  disabled={isResendDisabled || isResendingOtp || isVerifyingOtp || !email}
                   className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isResending ? (
+                  {isResendingOtp ? (
                     <>
                       <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
                       Sending...
                     </>
-                  ) : countdown > 0 ? (
+                  ) : isResendDisabled ? (
                     `Resend code in ${countdown}s`
                   ) : (
                     'Resend code'
                   )}
-                </button>
-              </div> */}
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

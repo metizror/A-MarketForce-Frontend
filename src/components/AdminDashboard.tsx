@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sidebar } from './DashboardSidebar';
+import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardStats } from './DashboardStats';
 import { ContactsTable } from './ContactsTable';
 import { CompaniesTable } from './CompaniesTable';
@@ -11,8 +11,8 @@ import { ViewContactDetails } from './ViewContactDetails';
 import { SupportContactForm } from './SupportContactForm';
 import { Button } from './ui/button';
 import { LogOut, Filter } from 'lucide-react';
-import { User, Contact, Company, ActivityLog, ApprovalRequest } from '../App';
 import { ApprovalRequests } from './ApprovalRequests';
+import type { User, Contact, Company, ActivityLog, ApprovalRequest } from '@/types/dashboard.types';
 
 interface AdminDashboardProps {
   user: User;
@@ -232,11 +232,15 @@ export function AdminDashboard({
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar
+      <DashboardSidebar
         activeView={activeView}
-        setActiveView={setActiveView}
-        menuItems={menuItems}
-        user={user}
+        menuItems={menuItems.map(item => ({ ...item, path: `/${item.id === 'dashboard' ? 'dashboard' : item.id}` }))}
+        user={{
+          _id: user.id,
+          email: user.email,
+          name: user.name,
+          role: (user.role || 'admin') as 'admin' | 'superadmin' | 'customer',
+        }}
         onLogout={onLogout}
         onSupportClick={() => setShowSupportModal(true)}
         pendingRequestsCount={pendingRequestsCount}

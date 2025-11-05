@@ -12,34 +12,388 @@ import { Checkbox } from './ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { Plus, Edit, Trash2, Download, Search, Eye, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ArrowUpDown, MoreVertical, LayoutList, Table2 } from 'lucide-react';
-import { Contact, User, Company } from '../App';
+import { Plus, Edit, Trash2, Download, Search, Eye, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ArrowUpDown, MoreVertical, LayoutList, Table2, Filter } from 'lucide-react';
+import { Contact, User, Company } from '@/types/dashboard.types';
 import { toast } from 'sonner';
 import { ContactsListView } from './ContactsListView';
 
 interface ContactsTableProps {
   contacts: Contact[];
-  setContacts: (contacts: Contact[]) => void;
   user: User;
   companies?: Company[];
   filters?: any;
+  searchQuery?: string;
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  } | null;
+  isLoading?: boolean;
+  error?: string | null;
+  onSearchChange?: (search: string) => void;
+  onFilterChange?: (filters: any) => void;
+  onPageChange?: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
   onViewContact?: (contact: Contact) => void;
+  showFilters?: boolean;
+  onToggleFilters?: () => void;
 }
 
 type SortField = keyof Contact;
 type SortDirection = 'asc' | 'desc';
 
-export function ContactsTable({ contacts, setContacts, user, companies = [], filters = {}, onViewContact }: ContactsTableProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+export function ContactsTable({ 
+  contacts, 
+  user, 
+  companies = [], 
+  filters = {}, 
+  searchQuery = '',
+  pagination = null,
+  isLoading = false,
+  error = null,
+  onSearchChange,
+  onFilterChange,
+  onPageChange,
+  onLimitChange,
+  onViewContact,
+  showFilters = false,
+  onToggleFilters
+}: ContactsTableProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [viewingContact, setViewingContact] = useState<Contact | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [sortField, setSortField] = useState<SortField>('firstName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [viewMode, setViewMode] = useState<'table' | 'list'>('table');
+
+  // Industry and Sub-Industry mapping
+  const industrySubIndustryMap: Record<string, string[]> = {
+    "Agriculture, Forestry and Fishing": [
+      "Commercial Fishing",
+      "Crop and Animal Production",
+      "Forestry and Logging"
+    ],
+    "Aerospace and Defense": [
+      "Aircraft Engine and Parts Manufacturing",
+      "Aircraft Manufacturing",
+      "Guided Missile and Space Vehicle Manufacturing",
+      "Space Research and Technology",
+      "Weapons and Ammunition Manufacturing"
+    ],
+    "Automotive, Transportation and Logistics": [
+      "Air Transportation Services",
+      "Airlines",
+      "Mass Transit and Ground Passenger Transportation",
+      "Miscellaneous Transportation Equipment Manufacturing",
+      "Miscellaneous Transportation Services",
+      "Motor Vehicle and Parts Dealers",
+      "Motor Vehicle Manufacturing",
+      "Motor Vehicle Parts Manufacturing",
+      "Motor Vehicle Rental",
+      "Motor Vehicle Repair and Maintenance",
+      "Motor Vehicle Wholesale",
+      "Pipeline Transportation",
+      "Postal, Shipping and Messengers",
+      "Railroad Transport",
+      "Railroad Transportation Services",
+      "Road Transportation Services",
+      "Ship and Boat Building",
+      "Shipping and Water Transport",
+      "Shipping and Water Transportation Services",
+      "Storage and Warehousing",
+      "Train and Railroad Equipment Manufacturing",
+      "Transportation Equipment Wholesale",
+      "Trucking"
+    ],
+    "Banking and Finance": [
+      "Banking",
+      "Commodities",
+      "Exchanges",
+      "Holding Companies",
+      "Investment Banking",
+      "Investment Services",
+      "Mortgage and Credit",
+      "Securities"
+    ],
+    "Business, Consulting and Professional Services": [
+      "Administrative Services",
+      "Advertising Services",
+      "Associations and Organizations",
+      "Building and Dwelling Services",
+      "Business Support Services",
+      "Commercial Real Estate Leasing",
+      "Consulting Services",
+      "Employment Services",
+      "Facilities Management",
+      "Market Research and Opinion Polling",
+      "Miscellaneous Professional Services",
+      "Photographic Services",
+      "Research and Development Services",
+      "Accounting and Tax Preparation",
+      "Architecture and Engineering",
+      "Investigation and Security Services",
+      "Legal Services",
+      "Specialized Design Services",
+      "Marketing Services",
+      "Industrial Machinery Repair and Maintenance",
+      "Miscellaneous Repair and Maintenance",
+      "Computer and Office Machine Repair and Maintenance"
+    ],
+    "Chemicals": [
+      "Agricultural Chemical Manufacturing",
+      "Basic Chemical Manufacturing",
+      "Chemical Wholesale",
+      "Miscellaneous Chemical Manufacturing",
+      "Paint, Coating, and Adhesive Manufacturing",
+      "Synthetic Chemical Manufacturing"
+    ],
+    "Construction and Building Materials": [
+      "Cement and Concrete Product Manufacturing",
+      "Civil Engineering",
+      "Construction and Hardware Materials Wholesale",
+      "Construction Machinery Manufacturing",
+      "Residential and Commercial Building Construction",
+      "Specialty Construction Trade Contractors"
+    ],
+    "Consumer Services": [
+      "Consumer Goods Rental",
+      "Death Care Services",
+      "Fitness and Recreation Centers",
+      "Laundry Services",
+      "Miscellaneous Personal Services",
+      "Personal Care Services",
+      "Photofinishing",
+      "Residential Real Estate Leasing"
+    ],
+    "Education": [
+      "Child Day Care Services",
+      "Colleges and Universities",
+      "Miscellaneous Educational Services",
+      "Primary and Secondary Education",
+      "Professional and Management Training"
+    ],
+    "Electronics": [
+      "Appliance Repair and Maintenance",
+      "Audio and Video Equipment Manufacturing",
+      "Consumer Electronics Repair and Maintenance",
+      "Electrical Equipment and Appliances Manufacturing",
+      "Electromedical and Control Instruments Manufacturing",
+      "Electronic Equipment Repair and Maintenance",
+      "Electronics and Appliances Stores",
+      "Electronics Wholesale",
+      "Magnetic and Optical Media Manufacturing",
+      "Semiconductor and Other Electronic Component Manufacturing"
+    ],
+    "Entertainment, Travel and Leisure": [
+      "Airlines",
+      "Fitness and Recreation Centers",
+      "Gambling and Casinos",
+      "Golf Courses and Country Clubs",
+      "Hotels and Accommodation",
+      "Miscellaneous Amusement and Recreation",
+      "Museums and Historical Sites",
+      "Performing Arts",
+      "Promoters and Agents",
+      "Restaurants and Bars",
+      "Spectator Sports",
+      "Sporting Goods and Recreation Stores",
+      "Travel and Reservation Services"
+    ],
+    "Food and Beverage": [
+      "Alcoholic Beverage Wholesale",
+      "Beer, Wine, and Liquor Stores",
+      "Beverage Manufacturing",
+      "Commercial Fishing",
+      "Crop and Animal Production",
+      "Food Manufacturing",
+      "Grocery Stores",
+      "Grocery Wholesale",
+      "Restaurants and Bars"
+    ],
+    "Healthcare, Biotechnology and Pharmaceuticals": [
+      "Ambulatory Services",
+      "Dentists",
+      "Diagnostic Laboratories",
+      "Fitness and Recreation Centers",
+      "Health and Personal Care Wholesale",
+      "Home Health Care Services",
+      "Hospitals",
+      "Medical Equipment and Supplies",
+      "Nursing and Residential Care",
+      "Outpatient Care",
+      "Pharmaceutical Manufacturing",
+      "Pharmacies and Personal Care Stores",
+      "Physicians and Health Practitioners",
+      "Social and Rehabilitation Services"
+    ],
+    "High Tech": [
+      "Communications Equipment Manufacturing",
+      "Computer and Peripheral Equipment Manufacturing",
+      "Computer Programming",
+      "Computer System Design Services",
+      "Data Processing",
+      "Electrical Equipment and Appliances Manufacturing",
+      "Electromedical and Control Instruments Manufacturing",
+      "Software",
+      "Internet and Web Services",
+      "Managed Service Providers (MSPs)"
+    ],
+    "Insurance": [
+      "Insurance Agents",
+      "Insurance Services",
+      "Life and Health Insurance",
+      "Pensions and Funds",
+      "Property and Casualty Insurance"
+    ],
+    "Manufacturing": [
+      "Agricultural Chemical Manufacturing",
+      "Aircraft Engine and Parts Manufacturing",
+      "Aircraft Manufacturing",
+      "Audio and Video Equipment Manufacturing",
+      "Basic Chemical Manufacturing",
+      "Beverage Manufacturing",
+      "Cement and Concrete Product Manufacturing",
+      "Clothing and Apparel Manufacturing",
+      "Communications Equipment Manufacturing",
+      "Computer and Peripheral Equipment Manufacturing",
+      "Construction Machinery Manufacturing",
+      "Electrical Equipment and Appliances Manufacturing",
+      "Electromedical and Control Instruments Manufacturing",
+      "Food Manufacturing",
+      "Furniture Manufacturing",
+      "Guided Missile and Space Vehicle Manufacturing",
+      "Machinery and Equipment Manufacturing",
+      "Magnetic and Optical Media Manufacturing",
+      "Metal Products Manufacturing",
+      "Miscellaneous Chemical Manufacturing",
+      "Miscellaneous Manufacturing",
+      "Miscellaneous Transportation Equipment Manufacturing",
+      "Motor Vehicle Manufacturing",
+      "Motor Vehicle Parts Manufacturing",
+      "NonMetallic Mineral Product Manufacturing",
+      "Paint, Coating, and Adhesive Manufacturing",
+      "Paper Product Manufacturing",
+      "Petroleum Product Manufacturing",
+      "Pharmaceutical Manufacturing",
+      "Rubber and Plastic Product Manufacturing",
+      "Semiconductor and Other Electronic Component Manufacturing",
+      "Ship and Boat Building",
+      "Synthetic Chemical Manufacturing",
+      "Textile Manufacturing",
+      "Tobacco Production",
+      "Train and Railroad Equipment Manufacturing",
+      "Weapons and Ammunition Manufacturing",
+      "Wood Product Manufacturing"
+    ],
+    "Mining, Quarrying and Drilling": [
+      "Coal Mining",
+      "Metals Mining",
+      "NonMetallic Minerals Mining",
+      "Petroleum and Natural Gas Extraction",
+      "Support Activities for Mining"
+    ],
+    "Non-Profit": [
+      "Non-profit Organisations"
+    ],
+    "Government Administration": [
+      "Administration of Public Programs",
+      "Courts, Justice and Public Safety",
+      "Executive and Legislature",
+      "National Security and International Affairs",
+      "Space Research and Technology",
+      "Local Authorities (Cities, Counties, States)"
+    ],
+    "Real Estate": [
+      "Commercial Real Estate Leasing",
+      "Property Managers",
+      "Real Estate Agents and Brokers",
+      "Real Estate Services",
+      "Residential Real Estate Leasing"
+    ],
+    "Rental and Leasing": [
+      "Commercial and Industrial Rental",
+      "Commercial Real Estate Leasing",
+      "Consumer Goods Rental",
+      "Miscellaneous Rental",
+      "Motor Vehicle Rental",
+      "Residential Real Estate Leasing"
+    ],
+    "Retail": [
+      "Beer, Wine, and Liquor Stores",
+      "Clothing and Apparel Stores",
+      "Department Stores",
+      "Electronics and Appliances Stores",
+      "Gasoline Stations and Fuel Dealers",
+      "Grocery Stores",
+      "Home and Garden Retail",
+      "Home Furnishings Retail",
+      "Miscellaneous Store Retailers",
+      "Motor Vehicle and Parts Dealers",
+      "Nonstore Retail",
+      "Pharmacies and Personal Care Stores",
+      "Sporting Goods and Recreation Stores",
+      "Convenience Store",
+      "eCommerce"
+    ],
+    "Telecommunications and Publishing": [
+      "Broadcasting and Media",
+      "Cable and Other Program Distribution",
+      "Communication Equipment Repair and Maintenance",
+      "Communications Equipment Manufacturing",
+      "Internet and Web Services",
+      "Miscellaneous Information Services",
+      "Miscellaneous Telecommunication Services",
+      "Movies",
+      "Publishing",
+      "Telecommunications Resellers",
+      "Wired Telecommunications Carriers",
+      "Wireless Telecommunications Carriers",
+      "Music",
+      "Printing"
+    ],
+    "Utilities and Energy": [
+      "Electricity Generation and Distribution",
+      "Natural Gas Distribution",
+      "Waste Management",
+      "Water and Sewage Services",
+      "Renweable Energy Services",
+      "Petroleum and Natural Gas Extraction"
+    ],
+    "Wholesale": [
+      "Alcoholic Beverage Wholesale",
+      "Chemical Wholesale",
+      "Clothing and Apparel Wholesale",
+      "Computer, Office Equipment and Software Merchant Wholesalers",
+      "Construction and Hardware Materials Wholesale",
+      "Electronics Wholesale",
+      "Grocery Wholesale",
+      "Health and Personal Care Wholesale",
+      "Home Furnishings Wholesale",
+      "Machinery Wholesale",
+      "Metals and Minerals Wholesale",
+      "Miscellaneous Wholesale",
+      "Motor Vehicle Wholesale",
+      "Paper Wholesale",
+      "Petroleum Wholesale",
+      "Professional and Commercial Equipment Wholesale",
+      "Transportation Equipment Wholesale"
+    ]
+  };
+
+  const industries = Object.keys(industrySubIndustryMap).map(industry => ({
+    label: industry,
+    value: industry,
+  }));
+  
+  // Use pagination from API or default values
+  const currentPage = pagination?.currentPage || 1;
+  const rowsPerPage = pagination?.limit || 25;
+  const totalPages = pagination?.totalPages || 1;
+  const totalCount = pagination?.totalCount || 0;
   
   const [newContact, setNewContact] = useState({
     firstName: '',
@@ -58,6 +412,7 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
     country: '',
     website: '',
     industry: '',
+    subIndustry: '',
     contactLinkedInUrl: '',
     amfNotes: '',
     lastUpdateDate: new Date().toISOString().split('T')[0],
@@ -67,11 +422,18 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
     revenue: ''
   });
 
-  // Helper function to get company name by contact's companyId
+  // Helper function to get company name
   const getCompanyName = (contact: Contact) => {
-    if (!contact.companyId) return '';
-    const company = companies.find(c => c.id === contact.companyId);
-    return company?.companyName || '';
+    // First try to use companyName from contact (if API returns it directly)
+    if (contact.companyName) {
+      return contact.companyName;
+    }
+    // Fallback to finding in companies array
+    if (contact.companyId) {
+      const company = companies.find(c => c.id === contact.companyId);
+      return company?.companyName || '';
+    }
+    return '';
   };
 
   // Helper function to get initials from name
@@ -79,65 +441,31 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
-  // Apply search, filters, and sorting
-  const filteredAndSortedContacts = useMemo(() => {
-    let result = contacts.filter(contact => {
-      // Search across multiple fields
-      const searchableFields = [
-        contact.firstName, contact.lastName, contact.jobTitle, contact.email,
-        contact.phone, contact.city, contact.state, contact.country, contact.industry
-      ];
-      const matchesSearch = searchableFields.some(field => 
-        field.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      
-      // Apply filters
-      const matchesFilters = Object.entries(filters).every(([key, value]) => {
-        if (!value) return true;
-        
-        switch (key) {
-          case 'firstName':
-          case 'lastName':
-          case 'email':
-            return contact[key as keyof Contact].toLowerCase().includes((value as string).toLowerCase());
-          case 'jobLevel':
-          case 'jobRole':
-          case 'industry':
-          case 'country':
-          case 'state':
-            return contact[key as keyof Contact] === value;
-          default:
-            return true;
-        }
-      });
-      
-      return matchesSearch && matchesFilters;
-    });
+  // Handle search input change
+  const handleSearchInputChange = (value: string) => {
+    if (onSearchChange) {
+      onSearchChange(value);
+    }
+  };
 
-    // Sort results
-    result.sort((a, b) => {
-      const aValue = a[sortField] || '';
-      const bValue = b[sortField] || '';
-      
-      if (sortDirection === 'asc') {
-        return aValue.localeCompare(bValue);
-      } else {
-        return bValue.localeCompare(aValue);
-      }
-    });
+  // Handle page navigation
+  const handlePageNavigation = (page: number) => {
+    if (onPageChange) {
+      onPageChange(page);
+    }
+  };
 
-    return result;
-  }, [contacts, searchQuery, filters, sortField, sortDirection]);
+  // Handle limit change
+  const handleRowsPerPageChange = (value: string) => {
+    const limit = parseInt(value, 10);
+    if (onLimitChange) {
+      onLimitChange(limit);
+    }
+  };
 
-  // Pagination
-  const totalPages = Math.ceil(filteredAndSortedContacts.length / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedContacts = filteredAndSortedContacts.slice(startIndex, startIndex + rowsPerPage);
-  
-  // Reset to first page when filters change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, filters]);
+  // Use contacts directly from API (already filtered and paginated server-side)
+  const displayedContacts = contacts;
+  const startIndex = pagination ? (pagination.currentPage - 1) * pagination.limit : 0;
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -176,7 +504,9 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
       updatedDate: new Date().toISOString().split('T')[0]
     };
 
-    setContacts([...contacts, contact]);
+    // Contact added - refresh the list
+    // The parent component will handle refetching
+    toast.success('Contact added successfully');
     resetForm();
     setIsAddDialogOpen(false);
     toast.success('Contact added successfully');
@@ -228,6 +558,7 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
       country: contact.country,
       website: contact.website,
       industry: contact.industry,
+      subIndustry: (contact as any).subIndustry || '',
       contactLinkedInUrl: contact.contactLinkedInUrl,
       amfNotes: contact.amfNotes,
       lastUpdateDate: contact.lastUpdateDate,
@@ -240,29 +571,22 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
   const handleUpdateContact = () => {
     if (!editingContact) return;
 
-    const updatedContacts = contacts.map(contact =>
-      contact.id === editingContact.id
-        ? {
-            ...contact,
-            ...newContact,
-            updatedDate: new Date().toISOString().split('T')[0]
-          }
-        : contact
-    );
-
-    setContacts(updatedContacts);
+    // Contact updated - refresh the list
+    // The parent component will handle refetching
     setEditingContact(null);
     resetForm();
     toast.success('Contact updated successfully');
   };
 
   const handleDeleteContact = (contactId: string) => {
-    setContacts(contacts.filter(contact => contact.id !== contactId));
+    // Contact deleted - refresh the list
+    // The parent component will handle refetching
     toast.success('Contact deleted successfully');
   };
 
   const handleBulkDelete = () => {
-    setContacts(contacts.filter(contact => !selectedContacts.includes(contact.id)));
+    // Contacts deleted - refresh the list
+    // The parent component will handle refetching
     setSelectedContacts([]);
     toast.success(`${selectedContacts.length} contacts deleted successfully`);
   };
@@ -278,7 +602,7 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
   const handleExportBulk = () => {
     const contactsToExport = selectedContacts.length > 0 
       ? contacts.filter(contact => selectedContacts.includes(contact.id))
-      : filteredAndSortedContacts;
+      : displayedContacts;
 
     const csvHeader = 'First Name,Last Name,Job Title,Job Level,Job Role,Email,Phone,Direct Phone,Address 1,Address 2,City,State,Zip Code,Country,Website,Industry,Contact LinkedIn URL,aMF Notes,Last Update Date';
     const csvRows = contactsToExport.map(contact =>
@@ -302,7 +626,7 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedContacts(paginatedContacts.map(contact => contact.id));
+      setSelectedContacts(displayedContacts.map(contact => contact.id));
     } else {
       setSelectedContacts([]);
     }
@@ -349,15 +673,17 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
             <SelectValue placeholder="Select level" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Entry">Entry</SelectItem>
-            <SelectItem value="Junior">Junior</SelectItem>
-            <SelectItem value="Mid">Mid</SelectItem>
-            <SelectItem value="Senior">Senior</SelectItem>
-            <SelectItem value="Lead">Lead</SelectItem>
-            <SelectItem value="Manager">Manager</SelectItem>
-            <SelectItem value="Director">Director</SelectItem>
-            <SelectItem value="VP">VP</SelectItem>
+            <SelectItem value="Analyst">Analyst</SelectItem>
+            <SelectItem value="Below Manager">Below Manager</SelectItem>
             <SelectItem value="C-Level">C-Level</SelectItem>
+            <SelectItem value="Developer">Developer</SelectItem>
+            <SelectItem value="Director">Director</SelectItem>
+            <SelectItem value="Engineer">Engineer</SelectItem>
+            <SelectItem value="General Manager">General Manager</SelectItem>
+            <SelectItem value="Manager">Manager</SelectItem>
+            <SelectItem value="Managing Director">Managing Director</SelectItem>
+            <SelectItem value="Vice President">Vice President</SelectItem>
+            <SelectItem value="Architect">Architect</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -368,14 +694,31 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
             <SelectValue placeholder="Select role" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="Administration">Administration</SelectItem>
+            <SelectItem value="Business Development">Business Development</SelectItem>
+            <SelectItem value="Client Management">Client Management</SelectItem>
+            <SelectItem value="Customer Experience">Customer Experience</SelectItem>
+            <SelectItem value="Customer Success">Customer Success</SelectItem>
+            <SelectItem value="Data & Analytics">Data & Analytics</SelectItem>
+            <SelectItem value="Demand Generation">Demand Generation</SelectItem>
             <SelectItem value="Engineering">Engineering</SelectItem>
-            <SelectItem value="Marketing">Marketing</SelectItem>
-            <SelectItem value="Sales">Sales</SelectItem>
-            <SelectItem value="HR">HR</SelectItem>
             <SelectItem value="Finance">Finance</SelectItem>
+            <SelectItem value="Growth">Growth</SelectItem>
+            <SelectItem value="Human Resources">Human Resources</SelectItem>
+            <SelectItem value="Information Technology">Information Technology</SelectItem>
+            <SelectItem value="Legal">Legal</SelectItem>
+            <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+            <SelectItem value="Marketing">Marketing</SelectItem>
             <SelectItem value="Operations">Operations</SelectItem>
+            <SelectItem value="Others">Others</SelectItem>
+            <SelectItem value="Procurement / Sourcing / Supply Chain">Procurement / Sourcing / Supply Chain</SelectItem>
             <SelectItem value="Product">Product</SelectItem>
-            <SelectItem value="Design">Design</SelectItem>
+            <SelectItem value="Quality">Quality</SelectItem>
+            <SelectItem value="Risk & Compliance">Risk & Compliance</SelectItem>
+            <SelectItem value="Sales">Sales</SelectItem>
+            <SelectItem value="Sales & Marketing">Sales & Marketing</SelectItem>
+            <SelectItem value="Strategy">Strategy</SelectItem>
+            <SelectItem value="Underwriting">Underwriting</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -463,22 +806,35 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
       </div>
       <div className="space-y-2">
         <Label>Industry</Label>
-        <Select value={newContact.industry} onValueChange={(value) => setNewContact({...newContact, industry: value})}>
+        <Select value={newContact.industry} onValueChange={(value) => {
+          setNewContact({...newContact, industry: value, subIndustry: ''});
+        }}>
           <SelectTrigger>
             <SelectValue placeholder="Select industry" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Technology">Technology</SelectItem>
-            <SelectItem value="Healthcare">Healthcare</SelectItem>
-            <SelectItem value="Finance">Finance</SelectItem>
-            <SelectItem value="Marketing">Marketing</SelectItem>
-            <SelectItem value="Education">Education</SelectItem>
-            <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-            <SelectItem value="Retail">Retail</SelectItem>
-            <SelectItem value="Consulting">Consulting</SelectItem>
+            {industries.map((industry) => (
+              <SelectItem key={industry.value} value={industry.value}>{industry.label}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
+
+      {newContact.industry && industrySubIndustryMap[newContact.industry] && (
+        <div className="space-y-2">
+          <Label>Sub-Industry</Label>
+          <Select value={newContact.subIndustry || ''} onValueChange={(value) => setNewContact({...newContact, subIndustry: value})}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select sub-industry" />
+            </SelectTrigger>
+            <SelectContent>
+              {industrySubIndustryMap[newContact.industry].map((subIndustry) => (
+                <SelectItem key={subIndustry} value={subIndustry}>{subIndustry}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="space-y-2">
         <Label htmlFor={isEdit ? "edit-contactLinkedInUrl" : "contactLinkedInUrl"}>Contact LinkedIn URL</Label>
         <Input
@@ -517,23 +873,42 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
       </div>
       <div className="space-y-2">
         <Label htmlFor={isEdit ? "edit-employeeSize" : "employeeSize"}>Employee Size *</Label>
-        <Input
-          id={isEdit ? "edit-employeeSize" : "employeeSize"}
-          value={newContact.employeeSize}
-          onChange={(e) => setNewContact({...newContact, employeeSize: e.target.value})}
-          placeholder="e.g., 100-500"
-          required
-        />
+        <Select value={newContact.employeeSize} onValueChange={(value) => setNewContact({...newContact, employeeSize: value})}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select employee size" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1-25">1 to 25</SelectItem>
+            <SelectItem value="26-50">26 to 50</SelectItem>
+            <SelectItem value="51-100">51 to 100</SelectItem>
+            <SelectItem value="101-250">101 to 250</SelectItem>
+            <SelectItem value="251-500">251 to 500</SelectItem>
+            <SelectItem value="501-1000">501 to 1000</SelectItem>
+            <SelectItem value="1001-2500">1001 to 2500</SelectItem>
+            <SelectItem value="2501-5000">2501 to 5000</SelectItem>
+            <SelectItem value="5001-10000">5001 to 10000</SelectItem>
+            <SelectItem value="over-10001">over 10,001</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-2 md:col-span-2">
         <Label htmlFor={isEdit ? "edit-revenue" : "revenue"}>Revenue *</Label>
-        <Input
-          id={isEdit ? "edit-revenue" : "revenue"}
-          value={newContact.revenue}
-          onChange={(e) => setNewContact({...newContact, revenue: e.target.value})}
-          placeholder="e.g., $10M-$50M"
-          required
-        />
+        <Select value={newContact.revenue} onValueChange={(value) => setNewContact({...newContact, revenue: value})}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select revenue" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Less-than-1M">Less than $1M</SelectItem>
+            <SelectItem value="1M-5M">$1M to $5M</SelectItem>
+            <SelectItem value="5M-10M">$5M to $10M</SelectItem>
+            <SelectItem value="10M-50M">$10M to $50M</SelectItem>
+            <SelectItem value="50M-100M">$50M to $100M</SelectItem>
+            <SelectItem value="100M-250M">$100M to $250M</SelectItem>
+            <SelectItem value="250M-500M">$250M to $500M</SelectItem>
+            <SelectItem value="500M-1B">$500M to $1B</SelectItem>
+            <SelectItem value="More-than-1B">More than $1B</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       <div className="md:col-span-2 space-y-2">
@@ -550,17 +925,31 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
   );
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="h-full flex flex-col overflow-hidden">
+      <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
-          <CardTitle>Contacts ({filteredAndSortedContacts.length})</CardTitle>
+          <CardTitle>Contacts ({totalCount})</CardTitle>
           <div className="flex items-center space-x-2">
+            {onToggleFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onToggleFilters}
+                className="flex items-center gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Search Filters
+              </Button>
+            )}
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Search contacts..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchQuery || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleSearchInputChange(value);
+                }}
                 className="pl-9 h-9"
               />
             </div>
@@ -629,14 +1018,14 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
         </div>
       </CardHeader>
       
-      <CardContent>
-        <div className="overflow-x-auto">
+      <CardContent className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">
                   <Checkbox 
-                    checked={selectedContacts.length === paginatedContacts.length && paginatedContacts.length > 0}
+                    checked={selectedContacts.length === displayedContacts.length && displayedContacts.length > 0}
                     onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
@@ -669,7 +1058,30 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedContacts.map((contact) => (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                      <span className="ml-3 text-gray-600">Loading contacts...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-red-600">
+                    {error}
+                  </TableCell>
+                </TableRow>
+              ) : displayedContacts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    No contacts found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                displayedContacts.map((contact) => {
+                  return (
                 <TableRow 
                   key={contact.id}
                   className="cursor-pointer hover:bg-gray-50"
@@ -700,10 +1112,25 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{contact.phone}</TableCell>
-                  <TableCell>{contact.email}</TableCell>
-                  <TableCell>{getCompanyName(contact)}</TableCell>
-                  <TableCell>{contact.addedDate}</TableCell>
+                  <TableCell>{contact.phone || '-'}</TableCell>
+                  <TableCell>{contact.email || '-'}</TableCell>
+                  <TableCell>{getCompanyName(contact) || '-'}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const date = (contact as any).createdAt || contact.addedDate;
+                      if (!date) return '-';
+                      try {
+                        const dateObj = typeof date === 'string' ? new Date(date) : date;
+                        return dateObj.toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: '2-digit', 
+                          day: '2-digit' 
+                        });
+                      } catch {
+                        return date;
+                      }
+                    })()}
+                  </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -736,19 +1163,18 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              );
+                })
+              )}
             </TableBody>
           </Table>
         </div>
 
-        {/* Pagination Controls */}
-        <div className="flex items-center justify-between mt-4 pt-4 border-t">
+        {/* Pagination Controls - Fixed at bottom */}
+        <div className="flex items-center justify-between mt-4 pt-4 border-t flex-shrink-0">
           <div className="flex items-center space-x-2">
             <Label>Rows per page:</Label>
-            <Select value={rowsPerPage.toString()} onValueChange={(value) => {
-              setRowsPerPage(Number(value));
-              setCurrentPage(1);
-            }}>
+            <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
               <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>
@@ -759,7 +1185,7 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
               </SelectContent>
             </Select>
             <span className="text-sm text-gray-600">
-              Showing {startIndex + 1} to {Math.min(startIndex + rowsPerPage, filteredAndSortedContacts.length)} of {filteredAndSortedContacts.length} results
+              Showing {startIndex + 1} to {Math.min(startIndex + rowsPerPage, totalCount)} of {totalCount} results
             </span>
           </div>
           
@@ -767,8 +1193,8 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
+              onClick={() => handlePageNavigation(Math.max(currentPage - 1, 1))}
+              disabled={!pagination?.hasPreviousPage || currentPage === 1}
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
               Previous
@@ -782,7 +1208,7 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
                     key={pageNum}
                     variant={currentPage === pageNum ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setCurrentPage(pageNum)}
+                    onClick={() => handlePageNavigation(pageNum)}
                     style={currentPage === pageNum ? { backgroundColor: user.role === 'superadmin' ? '#EF8037' : '#EB432F' } : {}}
                   >
                     {pageNum}
@@ -794,8 +1220,8 @@ export function ContactsTable({ contacts, setContacts, user, companies = [], fil
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
+              onClick={() => handlePageNavigation(Math.min(currentPage + 1, totalPages))}
+              disabled={!pagination?.hasNextPage || currentPage === totalPages}
             >
               Next
               <ChevronRight className="w-4 h-4 ml-1" />

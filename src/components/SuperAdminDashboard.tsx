@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sidebar } from './DashboardSidebar';
+import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardStats } from './DashboardStats';
 import { ContactsTable } from './ContactsTable';
 import { CompaniesTable } from './CompaniesTable';
@@ -14,6 +14,7 @@ import { SupportContactForm } from './SupportContactForm';
 import { Button } from './ui/button';
 import { LogOut, Filter } from 'lucide-react';
 import { ApprovalRequests } from './ApprovalRequests';
+import type { User, Contact, Company, ActivityLog, ApprovalRequest } from '@/types/dashboard.types';
 
 interface SuperAdminDashboardProps {
   user: User;
@@ -47,8 +48,8 @@ export function SuperAdminDashboard({
   onLogout
 }: SuperAdminDashboardProps) {
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({});
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [filters, setFilters] = useState<Record<string, any>>({});
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showSupportModal, setShowSupportModal] = useState(false);
@@ -224,11 +225,15 @@ export function SuperAdminDashboard({
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar
+      <DashboardSidebar
         activeView={activeView}
-        setActiveView={setActiveView}
-        menuItems={menuItems}
-        user={user}
+        menuItems={menuItems.map(item => ({ ...item, path: `/${item.id === 'dashboard' ? 'dashboard' : item.id}` }))}
+        user={{
+          _id: user.id,
+          email: user.email,
+          name: user.name,
+          role: (user.role || 'admin') as 'admin' | 'superadmin' | 'customer',
+        }}
         onLogout={onLogout}
         onSupportClick={() => setShowSupportModal(true)}
         pendingRequestsCount={pendingRequestsCount}
