@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ViewContactDetails } from "@/components/ViewContactDetails";
-import { useAppSelector } from "@/store/hooks";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { getContacts } from "@/store/slices/contacts.slice";
 import { privateApiCall, privateApiDelete } from "@/lib/api";
 import type { Contact, Company, User } from "@/types/dashboard.types";
 import { toast } from "sonner";
@@ -15,6 +16,8 @@ export default function ContactDetailPage() {
   const contactId = params?.id as string;
   
   const { user } = useAppSelector((state) => state.auth);
+  const { contacts: reduxContacts } = useAppSelector((state) => state.contacts);
+  const dispatch = useAppDispatch();
   const [contact, setContact] = useState<Contact | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,12 +42,51 @@ export default function ContactDetailPage() {
         setIsLoading(true);
         setError(null);
         
-        const response = await privateApiCall<{ contact: any }>(`/admin/contacts/${contactId}`);
+        // First, check if contact is already in Redux store
+        let contactData: any = reduxContacts.find((c: Contact) => {
+          const cId = (c as any)._id?.toString() || c.id?.toString();
+          return cId === contactId;
+        });
+        
+        // If not found in Redux, fetch from API with pagination
+        if (!contactData) {
+          let found = false;
+          let page = 1;
+          const limit = 100; // API max limit
+          
+          while (!found && page <= 100) { // Safety limit of 100 pages
+            const response = await privateApiCall<{ contacts: any[], pagination: any }>(`/admin/contacts?page=${page}&limit=${limit}`);
+            
+            // Find the contact by ID (handle both _id and id formats)
+            contactData = response.contacts.find((c: any) => {
+              const cId = c._id?.toString() || c.id?.toString();
+              return cId === contactId;
+            });
+            
+            if (contactData) {
+              found = true;
+              break;
+            }
+            
+            // If no more pages, stop searching
+            if (page >= response.pagination.totalPages) {
+              break;
+            }
+            
+            page++;
+          }
+        }
+        
+        if (!contactData) {
+          setError('Contact not found');
+          toast.error('Contact not found');
+          setIsLoading(false);
+          return;
+        }
         
         // Map the API response to Contact type
-        const contactData = response.contact;
         const mappedContact: Contact = {
-          id: contactData._id || contactData.id,
+          id: contactData._id?.toString() || contactData.id,
           firstName: contactData.firstName || '',
           lastName: contactData.lastName || '',
           jobTitle: contactData.jobTitle || '',
@@ -61,13 +103,13 @@ export default function ContactDetailPage() {
           country: contactData.country || '',
           website: contactData.website || '',
           industry: contactData.industry || '',
-          contactLinkedInUrl: contactData.LinkedInUrl || contactData.contactLinkedInUrl || '',
+          contactLinkedInUrl: (contactData as any).LinkedInUrl || contactData.contactLinkedInUrl || '',
           amfNotes: contactData.amfNotes || '',
-          lastUpdateDate: contactData.lastUpdateDate || contactData.updatedAt || '',
+          lastUpdateDate: contactData.lastUpdateDate || (contactData as any).updatedAt || '',
           addedBy: contactData.addedBy || 'Unknown',
           addedByRole: contactData.addedByRole || '',
-          addedDate: contactData.addedDate || contactData.createdAt || '',
-          updatedDate: contactData.updatedDate || contactData.updatedAt || '',
+          addedDate: contactData.addedDate || (contactData as any).createdAt || '',
+          updatedDate: contactData.updatedDate || (contactData as any).updatedAt || '',
           companyName: contactData.companyName || '',
           employeeSize: contactData.employeeSize || '',
           revenue: contactData.revenue || '',
@@ -84,7 +126,7 @@ export default function ContactDetailPage() {
     };
 
     fetchContact();
-  }, [contactId]);
+  }, [contactId, reduxContacts]);
 
   const handleBack = () => {
     router.push('/contacts');
