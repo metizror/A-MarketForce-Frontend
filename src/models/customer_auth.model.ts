@@ -75,6 +75,14 @@ const customerAuthSchema = new mongoose.Schema(
       type: String,
       default: "customer",
     },
+    reviewedBy: {
+      type: String,
+      default: null,
+    },
+    rejectionReason: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

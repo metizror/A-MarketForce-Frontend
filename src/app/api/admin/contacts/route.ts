@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   try {
     await connectToDatabase();
-    
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
@@ -30,13 +30,13 @@ export async function GET(request: NextRequest) {
     const jobTitle = searchParams.get("jobTitle") || "";
     const jobLevel = searchParams.get("jobLevel") || "";
     const jobRole = searchParams.get("jobRole") || "";
-    
+
     const pageNumber = Math.max(1, page);
     const limitNumber = Math.min(Math.max(1, limit), 100);
     const skip = (pageNumber - 1) * limitNumber;
-    
+
     const query: any = {};
-    
+
     if (employeeSize) {
       query.employeeSize = { $regex: employeeSize, $options: "i" };
     }
@@ -73,17 +73,17 @@ export async function GET(request: NextRequest) {
         { jobTitle: { $regex: search, $options: "i" } },
       ];
     }
-    
+
     const [contacts, totalCount] = await Promise.all([
       Contacts.find(query)
         .skip(skip)
         .limit(limitNumber)
-        .sort({ createdAt: -1 }), 
+        .sort({ createdAt: -1 }),
       Contacts.countDocuments(query),
     ]);
-    
+
     const totalPages = Math.ceil(totalCount / limitNumber);
-    
+
     return NextResponse.json({
       contacts,
       pagination: {
@@ -124,7 +124,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const contact = await Contacts.create(data);
+    const contact = await Contacts.create({
+      ...data,
+      createdBy: tokenVerification.admin?.name,
+    });
     return NextResponse.json(
       { message: "Contact created successfully", contact: contact },
       { status: 201 }
@@ -185,7 +188,9 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { data } = body;
-    const contact = await Contacts.findByIdAndUpdate(data.id, data, { new: true });
+    const contact = await Contacts.findByIdAndUpdate(data.id, data, {
+      new: true,
+    });
     return NextResponse.json(
       { message: "Contact updated successfully", contact: contact },
       { status: 200 }

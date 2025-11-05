@@ -122,6 +122,10 @@ const contactsSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    createdBy: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

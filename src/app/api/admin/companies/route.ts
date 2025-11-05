@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import Companies from "../../../../models/companies.model";
 import { connectToDatabase } from "../../../../lib/db";
 import { requireAdminAuth } from "../../../../services/jwt.service";
+import { createActivity } from "../../../../services/activity.service";
 
 await connectToDatabase();
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdminAuth(request);
   if (auth.error) return auth.error;
- 
+
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -82,6 +83,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { data } = body;
     const company = await Companies.create(data);
+    if (auth.admin) {
+      await createActivity(
+        "Company created",
+        `Company ${company.companyName || "Unknown"} created by ${auth.admin.name}`,
+        auth.admin._id,
+        auth.admin.name
+      );
+    }
     return NextResponse.json(
       { message: "Company created successfully", company: company },
       { status: 201 }
@@ -104,6 +113,14 @@ export async function PUT(request: NextRequest) {
     const company = await Companies.findByIdAndUpdate(data.id, data, {
       new: true,
     });
+    if (auth.admin) {
+      await createActivity(
+        "Company updated",
+        `Company ${company.companyName || "Unknown"} updated by ${auth.admin.name}`,
+        auth.admin._id,
+        auth.admin.name
+      );
+    }
     return NextResponse.json(
       { message: "Company updated successfully", company: company },
       { status: 200 }
@@ -129,6 +146,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
     const companies = await Companies.deleteMany({ _id: { $in: ids } });
+    if (auth.admin) {
+      await createActivity(
+        "Companies deleted",
+        `${ids.length} Companies deleted by ${auth.admin.name}`,
+        auth.admin._id,
+        auth.admin.name
+      );
+    }
     return NextResponse.json(
       { message: "Companies deleted successfully", companies: companies },
       { status: 200 }
