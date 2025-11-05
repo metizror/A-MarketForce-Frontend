@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "../../../../lib/db";
 import Contacts from "@/models/contacts.model";
+import { verifyAdminToken } from "../../../../services/jwt.service";
 
 await connectToDatabase();
 
 export async function GET(request: NextRequest) {
+  const tokenVerification = await verifyAdminToken(request);
+  if (!tokenVerification.valid) {
+    return NextResponse.json(
+      { message: "Unauthorized: Invalid or missing JWT token" },
+      { status: 401 }
+    );
+  }
+
   try {
     await connectToDatabase();
     
@@ -87,7 +96,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error("Error fetching contacts:", error);
     return NextResponse.json(
       { message: "Error fetching contacts", error: error.message },
       { status: 500 }
@@ -96,6 +104,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const tokenVerification = await verifyAdminToken(request);
+  if (!tokenVerification.valid) {
+    return NextResponse.json(
+      { message: "Unauthorized: Invalid or missing JWT token" },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { data } = body;
@@ -114,7 +130,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.log(error);
     return NextResponse.json(
       { message: "Error creating contact", error: error.message },
       { status: 500 }
@@ -123,6 +138,14 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const tokenVerification = await verifyAdminToken(request);
+  if (!tokenVerification.valid) {
+    return NextResponse.json(
+      { message: "Unauthorized: Invalid or missing JWT token" },
+      { status: 401 }
+    );
+  }
+
   try {
     await connectToDatabase();
     const { ids } = await request.json();
@@ -143,7 +166,6 @@ export async function DELETE(request: NextRequest) {
       { status: 200 }
     );
   } catch (error: any) {
-    console.error("Error deleting contacts:", error);
     return NextResponse.json(
       { message: "Error deleting contacts", error: error.message },
       { status: 500 }
@@ -152,16 +174,23 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const tokenVerification = await verifyAdminToken(request);
+  if (!tokenVerification.valid) {
+    return NextResponse.json(
+      { message: "Unauthorized: Invalid or missing JWT token" },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json();
-    const { id, data } = body;
-    const contact = await Contacts.findByIdAndUpdate(id, data, { new: true });
+    const { data } = body;
+    const contact = await Contacts.findByIdAndUpdate(data.id, data, { new: true });
     return NextResponse.json(
       { message: "Contact updated successfully", contact: contact },
       { status: 200 }
     );
   } catch (error: any) {
-    console.log(error);
     return NextResponse.json(
       { message: "Error updating contact", error: error.message },
       { status: 500 }
