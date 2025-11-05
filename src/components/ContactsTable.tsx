@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -539,32 +539,360 @@ export function ContactsTable({
     });
   };
 
+  // Sync form when editingContact changes - ensures dropdowns show correct values
+  useEffect(() => {
+    if (editingContact) {
+      // This will be handled by handleEditContact, but this ensures sync
+      // The handleEditContact is called when clicking Edit, so this is a backup
+    } else {
+      // Reset form when dialog closes
+      resetForm();
+    }
+  }, [editingContact]);
+
+  // Helper function to normalize revenue values (remove spaces to match dropdown values)
+  const normalizeRevenue = (value: string | undefined): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    // Valid Revenue options - exact values as they appear in SelectItem
+    const validRevenues = [
+      'Less-than-1M', '1M-5M', '5M-10M', '10M-50M', '50M-100M',
+      '100M-250M', '250M-500M', '500M-1B', 'More-than-1B'
+    ];
+    
+    // First check for exact match (case-sensitive)
+    const exactMatch = validRevenues.find(rev => rev === trimmed);
+    if (exactMatch) return exactMatch;
+    
+    // Remove spaces and normalize to match dropdown values
+    const normalized = trimmed.replace(/\s+/g, '');
+    
+    // Check normalized value against valid options
+    const normalizedMatch = validRevenues.find(rev => rev.replace(/\s+/g, '') === normalized);
+    if (normalizedMatch) return normalizedMatch;
+    
+    // Map possible variations to dropdown values
+    if (normalized.includes('Less-than-1M') || normalized.includes('Lessthan1M') || normalized.toLowerCase().includes('lessthan1m')) return 'Less-than-1M';
+    if (normalized.includes('1M-5M') || normalized.includes('1Mto5M') || normalized === '1m5m') return '1M-5M';
+    if (normalized.includes('5M-10M') || normalized.includes('5Mto10M') || normalized === '5m10m') return '5M-10M';
+    if (normalized.includes('10M-50M') || normalized.includes('10Mto50M') || normalized === '10m50m') return '10M-50M';
+    if (normalized.includes('50M-100M') || normalized.includes('50Mto100M') || normalized === '50m100m') return '50M-100M';
+    if (normalized.includes('100M-250M') || normalized.includes('100Mto250M') || normalized === '100m250m') return '100M-250M';
+    if (normalized.includes('250M-500M') || normalized.includes('250Mto500M') || normalized === '250m500m') return '250M-500M';
+    if (normalized.includes('500M-1B') || normalized.includes('500Mto1B') || normalized === '500m1b') return '500M-1B';
+    if (normalized.includes('More-than-1B') || normalized.includes('Morethan1B') || normalized.toLowerCase().includes('morethan1b')) return 'More-than-1B';
+    
+    return '';
+  };
+
+  // Helper function to normalize employeeSize values (remove spaces to match dropdown values)
+  const normalizeEmployeeSize = (value: string | undefined): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    // Valid Employee Size options - exact values as they appear in SelectItem
+    const validSizes = [
+      '1-25', '26-50', '51-100', '101-250', '251-500',
+      '501-1000', '1001-2500', '2501-5000', '5001-10000', 'over-10001'
+    ];
+    
+    // First check for exact match (case-sensitive)
+    const exactMatch = validSizes.find(size => size === trimmed);
+    if (exactMatch) return exactMatch;
+    
+    // Remove spaces and normalize to match dropdown values
+    const normalized = trimmed.replace(/\s+/g, '');
+    
+    // Check normalized value against valid options
+    const normalizedMatch = validSizes.find(size => size.replace(/\s+/g, '') === normalized);
+    if (normalizedMatch) return normalizedMatch;
+    
+    // Map possible variations to dropdown values
+    if (normalized === '1-25' || normalized === '1to25' || normalized === '1to25') return '1-25';
+    if (normalized === '26-50' || normalized === '26to50') return '26-50';
+    if (normalized === '51-100' || normalized === '51to100') return '51-100';
+    if (normalized === '101-250' || normalized === '101to250') return '101-250';
+    if (normalized === '251-500' || normalized === '251to500') return '251-500';
+    if (normalized === '501-1000' || normalized === '501to1000') return '501-1000';
+    if (normalized === '1001-2500' || normalized === '1001to2500') return '1001-2500';
+    if (normalized === '2501-5000' || normalized === '2501to5000') return '2501-5000';
+    if (normalized === '5001-10000' || normalized === '5001to10000') return '5001-10000';
+    if (normalized === 'over-10001' || normalized === 'over10001' || normalized.toLowerCase().includes('over10001') || normalized.toLowerCase().includes('over 10,001')) return 'over-10001';
+    
+    return '';
+  };
+
+  // Helper function to normalize Job Level values (trim and match exact values)
+  const normalizeJobLevel = (value: string | undefined): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    // Valid Job Level options - exact values as they appear in SelectItem
+    const validLevels = [
+      'Analyst', 'Below Manager', 'C-Level', 'Developer', 'Director', 
+      'Engineer', 'General Manager', 'Manager', 'Managing Director', 
+      'Vice President', 'Architect'
+    ];
+    // Check if trimmed value matches any valid level (case-insensitive)
+    const matched = validLevels.find(level => level.toLowerCase() === trimmed.toLowerCase());
+    // Always return the exact matched value to ensure SelectItem match
+    if (matched) {
+      return matched;
+    }
+    // Check for exact match (handles cases where value is already correct)
+    const exactMatch = validLevels.find(level => level === trimmed);
+    return exactMatch || '';
+  };
+
+  // Helper function to normalize Job Role values (trim and match exact values)
+  const normalizeJobRole = (value: string | undefined): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    
+    // Valid Job Role options - exact values as they appear in SelectItem
+    const validRoles = [
+      'Administration', 'Business Development', 'Client Management', 
+      'Customer Experience', 'Customer Success', 'Data & Analytics', 
+      'Demand Generation', 'Engineering', 'Finance', 'Growth', 
+      'Human Resources', 'Information Technology', 'Legal', 'Manufacturing', 
+      'Marketing', 'Operations', 'Others', 
+      'Procurement / Sourcing / Supply Chain', 'Product', 'Quality', 
+      'Risk & Compliance', 'Sales', 'Sales & Marketing', 'Strategy', 'Underwriting'
+    ];
+    
+    // First check for exact match (case-sensitive)
+    const exactMatch = validRoles.find(role => role === trimmed);
+    if (exactMatch) return exactMatch;
+    
+    // Check for case-insensitive match
+    const caseInsensitiveMatch = validRoles.find(role => role.toLowerCase() === trimmed.toLowerCase());
+    if (caseInsensitiveMatch) return caseInsensitiveMatch;
+    
+    // Handle common variations and abbreviations
+    const lowerTrimmed = trimmed.toLowerCase();
+    
+    // Map common variations to exact values
+    const variationMap: Record<string, string> = {
+      // Engineering variations
+      'software engineer': 'Engineering',
+      'software engineering': 'Engineering',
+      'engineer': 'Engineering',
+      'development': 'Engineering',
+      'software development': 'Engineering',
+      'dev': 'Engineering',
+      'programming': 'Engineering',
+      'tech': 'Engineering',
+      'technical': 'Engineering',
+      
+      // IT variations
+      'it': 'Information Technology',
+      'information tech': 'Information Technology',
+      'tech support': 'Information Technology',
+      'technology': 'Information Technology',
+      
+      // Sales variations
+      'sales manager': 'Sales',
+      'sales executive': 'Sales',
+      'sales rep': 'Sales',
+      'sales representative': 'Sales',
+      'account manager': 'Sales',
+      
+      // Marketing variations
+      'marketing manager': 'Marketing',
+      'digital marketing': 'Marketing',
+      'brand marketing': 'Marketing',
+      
+      // HR variations
+      'hr': 'Human Resources',
+      'human resource': 'Human Resources',
+      'people operations': 'Human Resources',
+      'talent': 'Human Resources',
+      
+      // Finance variations
+      'accounting': 'Finance',
+      'financial': 'Finance',
+      'accounts': 'Finance',
+      
+      // Operations variations
+      'ops': 'Operations',
+      'operational': 'Operations',
+      
+      // Product variations
+      'product management': 'Product',
+      'product manager': 'Product',
+      'pm': 'Product',
+      
+      // Data variations
+      'data analytics': 'Data & Analytics',
+      'data and analytics': 'Data & Analytics',
+      'analytics': 'Data & Analytics',
+      'data science': 'Data & Analytics',
+      
+      // Procurement variations
+      'procurement': 'Procurement / Sourcing / Supply Chain',
+      'sourcing': 'Procurement / Sourcing / Supply Chain',
+      'supply chain': 'Procurement / Sourcing / Supply Chain',
+      'purchasing': 'Procurement / Sourcing / Supply Chain',
+      
+      // Customer Success variations
+      'customer support': 'Customer Success',
+      'customer service': 'Customer Success',
+      'cs': 'Customer Success',
+      
+      // Legal variations
+      'legal affairs': 'Legal',
+      'compliance': 'Risk & Compliance',
+      'risk management': 'Risk & Compliance',
+    };
+    
+    // Check variation map
+    if (variationMap[lowerTrimmed]) {
+      return variationMap[lowerTrimmed];
+    }
+    
+    // Check if trimmed value contains any valid role (partial match)
+    const partialMatch = validRoles.find(role => {
+      const lowerRole = role.toLowerCase();
+      return lowerTrimmed.includes(lowerRole) || lowerRole.includes(lowerTrimmed);
+    });
+    if (partialMatch) return partialMatch;
+    
+    // If still no match, return empty string
+    return '';
+  };
+
+  // Helper function to normalize Industry values (trim and match exact values)
+  const normalizeIndustry = (value: string | undefined, industries: { value: string; label: string }[]): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    // Check if trimmed value matches any industry value (case-insensitive)
+    const matched = industries.find(industry => 
+      industry.value.toLowerCase() === trimmed.toLowerCase() || 
+      industry.label.toLowerCase() === trimmed.toLowerCase()
+    );
+    // Always return the exact matched value to ensure SelectItem match
+    if (matched) {
+      return matched.value;
+    }
+    // Check for exact match (handles cases where value is already correct)
+    const exactMatch = industries.find(industry => 
+      industry.value === trimmed || industry.label === trimmed
+    );
+    return exactMatch ? exactMatch.value : '';
+  };
+
   const handleEditContact = (contact: Contact) => {
     setEditingContact(contact);
-    setNewContact({
-      firstName: contact.firstName,
-      lastName: contact.lastName,
-      jobTitle: contact.jobTitle,
-      jobLevel: contact.jobLevel,
-      jobRole: contact.jobRole,
-      email: contact.email,
-      phone: contact.phone,
-      directPhone: contact.directPhone,
-      address1: contact.address1,
-      address2: contact.address2,
-      city: contact.city,
-      state: contact.state,
-      zipCode: contact.zipCode,
-      country: contact.country,
-      website: contact.website,
-      industry: contact.industry,
-      subIndustry: (contact as any).subIndustry || '',
-      contactLinkedInUrl: contact.contactLinkedInUrl,
-      amfNotes: contact.amfNotes,
-      lastUpdateDate: contact.lastUpdateDate,
-      companyName: contact.companyName || '',
-      employeeSize: contact.employeeSize || '',
-      revenue: contact.revenue || ''
+    // Access contact properties, handling both _id and id fields
+    const contactData = contact as any;
+    
+    // Debug: Log the raw contact data to see what we're working with
+    console.log('=== EDIT CONTACT DEBUG ===');
+    console.log('Raw contact object:', contact);
+    console.log('contactData.jobLevel:', contactData.jobLevel, 'Type:', typeof contactData.jobLevel, 'Length:', contactData.jobLevel?.length);
+    console.log('contactData.jobRole:', contactData.jobRole, 'Type:', typeof contactData.jobRole, 'Length:', contactData.jobRole?.length);
+    console.log('contactData.industry:', contactData.industry, 'Type:', typeof contactData.industry);
+    
+    // Get industries array for normalization
+    const industriesArray = Object.keys(industrySubIndustryMap).map(industry => ({
+      label: industry,
+      value: industry,
+    }));
+    
+    // Normalize all dropdown values to ensure they match SelectItem values exactly
+    const normalizedJobLevel = normalizeJobLevel(contactData.jobLevel);
+    const normalizedJobRole = normalizeJobRole(contactData.jobRole);
+    const normalizedIndustry = normalizeIndustry(contactData.industry, industriesArray);
+    const normalizedEmployeeSize = normalizeEmployeeSize(contactData.employeeSize);
+    const normalizedRevenue = normalizeRevenue(contactData.revenue);
+    
+    // Debug logging (remove in production)
+    console.log('Edit Contact - Original values:', {
+      jobLevel: contactData.jobLevel,
+      jobRole: contactData.jobRole,
+      industry: contactData.industry,
+      employeeSize: contactData.employeeSize,
+      revenue: contactData.revenue
+    });
+    console.log('Edit Contact - Normalized values:', {
+      jobLevel: normalizedJobLevel,
+      jobRole: normalizedJobRole,
+      industry: normalizedIndustry,
+      employeeSize: normalizedEmployeeSize,
+      revenue: normalizedRevenue
+    });
+    
+    // Additional debug for Job Role specifically
+    if (contactData.jobRole) {
+      console.log('Job Role Debug:', {
+        original: contactData.jobRole,
+        trimmed: contactData.jobRole.trim(),
+        normalized: normalizedJobRole,
+        isEmpty: normalizedJobRole === '',
+        willDisplay: normalizedJobRole !== ''
+      });
+    }
+    
+    console.log('Edit Contact - Full contact data:', contactData);
+    
+    // Create updated contact object with all fields
+    // Use normalized value if it exists and is not empty, otherwise fallback to original value (trimmed)
+    const updatedContact = {
+      firstName: String(contactData.firstName || '').trim(),
+      lastName: String(contactData.lastName || '').trim(),
+      jobTitle: String(contactData.jobTitle || '').trim(),
+      jobLevel: (normalizedJobLevel && normalizedJobLevel !== '') ? normalizedJobLevel : String(contactData.jobLevel || '').trim(),
+      jobRole: (normalizedJobRole && normalizedJobRole !== '') ? normalizedJobRole : String(contactData.jobRole || '').trim(),
+      email: String(contactData.email || '').trim(),
+      phone: String(contactData.phone || '').trim(),
+      directPhone: String(contactData.directPhone || '').trim(),
+      address1: String(contactData.address1 || '').trim(),
+      address2: String(contactData.address2 || '').trim(),
+      city: String(contactData.city || '').trim(),
+      state: String(contactData.state || '').trim(),
+      zipCode: String(contactData.zipCode || '').trim(),
+      country: String(contactData.country || '').trim(),
+      website: String(contactData.website || '').trim(),
+      industry: (normalizedIndustry && normalizedIndustry !== '') ? normalizedIndustry : String(contactData.industry || '').trim(),
+      subIndustry: String((contactData.subIndustry || '').trim()),
+      contactLinkedInUrl: String(contactData.contactLinkedInUrl || contactData.LinkedInUrl || '').trim(),
+      amfNotes: String(contactData.amfNotes || '').trim(),
+      lastUpdateDate: contactData.lastUpdateDate || new Date().toISOString().split('T')[0],
+      companyName: String(contactData.companyName || '').trim(),
+      employeeSize: (normalizedEmployeeSize && normalizedEmployeeSize !== '') ? normalizedEmployeeSize : String(contactData.employeeSize || '').trim(),
+      revenue: (normalizedRevenue && normalizedRevenue !== '') ? normalizedRevenue : String(contactData.revenue || '').trim()
+    };
+    
+    // Set state immediately and ensure it's applied
+    setNewContact(updatedContact);
+    
+    // Log the final state to verify
+    console.log('Edit Contact - Final state being set:', updatedContact);
+    console.log('Edit Contact - Verification:', {
+      jobRole: {
+        original: contactData.jobRole,
+        normalized: normalizedJobRole,
+        final: updatedContact.jobRole,
+        isNormalizedEmpty: normalizedJobRole === '',
+        isFinalEmpty: updatedContact.jobRole === ''
+      },
+      industry: {
+        original: contactData.industry,
+        normalized: normalizedIndustry,
+        final: updatedContact.industry,
+        isNormalizedEmpty: normalizedIndustry === '',
+        isFinalEmpty: updatedContact.industry === ''
+      },
+      employeeSize: {
+        original: contactData.employeeSize,
+        normalized: normalizedEmployeeSize,
+        final: updatedContact.employeeSize,
+        isNormalizedEmpty: normalizedEmployeeSize === '',
+        isFinalEmpty: updatedContact.employeeSize === ''
+      }
     });
   };
 
@@ -640,7 +968,9 @@ export function ContactsTable({
     }
   };
 
-  const renderFormFields = (isEdit = false) => (
+  const renderFormFields = (isEdit = false) => {
+    const contactId = editingContact?.id || (editingContact as any)?._id || 'new';
+    return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
       <div className="space-y-2">
         <Label htmlFor={isEdit ? "edit-firstName" : "firstName"}>First Name *</Label>
@@ -668,7 +998,11 @@ export function ContactsTable({
       </div>
       <div className="space-y-2">
         <Label>Job Level</Label>
-        <Select value={newContact.jobLevel} onValueChange={(value) => setNewContact({...newContact, jobLevel: value})}>
+        <Select 
+          key={`jobLevel-${contactId}`}
+          value={newContact.jobLevel || ''} 
+          onValueChange={(value) => setNewContact({...newContact, jobLevel: value})}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select level" />
           </SelectTrigger>
@@ -689,7 +1023,11 @@ export function ContactsTable({
       </div>
       <div className="space-y-2">
         <Label>Job Role</Label>
-        <Select value={newContact.jobRole} onValueChange={(value) => setNewContact({...newContact, jobRole: value})}>
+        <Select 
+          key={`jobRole-${contactId}`}
+          value={newContact.jobRole || ''} 
+          onValueChange={(value) => setNewContact({...newContact, jobRole: value})}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select role" />
           </SelectTrigger>
@@ -806,9 +1144,13 @@ export function ContactsTable({
       </div>
       <div className="space-y-2">
         <Label>Industry</Label>
-        <Select value={newContact.industry} onValueChange={(value) => {
-          setNewContact({...newContact, industry: value, subIndustry: ''});
-        }}>
+        <Select 
+          key={`industry-${contactId}`}
+          value={newContact.industry || ''} 
+          onValueChange={(value) => {
+            setNewContact({...newContact, industry: value, subIndustry: ''});
+          }}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select industry" />
           </SelectTrigger>
@@ -823,7 +1165,11 @@ export function ContactsTable({
       {newContact.industry && industrySubIndustryMap[newContact.industry] && (
         <div className="space-y-2">
           <Label>Sub-Industry</Label>
-          <Select value={newContact.subIndustry || ''} onValueChange={(value) => setNewContact({...newContact, subIndustry: value})}>
+          <Select 
+            key={`subIndustry-${contactId}-${newContact.industry}`}
+            value={newContact.subIndustry || ''} 
+            onValueChange={(value) => setNewContact({...newContact, subIndustry: value})}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select sub-industry" />
             </SelectTrigger>
@@ -873,7 +1219,11 @@ export function ContactsTable({
       </div>
       <div className="space-y-2">
         <Label htmlFor={isEdit ? "edit-employeeSize" : "employeeSize"}>Employee Size *</Label>
-        <Select value={newContact.employeeSize} onValueChange={(value) => setNewContact({...newContact, employeeSize: value})}>
+        <Select 
+          key={`employeeSize-${contactId}`}
+          value={newContact.employeeSize || ''} 
+          onValueChange={(value) => setNewContact({...newContact, employeeSize: value})}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select employee size" />
           </SelectTrigger>
@@ -893,7 +1243,11 @@ export function ContactsTable({
       </div>
       <div className="space-y-2 md:col-span-2">
         <Label htmlFor={isEdit ? "edit-revenue" : "revenue"}>Revenue *</Label>
-        <Select value={newContact.revenue} onValueChange={(value) => setNewContact({...newContact, revenue: value})}>
+        <Select 
+          key={`revenue-${contactId}`}
+          value={newContact.revenue || ''} 
+          onValueChange={(value) => setNewContact({...newContact, revenue: value})}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select revenue" />
           </SelectTrigger>
@@ -922,7 +1276,8 @@ export function ContactsTable({
         />
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <Card className="h-full flex flex-col overflow-hidden">
