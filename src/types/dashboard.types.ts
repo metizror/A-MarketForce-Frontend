@@ -53,14 +53,16 @@ export interface Company {
   revenue: string;
   employeeSize: string;
   industry: string;
+  subIndustry?: string;
   technology: string;
   companyLinkedInUrl?: string;
   amfNotes: string;
   lastUpdateDate: string;
-  addedBy: string;
-  addedByRole: string;
+  addedBy?: string;
+  addedByRole?: string;
   addedDate: string;
   updatedDate: string;
+  createdBy?: string; // From API - who created the company
 }
 
 export interface ActivityLog {
