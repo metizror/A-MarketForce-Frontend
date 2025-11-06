@@ -86,7 +86,9 @@ export async function POST(request: NextRequest) {
     if (auth.admin) {
       await createActivity(
         "Company created",
-        `Company ${company.companyName || "Unknown"} created by ${auth.admin.name}`,
+        `Company ${company.companyName || "Unknown"} created by ${
+          auth.admin.name
+        }`,
         auth.admin._id,
         auth.admin.name
       );
@@ -116,7 +118,9 @@ export async function PUT(request: NextRequest) {
     if (auth.admin) {
       await createActivity(
         "Company updated",
-        `Company ${company.companyName || "Unknown"} updated by ${auth.admin.name}`,
+        `Company ${company.companyName || "Unknown"} updated by ${
+          auth.admin.name
+        }`,
         auth.admin._id,
         auth.admin.name
       );
