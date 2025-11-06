@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CompaniesTable } from "@/components/CompaniesTable";
+import { CompanyFilterPanel } from "@/components/CompanyFilterPanel";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { getCompanies, type GetCompaniesParams } from "@/store/slices/companies.slice";
 import type { User, Company } from "@/types/dashboard.types";
@@ -18,6 +19,7 @@ export default function CompaniesPage() {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   const dashboardUser: User | null = user ? {
     id: user.id,
@@ -121,6 +123,13 @@ export default function CompaniesPage() {
 
   return (
     <div className="flex h-full w-full overflow-hidden">
+      {showFilters && (
+        <CompanyFilterPanel 
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClose={() => setShowFilters(false)}
+        />
+      )}
       <div className={`flex-1 flex flex-col min-w-0 overflow-hidden h-full p-6`}>
         <CompaniesTable 
           companies={companies}
@@ -134,6 +143,8 @@ export default function CompaniesPage() {
           onFilterChange={handleFilterChange}
           onPageChange={handlePageChange}
           onLimitChange={handleLimitChange}
+          showFilters={showFilters}
+          onToggleFilters={() => setShowFilters(!showFilters)}
           onViewCompany={(company: Company) => {
             // Navigate to company detail page
             // Handle both _id and id fields for compatibility

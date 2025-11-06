@@ -177,8 +177,8 @@ export default function DashboardLayout({
       />
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Hide header on contact detail pages */}
-        {!pathname.startsWith('/contacts/') && (
+        {/* Hide header on contact and company detail pages */}
+        {!pathname.startsWith('/contacts/') && !pathname.startsWith('/companies/') && (
           <header className="bg-white border-b border-gray-200 px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
