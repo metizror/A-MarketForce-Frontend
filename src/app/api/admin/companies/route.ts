@@ -30,14 +30,26 @@ export async function GET(request: NextRequest) {
     if (search) {
       query.$or = [
         { companyName: { $regex: search, $options: "i" } },
-        { industry: { $regex: industry, $options: "i" } },
-        { country: { $regex: country, $options: "i" } },
-        { state: { $regex: state, $options: "i" } },
+        { industry: { $regex: search, $options: "i" } },
+        { country: { $regex: search, $options: "i" } },
+        { state: { $regex: search, $options: "i" } },
+        { city: { $regex: search, $options: "i" } },
+        { revenue: { $regex: search, $options: "i" } },
+        { employeeSize: { $regex: search, $options: "i" } },
       ];
     }
 
     if (companyName) {
       query.companyName = { $regex: companyName, $options: "i" };
+    }
+    if (industry) {
+      query.industry = { $regex: industry, $options: "i" };
+    }
+    if (country) {
+      query.country = { $regex: country, $options: "i" };
+    }
+    if (state) {
+      query.state = { $regex: state, $options: "i" };
     }
     if (revenue) {
       query.revenue = { $regex: revenue, $options: "i" };
