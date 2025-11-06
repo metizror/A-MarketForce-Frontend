@@ -16,6 +16,8 @@ import { Plus, Edit, Trash2, Download, Search, Eye, ChevronLeft, ChevronRight, C
 import { Contact, User, Company } from '@/types/dashboard.types';
 import { toast } from 'sonner';
 import { ContactsListView } from './ContactsListView';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { createContact, updateContact, deleteContacts, getContacts, type GetContactsParams } from '@/store/slices/contacts.slice';
 
 interface ContactsTableProps {
   contacts: Contact[];
@@ -62,6 +64,8 @@ export function ContactsTable({
   showFilters = false,
   onToggleFilters
 }: ContactsTableProps) {
+  const dispatch = useAppDispatch();
+  const { isCreating, isUpdating, isDeleting } = useAppSelector((state) => state.contacts);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [viewingContact, setViewingContact] = useState<Contact | null>(null);
@@ -69,6 +73,8 @@ export function ContactsTable({
   const [sortField, setSortField] = useState<SortField>('firstName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [viewMode, setViewMode] = useState<'table' | 'list'>('table');
+  const [showExportAllDialog, setShowExportAllDialog] = useState(false);
+  const [isExportingAll, setIsExportingAll] = useState(false);
 
   // Industry and Sub-Industry mapping
   const industrySubIndustryMap: Record<string, string[]> = {
@@ -483,7 +489,7 @@ export function ContactsTable({
       <ChevronDown className="w-4 h-4 ml-1" />;
   };
 
-  const handleAddContact = () => {
+  const handleAddContact = async () => {
     if (!newContact.firstName || !newContact.lastName) {
       toast.error('Please enter first and last name');
       return;
@@ -495,21 +501,76 @@ export function ContactsTable({
       return;
     }
 
-    const contact: Contact = {
-      id: Date.now().toString(),
-      ...newContact,
-      addedBy: user.name,
-      addedByRole: user.role || '',
-      addedDate: new Date().toISOString().split('T')[0],
-      updatedDate: new Date().toISOString().split('T')[0]
-    };
+    try {
+      // Prepare payload for API
+      const payload = {
+        firstName: newContact.firstName,
+        lastName: newContact.lastName,
+        jobTitle: newContact.jobTitle || undefined,
+        jobLevel: newContact.jobLevel || undefined,
+        jobRole: newContact.jobRole || undefined,
+        email: newContact.email || undefined,
+        phone: newContact.phone || undefined,
+        directPhone: newContact.directPhone || undefined,
+        address1: newContact.address1 || undefined,
+        address2: newContact.address2 || undefined,
+        city: newContact.city || undefined,
+        state: newContact.state || undefined,
+        zipCode: newContact.zipCode || undefined,
+        country: newContact.country || undefined,
+        website: newContact.website || undefined,
+        industry: newContact.industry || undefined,
+        subIndustry: newContact.subIndustry || undefined,
+        LinkedInUrl: newContact.contactLinkedInUrl || undefined,
+        lastUpdateDate: newContact.lastUpdateDate || undefined,
+        companyName: newContact.companyName || undefined,
+        employeeSize: newContact.employeeSize || undefined,
+        revenue: newContact.revenue || undefined,
+        amfNotes: newContact.amfNotes || undefined,
+      };
 
-    // Contact added - refresh the list
-    // The parent component will handle refetching
-    toast.success('Contact added successfully');
-    resetForm();
-    setIsAddDialogOpen(false);
-    toast.success('Contact added successfully');
+      // Dispatch createContact action - if it succeeds, unwrap() will return the result
+      // If it fails, it will throw an error and be caught in the catch block
+      await dispatch(createContact(payload)).unwrap();
+      
+      // If we reach here, the API call was successful
+      // Close dialog first
+      setIsAddDialogOpen(false);
+      
+      // Reset form
+      resetForm();
+      
+      // Show success message
+      toast.success('Contact added successfully');
+      
+      // Notify parent to update page to 1 (so new contact is visible)
+      if (onPageChange) {
+        onPageChange(1);
+      }
+      
+      // Refetch contacts - reset to page 1 to show the new contact
+      const fetchParams: GetContactsParams = {
+        ...filters,
+        page: 1, // Reset to page 1 to show the new contact
+        search: searchQuery || undefined,
+      };
+      
+      // Clean empty values
+      const cleanedFilters = Object.fromEntries(
+        Object.entries(fetchParams).filter(([_, value]) => {
+          if (typeof value === 'number') return true;
+          return value !== '' && value !== null && value !== undefined;
+        })
+      ) as GetContactsParams;
+      
+      // Dispatch refetch - this will update Redux state and parent will re-render
+      await dispatch(getContacts(cleanedFilters));
+      
+    } catch (error: any) {
+      // Error occurred - show error message
+      // Don't close dialog so user can fix and retry
+      toast.error(error.message || 'Failed to add contact');
+    }
   };
 
   const resetForm = () => {
@@ -530,6 +591,7 @@ export function ContactsTable({
       country: '',
       website: '',
       industry: '',
+      subIndustry: '',
       contactLinkedInUrl: '',
       amfNotes: '',
       lastUpdateDate: new Date().toISOString().split('T')[0],
@@ -550,12 +612,14 @@ export function ContactsTable({
     }
   }, [editingContact]);
 
-  // Helper function to normalize revenue values (remove spaces to match dropdown values)
+  // Helper function to normalize revenue values (convert API format to dropdown format)
+  // API format: "$1M to $5M" -> Dropdown value: "1M-5M" (without $)
   const normalizeRevenue = (value: string | undefined): string => {
     if (!value) return '';
     const trimmed = value.trim();
     if (!trimmed) return '';
-    // Valid Revenue options - exact values as they appear in SelectItem
+    
+    // Valid Revenue options - exact values as they appear in SelectItem (without $)
     const validRevenues = [
       'Less-than-1M', '1M-5M', '5M-10M', '10M-50M', '50M-100M',
       '100M-250M', '250M-500M', '500M-1B', 'More-than-1B'
@@ -565,32 +629,27 @@ export function ContactsTable({
     const exactMatch = validRevenues.find(rev => rev === trimmed);
     if (exactMatch) return exactMatch;
     
-    // Remove spaces and normalize to match dropdown values
-    const normalized = trimmed.replace(/\s+/g, '');
+    // Handle special cases - remove $ signs and convert to dropdown format
+    if (trimmed === 'Less than $1M' || trimmed.toLowerCase() === 'less than $1m' || trimmed === 'Less-than-$1M') return 'Less-than-1M';
+    if (trimmed === 'More than $1B' || trimmed.toLowerCase() === 'more than $1b' || trimmed === 'More-than-$1B') return 'More-than-1B';
     
-    // Check normalized value against valid options
-    const normalizedMatch = validRevenues.find(rev => rev.replace(/\s+/g, '') === normalized);
+    // Remove $ signs and replace " to " with "-"
+    let normalized = trimmed.replace(/\$/g, '').replace(/\s+to\s+/gi, '-');
+    
+    // Check if normalized value matches any valid option
+    const normalizedMatch = validRevenues.find(rev => rev === normalized);
     if (normalizedMatch) return normalizedMatch;
-    
-    // Map possible variations to dropdown values
-    if (normalized.includes('Less-than-1M') || normalized.includes('Lessthan1M') || normalized.toLowerCase().includes('lessthan1m')) return 'Less-than-1M';
-    if (normalized.includes('1M-5M') || normalized.includes('1Mto5M') || normalized === '1m5m') return '1M-5M';
-    if (normalized.includes('5M-10M') || normalized.includes('5Mto10M') || normalized === '5m10m') return '5M-10M';
-    if (normalized.includes('10M-50M') || normalized.includes('10Mto50M') || normalized === '10m50m') return '10M-50M';
-    if (normalized.includes('50M-100M') || normalized.includes('50Mto100M') || normalized === '50m100m') return '50M-100M';
-    if (normalized.includes('100M-250M') || normalized.includes('100Mto250M') || normalized === '100m250m') return '100M-250M';
-    if (normalized.includes('250M-500M') || normalized.includes('250Mto500M') || normalized === '250m500m') return '250M-500M';
-    if (normalized.includes('500M-1B') || normalized.includes('500Mto1B') || normalized === '500m1b') return '500M-1B';
-    if (normalized.includes('More-than-1B') || normalized.includes('Morethan1B') || normalized.toLowerCase().includes('morethan1b')) return 'More-than-1B';
     
     return '';
   };
 
-  // Helper function to normalize employeeSize values (remove spaces to match dropdown values)
+  // Helper function to normalize employeeSize values (convert API format to dropdown format)
+  // API format: "1 to 25" -> Dropdown value: "1-25"
   const normalizeEmployeeSize = (value: string | undefined): string => {
     if (!value) return '';
     const trimmed = value.trim();
     if (!trimmed) return '';
+    
     // Valid Employee Size options - exact values as they appear in SelectItem
     const validSizes = [
       '1-25', '26-50', '51-100', '101-250', '251-500',
@@ -601,24 +660,15 @@ export function ContactsTable({
     const exactMatch = validSizes.find(size => size === trimmed);
     if (exactMatch) return exactMatch;
     
-    // Remove spaces and normalize to match dropdown values
-    const normalized = trimmed.replace(/\s+/g, '');
+    // Handle special case
+    if (trimmed === 'over 10,001' || trimmed.toLowerCase() === 'over 10,001') return 'over-10001';
     
-    // Check normalized value against valid options
-    const normalizedMatch = validSizes.find(size => size.replace(/\s+/g, '') === normalized);
+    // For other values, replace " to " with "-"
+    const normalized = trimmed.replace(/\s+to\s+/gi, '-');
+    
+    // Check if normalized value matches any valid option
+    const normalizedMatch = validSizes.find(size => size === normalized);
     if (normalizedMatch) return normalizedMatch;
-    
-    // Map possible variations to dropdown values
-    if (normalized === '1-25' || normalized === '1to25' || normalized === '1to25') return '1-25';
-    if (normalized === '26-50' || normalized === '26to50') return '26-50';
-    if (normalized === '51-100' || normalized === '51to100') return '51-100';
-    if (normalized === '101-250' || normalized === '101to250') return '101-250';
-    if (normalized === '251-500' || normalized === '251to500') return '251-500';
-    if (normalized === '501-1000' || normalized === '501to1000') return '501-1000';
-    if (normalized === '1001-2500' || normalized === '1001to2500') return '1001-2500';
-    if (normalized === '2501-5000' || normalized === '2501to5000') return '2501-5000';
-    if (normalized === '5001-10000' || normalized === '5001to10000') return '5001-10000';
-    if (normalized === 'over-10001' || normalized === 'over10001' || normalized.toLowerCase().includes('over10001') || normalized.toLowerCase().includes('over 10,001')) return 'over-10001';
     
     return '';
   };
@@ -896,50 +946,331 @@ export function ContactsTable({
     });
   };
 
-  const handleUpdateContact = () => {
+  const handleUpdateContact = async () => {
     if (!editingContact) return;
 
-    // Contact updated - refresh the list
-    // The parent component will handle refetching
-    setEditingContact(null);
-    resetForm();
-    toast.success('Contact updated successfully');
+    // Validate required fields
+    if (!newContact.firstName || !newContact.lastName) {
+      toast.error('Please enter first and last name');
+      return;
+    }
+
+    // Validate required company fields
+    if (!newContact.companyName || !newContact.employeeSize || !newContact.revenue) {
+      toast.error('Company Name, Employee Size, and Revenue are required');
+      return;
+    }
+
+    try {
+      // Get contact ID (handle both _id and id fields)
+      const contactId = editingContact.id || (editingContact as any)._id;
+      if (!contactId) {
+        toast.error('Contact ID is missing');
+        return;
+      }
+
+      // Prepare payload for API
+      const payload = {
+        id: contactId,
+        firstName: newContact.firstName,
+        lastName: newContact.lastName,
+        jobTitle: newContact.jobTitle || undefined,
+        jobLevel: newContact.jobLevel || undefined,
+        jobRole: newContact.jobRole || undefined,
+        email: newContact.email || undefined,
+        phone: newContact.phone || undefined,
+        directPhone: newContact.directPhone || undefined,
+        address1: newContact.address1 || undefined,
+        address2: newContact.address2 || undefined,
+        city: newContact.city || undefined,
+        state: newContact.state || undefined,
+        zipCode: newContact.zipCode || undefined,
+        country: newContact.country || undefined,
+        website: newContact.website || undefined,
+        industry: newContact.industry || undefined,
+        subIndustry: newContact.subIndustry || undefined,
+        LinkedInUrl: newContact.contactLinkedInUrl || undefined,
+        lastUpdateDate: newContact.lastUpdateDate || undefined,
+        companyName: newContact.companyName || undefined,
+        employeeSize: newContact.employeeSize || undefined,
+        revenue: newContact.revenue || undefined,
+        amfNotes: newContact.amfNotes || undefined,
+      };
+
+      // Dispatch updateContact action
+      await dispatch(updateContact(payload)).unwrap();
+
+      // If we reach here, the API call was successful
+      // Close dialog first
+      setEditingContact(null);
+
+      // Reset form
+      resetForm();
+
+      // Show success message
+      toast.success('Contact updated successfully');
+
+      // Refetch contacts to show updated data
+      const fetchParams: GetContactsParams = {
+        ...filters,
+        page: pagination?.currentPage || 1, // Keep current page
+        search: searchQuery || undefined,
+      };
+
+      // Clean empty values
+      const cleanedFilters = Object.fromEntries(
+        Object.entries(fetchParams).filter(([_, value]) => {
+          if (typeof value === 'number') return true;
+          return value !== '' && value !== null && value !== undefined;
+        })
+      ) as GetContactsParams;
+
+      // Dispatch refetch - this will update Redux state and parent will re-render
+      await dispatch(getContacts(cleanedFilters));
+
+    } catch (error: any) {
+      // Error occurred - show error message
+      // Don't close dialog so user can fix and retry
+      toast.error(error.message || 'Failed to update contact');
+    }
   };
 
-  const handleDeleteContact = (contactId: string) => {
-    // Contact deleted - refresh the list
-    // The parent component will handle refetching
-    toast.success('Contact deleted successfully');
+  const handleDeleteContact = async (contactId: string) => {
+    if (!contactId) {
+      toast.error('Contact ID is missing');
+      return;
+    }
+
+    try {
+      // Dispatch deleteContacts action with single ID
+      await dispatch(deleteContacts({ ids: [contactId] })).unwrap();
+
+      // Show success message
+      toast.success('Contact deleted successfully');
+
+      // Clear selection if this contact was selected
+      setSelectedContacts(selectedContacts.filter(selectedId => selectedId !== contactId));
+
+      // Refetch contacts to update the list
+      const fetchParams: GetContactsParams = {
+        ...filters,
+        page: pagination?.currentPage || 1,
+        search: searchQuery || undefined,
+      };
+
+      // Clean empty values
+      const cleanedFilters = Object.fromEntries(
+        Object.entries(fetchParams).filter(([_, value]) => {
+          if (typeof value === 'number') return true;
+          return value !== '' && value !== null && value !== undefined;
+        })
+      ) as GetContactsParams;
+
+      // Dispatch refetch - this will update Redux state and parent will re-render
+      await dispatch(getContacts(cleanedFilters));
+    } catch (error: any) {
+      // Error occurred - show error message
+      toast.error(error.message || 'Failed to delete contact');
+    }
   };
 
-  const handleBulkDelete = () => {
-    // Contacts deleted - refresh the list
-    // The parent component will handle refetching
-    setSelectedContacts([]);
-    toast.success(`${selectedContacts.length} contacts deleted successfully`);
+  const handleBulkDelete = async () => {
+    if (selectedContacts.length === 0) {
+      toast.error('Please select contacts to delete');
+      return;
+    }
+
+    // Store count before clearing
+    const countToDelete = selectedContacts.length;
+    const idsToDelete = [...selectedContacts];
+
+    try {
+      // Dispatch deleteContacts action with all selected IDs
+      await dispatch(deleteContacts({ ids: idsToDelete })).unwrap();
+
+      // Clear selection
+      setSelectedContacts([]);
+
+      // Show success message
+      toast.success(`${countToDelete} contacts deleted successfully`);
+
+      // Refetch contacts to update the list
+      const fetchParams: GetContactsParams = {
+        ...filters,
+        page: pagination?.currentPage || 1,
+        search: searchQuery || undefined,
+      };
+
+      // Clean empty values
+      const cleanedFilters = Object.fromEntries(
+        Object.entries(fetchParams).filter(([_, value]) => {
+          if (typeof value === 'number') return true;
+          return value !== '' && value !== null && value !== undefined;
+        })
+      ) as GetContactsParams;
+
+      // Dispatch refetch - this will update Redux state and parent will re-render
+      await dispatch(getContacts(cleanedFilters));
+    } catch (error: any) {
+      // Error occurred - show error message
+      toast.error(error.message || 'Failed to delete contacts');
+    }
+  };
+
+  // Helper function to escape CSV values
+  const escapeCSV = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    // Escape quotes and wrap in quotes if contains comma, quote, or newline
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
   };
 
   const handleExportSingle = (contact: Contact) => {
-    const csvHeader = 'First Name,Last Name,Job Title,Job Level,Job Role,Email,Phone,Direct Phone,Address 1,Address 2,City,State,Zip Code,Country,Website,Industry,Contact LinkedIn URL,aMF Notes,Last Update Date';
-    const csvRow = `"${contact.firstName}","${contact.lastName}","${contact.jobTitle}","${contact.jobLevel}","${contact.jobRole}","${contact.email}","${contact.phone}","${contact.directPhone}","${contact.address1}","${contact.address2}","${contact.city}","${contact.state}","${contact.zipCode}","${contact.country}","${contact.website}","${contact.industry}","${contact.contactLinkedInUrl}","${contact.amfNotes}","${contact.lastUpdateDate}"`;
+    const contactData = contact as any;
+    const csvHeader = 'Contact ID,First Name,Last Name,Job Title,Job Level,Job Role,Email,Phone,Direct Phone,Address 1,Address 2,City,State,Zip Code,Country,Website,Industry,Sub-Industry,Contact LinkedIn URL,Company Name,Employee Size,Revenue,aMF Notes,Created By,Added Date,Last Update Date,Updated Date';
+    const csvRow = [
+      escapeCSV(contact.id || contactData._id || ''),
+      escapeCSV(contact.firstName || ''),
+      escapeCSV(contact.lastName || ''),
+      escapeCSV(contact.jobTitle || ''),
+      escapeCSV(contact.jobLevel || ''),
+      escapeCSV(contact.jobRole || ''),
+      escapeCSV(contact.email || ''),
+      escapeCSV(contact.phone || ''),
+      escapeCSV(contact.directPhone || ''),
+      escapeCSV(contact.address1 || ''),
+      escapeCSV(contact.address2 || ''),
+      escapeCSV(contact.city || ''),
+      escapeCSV(contact.state || ''),
+      escapeCSV(contact.zipCode || ''),
+      escapeCSV(contact.country || ''),
+      escapeCSV(contact.website || ''),
+      escapeCSV(contact.industry || ''),
+      escapeCSV(contactData.subIndustry || ''),
+      escapeCSV(contact.contactLinkedInUrl || contactData.LinkedInUrl || ''),
+      escapeCSV(contact.companyName || ''),
+      escapeCSV(contact.employeeSize || ''),
+      escapeCSV(contact.revenue || ''),
+      escapeCSV(contact.amfNotes || ''),
+      escapeCSV(contactData.createdBy || contact.addedBy || ''),
+      escapeCSV(contact.addedDate || contactData.createdAt || ''),
+      escapeCSV(contact.lastUpdateDate || ''),
+      escapeCSV(contact.updatedDate || contactData.updatedAt || '')
+    ].join(',');
     
     const csvContent = [csvHeader, csvRow].join('\n');
     downloadCSV(csvContent, `contact-${contact.firstName}-${contact.lastName}.csv`);
   };
 
   const handleExportBulk = () => {
-    const contactsToExport = selectedContacts.length > 0 
-      ? contacts.filter(contact => selectedContacts.includes(contact.id))
-      : displayedContacts;
+    // If selectedContacts.length > 0, export selected contacts immediately
+    if (selectedContacts.length > 0) {
+      const contactsToExport = contacts.filter(contact => selectedContacts.includes(contact.id));
+      exportContactsToCSV(contactsToExport, `contacts-export-${contactsToExport.length}.csv`);
+      toast.success(`${contactsToExport.length} contacts exported successfully`);
+      return;
+    }
 
-    const csvHeader = 'First Name,Last Name,Job Title,Job Level,Job Role,Email,Phone,Direct Phone,Address 1,Address 2,City,State,Zip Code,Country,Website,Industry,Contact LinkedIn URL,aMF Notes,Last Update Date';
-    const csvRows = contactsToExport.map(contact =>
-      `"${contact.firstName}","${contact.lastName}","${contact.jobTitle}","${contact.jobLevel}","${contact.jobRole}","${contact.email}","${contact.phone}","${contact.directPhone}","${contact.address1}","${contact.address2}","${contact.city}","${contact.state}","${contact.zipCode}","${contact.country}","${contact.website}","${contact.industry}","${contact.contactLinkedInUrl}","${contact.amfNotes}","${contact.lastUpdateDate}"`
-    );
+    // If no selection, show confirmation dialog for "Export All"
+    // The AlertDialogTrigger will handle opening the dialog
+  };
+
+  const handleConfirmExportAll = async () => {
+    try {
+      setIsExportingAll(true);
+      setShowExportAllDialog(false);
+
+      // Fetch all contacts from API
+      const allContacts: Contact[] = [];
+      let page = 1;
+      const limit = 100; // API max limit
+      let hasMore = true;
+
+      while (hasMore) {
+        const fetchParams: GetContactsParams = {
+          ...filters,
+          page,
+          limit,
+          // Remove search when exporting all to get all contacts
+          search: undefined,
+        };
+
+        // Clean empty values
+        const cleanedFilters = Object.fromEntries(
+          Object.entries(fetchParams).filter(([_, value]) => {
+            if (typeof value === 'number') return true;
+            return value !== '' && value !== null && value !== undefined;
+          })
+        ) as GetContactsParams;
+
+        const response = await dispatch(getContacts(cleanedFilters)).unwrap();
+        
+        // Map contacts to ensure they have 'id' field
+        const mappedContacts = response.contacts.map((contact: any) => ({
+          ...contact,
+          id: contact._id || contact.id,
+        }));
+        
+        allContacts.push(...mappedContacts);
+
+        // Check if there are more pages
+        if (page >= response.pagination.totalPages) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      }
+
+      // Export all contacts
+      exportContactsToCSV(allContacts, `all-contacts-export-${allContacts.length}.csv`);
+      toast.success(`${allContacts.length} contacts exported successfully`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to export contacts');
+    } finally {
+      setIsExportingAll(false);
+    }
+  };
+
+  const exportContactsToCSV = (contactsToExport: Contact[], filename: string) => {
+    const csvHeader = 'Contact ID,First Name,Last Name,Job Title,Job Level,Job Role,Email,Phone,Direct Phone,Address 1,Address 2,City,State,Zip Code,Country,Website,Industry,Sub-Industry,Contact LinkedIn URL,Company Name,Employee Size,Revenue,aMF Notes,Created By,Added Date,Last Update Date,Updated Date';
+    const csvRows = contactsToExport.map(contact => {
+      const contactData = contact as any;
+      return [
+        escapeCSV(contact.id || contactData._id || ''),
+        escapeCSV(contact.firstName || ''),
+        escapeCSV(contact.lastName || ''),
+        escapeCSV(contact.jobTitle || ''),
+        escapeCSV(contact.jobLevel || ''),
+        escapeCSV(contact.jobRole || ''),
+        escapeCSV(contact.email || ''),
+        escapeCSV(contact.phone || ''),
+        escapeCSV(contact.directPhone || ''),
+        escapeCSV(contact.address1 || ''),
+        escapeCSV(contact.address2 || ''),
+        escapeCSV(contact.city || ''),
+        escapeCSV(contact.state || ''),
+        escapeCSV(contact.zipCode || ''),
+        escapeCSV(contact.country || ''),
+        escapeCSV(contact.website || ''),
+        escapeCSV(contact.industry || ''),
+        escapeCSV(contactData.subIndustry || ''),
+        escapeCSV(contact.contactLinkedInUrl || contactData.LinkedInUrl || ''),
+        escapeCSV(contact.companyName || ''),
+        escapeCSV(contact.employeeSize || ''),
+        escapeCSV(contact.revenue || ''),
+        escapeCSV(contact.amfNotes || ''),
+        escapeCSV(contactData.createdBy || contact.addedBy || ''),
+        escapeCSV(contact.addedDate || contactData.createdAt || ''),
+        escapeCSV(contact.lastUpdateDate || ''),
+        escapeCSV(contact.updatedDate || contactData.updatedAt || '')
+      ].join(',');
+    });
 
     const csvContent = [csvHeader, ...csvRows].join('\n');
-    downloadCSV(csvContent, 'contacts-export.csv');
-    toast.success(`${contactsToExport.length} contacts exported successfully`);
+    downloadCSV(csvContent, filename);
   };
 
   const downloadCSV = (content: string, filename: string) => {
@@ -1316,7 +1647,12 @@ export function ContactsTable({
               <>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-red-600">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-red-600"
+                      disabled={isDeleting}
+                    >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete ({selectedContacts.length})
                     </Button>
@@ -1329,9 +1665,13 @@ export function ContactsTable({
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700">
-                        Delete
+                      <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleBulkDelete} 
+                        className="bg-red-600 hover:bg-red-700"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? 'Deleting...' : 'Delete'}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -1342,10 +1682,35 @@ export function ContactsTable({
                 </Button>
               </>
             )}
-            <Button onClick={handleExportBulk} variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Export All
-            </Button>
+            <AlertDialog open={showExportAllDialog} onOpenChange={setShowExportAllDialog}>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={isExportingAll || selectedContacts.length > 0}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {isExportingAll ? 'Exporting...' : 'Export All'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Export All Contacts</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to export all {totalCount} contacts? This may take a moment to fetch all data.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isExportingAll}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleConfirmExportAll}
+                    disabled={isExportingAll}
+                  >
+                    {isExportingAll ? 'Exporting...' : 'Export All'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="bg-[#EF8037] hover:bg-[#EF8037]/90 text-white">
@@ -1360,11 +1725,19 @@ export function ContactsTable({
                 </DialogHeader>
                 {renderFormFields()}
                 <div className="flex justify-end space-x-2 mt-6">
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsAddDialogOpen(false)}
+                    disabled={isCreating}
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={handleAddContact} className="bg-[#EF8037] hover:bg-[#EF8037]/90 text-white">
-                    Save
+                  <Button 
+                    onClick={handleAddContact} 
+                    className="bg-[#EF8037] hover:bg-[#EF8037]/90 text-white"
+                    disabled={isCreating}
+                  >
+                    {isCreating ? 'Saving...' : 'Save'}
                   </Button>
                 </div>
               </DialogContent>
@@ -1510,6 +1883,7 @@ export function ContactsTable({
                         <DropdownMenuItem 
                           onClick={() => handleDeleteContact(contact.id)}
                           className="text-red-600"
+                          disabled={isDeleting}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
                           Delete
@@ -1594,11 +1968,19 @@ export function ContactsTable({
           </DialogHeader>
           {renderFormFields(true)}
           <div className="flex justify-end space-x-2 mt-6">
-            <Button variant="outline" onClick={() => setEditingContact(null)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setEditingContact(null)}
+              disabled={isUpdating}
+            >
               Cancel
             </Button>
-            <Button onClick={handleUpdateContact} style={{ backgroundColor: user.role === 'superadmin' ? '#EF8037' : '#EB432F' }}>
-              Update
+            <Button 
+              onClick={handleUpdateContact} 
+              style={{ backgroundColor: user.role === 'superadmin' ? '#EF8037' : '#EB432F' }}
+              disabled={isUpdating}
+            >
+              {isUpdating ? 'Updating...' : 'Update'}
             </Button>
           </div>
         </DialogContent>

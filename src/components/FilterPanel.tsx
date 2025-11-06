@@ -434,7 +434,6 @@ export function FilterPanel({ filters, setFilters, onFilterChange, onClose }: Fi
         industry: undefined,
         country: undefined,
         state: undefined,
-        technology: undefined,
         jobTitle: undefined,
         jobRole: undefined,
         jobLevel: undefined,
@@ -465,7 +464,7 @@ export function FilterPanel({ filters, setFilters, onFilterChange, onClose }: Fi
 
   // Check if any filter has been changed from initial state
   const hasFilterChanges = React.useMemo(() => {
-    const filterFields = ['companyName', 'employeeSize', 'revenue', 'industry', 'country', 'state', 'technology', 'jobTitle', 'jobRole', 'jobLevel'];
+    const filterFields = ['companyName', 'employeeSize', 'revenue', 'industry', 'country', 'state', 'jobTitle', 'jobRole', 'jobLevel'];
     
     // Check if any filter field has a value different from initial filters
     return filterFields.some(field => {
@@ -605,16 +604,6 @@ export function FilterPanel({ filters, setFilters, onFilterChange, onClose }: Fi
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="technology" className="text-sm">Technology / Software</Label>
-                  <Input
-                    id="technology"
-                    placeholder="e.g. React, Salesforce..."
-                    value={localFilters.technology || ''}
-                    onChange={(e) => handleFilterChange('technology', e.target.value)}
-                  />
                 </div>
               </CollapsibleContent>
             </Collapsible>

@@ -106,8 +106,9 @@ export default function ContactDetailPage() {
           contactLinkedInUrl: (contactData as any).LinkedInUrl || contactData.contactLinkedInUrl || '',
           amfNotes: contactData.amfNotes || '',
           lastUpdateDate: contactData.lastUpdateDate || (contactData as any).updatedAt || '',
-          addedBy: contactData.addedBy || 'Unknown',
-          addedByRole: contactData.addedByRole || '',
+          addedBy: contactData.addedBy || undefined,
+          addedByRole: contactData.addedByRole || undefined,
+          createdBy: contactData.createdBy || contactData.addedBy || undefined,
           addedDate: contactData.addedDate || (contactData as any).createdAt || '',
           updatedDate: contactData.updatedDate || (contactData as any).updatedAt || '',
           companyName: contactData.companyName || '',
@@ -133,8 +134,76 @@ export default function ContactDetailPage() {
   };
 
   const handleEdit = (contact: Contact) => {
-    // Navigate to edit page or open edit modal
-    router.push(`/contacts/${contact.id}/edit`);
+    // This is now handled by ViewContactDetails component's edit modal
+    // Keeping for backward compatibility but not used
+  };
+
+  const handleContactUpdated = async () => {
+    // Refresh contact data after update
+    if (!contactId) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Fetch updated contact from API
+      let contactData: any = null;
+      let page = 1;
+      const limit = 100;
+      
+      while (!contactData && page <= 100) {
+        const response = await privateApiCall<{ contacts: any[], pagination: any }>(`/admin/contacts?page=${page}&limit=${limit}`);
+        
+        contactData = response.contacts.find((c: any) => {
+          const cId = c._id?.toString() || c.id?.toString();
+          return cId === contactId;
+        });
+        
+        if (contactData) break;
+        if (page >= response.pagination.totalPages) break;
+        page++;
+      }
+      
+      if (contactData) {
+        const mappedContact: Contact = {
+          id: contactData._id?.toString() || contactData.id,
+          firstName: contactData.firstName || '',
+          lastName: contactData.lastName || '',
+          jobTitle: contactData.jobTitle || '',
+          jobLevel: contactData.jobLevel || '',
+          jobRole: contactData.jobRole || '',
+          email: contactData.email || '',
+          phone: contactData.phone || '',
+          directPhone: contactData.directPhone || '',
+          address1: contactData.address1 || '',
+          address2: contactData.address2 || '',
+          city: contactData.city || '',
+          state: contactData.state || '',
+          zipCode: contactData.zipCode || '',
+          country: contactData.country || '',
+          website: contactData.website || '',
+          industry: contactData.industry || '',
+          contactLinkedInUrl: (contactData as any).LinkedInUrl || contactData.contactLinkedInUrl || '',
+          amfNotes: contactData.amfNotes || '',
+          lastUpdateDate: contactData.lastUpdateDate || (contactData as any).updatedAt || '',
+          addedBy: contactData.addedBy || undefined,
+          addedByRole: contactData.addedByRole || undefined,
+          createdBy: contactData.createdBy || contactData.addedBy || undefined,
+          addedDate: contactData.addedDate || (contactData as any).createdAt || '',
+          updatedDate: contactData.updatedDate || (contactData as any).updatedAt || '',
+          companyName: contactData.companyName || '',
+          employeeSize: contactData.employeeSize || '',
+          revenue: contactData.revenue || '',
+        };
+        setContact(mappedContact);
+      }
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to refresh contact';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = async (contactId: string) => {
@@ -167,9 +236,49 @@ export default function ContactDetailPage() {
     }
   };
 
+  // Helper function to escape CSV values
+  const escapeCSV = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    // Escape quotes and wrap in quotes if contains comma, quote, or newline
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
   const handleExport = (contact: Contact) => {
-    const csvHeader = 'First Name,Last Name,Job Title,Job Level,Job Role,Email,Phone,Direct Phone,Address 1,Address 2,City,State,Zip Code,Country,Website,Industry,Contact LinkedIn URL,aMF Notes,Last Update Date';
-    const csvRow = `"${contact.firstName}","${contact.lastName}","${contact.jobTitle}","${contact.jobLevel}","${contact.jobRole}","${contact.email}","${contact.phone}","${contact.directPhone}","${contact.address1}","${contact.address2}","${contact.city}","${contact.state}","${contact.zipCode}","${contact.country}","${contact.website}","${contact.industry}","${contact.contactLinkedInUrl}","${contact.amfNotes}","${contact.lastUpdateDate}"`;
+    const contactData = contact as any;
+    const csvHeader = 'Contact ID,First Name,Last Name,Job Title,Job Level,Job Role,Email,Phone,Direct Phone,Address 1,Address 2,City,State,Zip Code,Country,Website,Industry,Sub-Industry,Contact LinkedIn URL,Company Name,Employee Size,Revenue,aMF Notes,Created By,Added Date,Last Update Date,Updated Date';
+    const csvRow = [
+      escapeCSV(contact.id || contactData._id || ''),
+      escapeCSV(contact.firstName || ''),
+      escapeCSV(contact.lastName || ''),
+      escapeCSV(contact.jobTitle || ''),
+      escapeCSV(contact.jobLevel || ''),
+      escapeCSV(contact.jobRole || ''),
+      escapeCSV(contact.email || ''),
+      escapeCSV(contact.phone || ''),
+      escapeCSV(contact.directPhone || ''),
+      escapeCSV(contact.address1 || ''),
+      escapeCSV(contact.address2 || ''),
+      escapeCSV(contact.city || ''),
+      escapeCSV(contact.state || ''),
+      escapeCSV(contact.zipCode || ''),
+      escapeCSV(contact.country || ''),
+      escapeCSV(contact.website || ''),
+      escapeCSV(contact.industry || ''),
+      escapeCSV(contactData.subIndustry || ''),
+      escapeCSV(contact.contactLinkedInUrl || contactData.LinkedInUrl || ''),
+      escapeCSV(contact.companyName || ''),
+      escapeCSV(contact.employeeSize || ''),
+      escapeCSV(contact.revenue || ''),
+      escapeCSV(contact.amfNotes || ''),
+      escapeCSV(contactData.createdBy || contact.addedBy || ''),
+      escapeCSV(contact.addedDate || contactData.createdAt || ''),
+      escapeCSV(contact.lastUpdateDate || ''),
+      escapeCSV(contact.updatedDate || contactData.updatedAt || '')
+    ].join(',');
     
     const csvContent = [csvHeader, csvRow].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -231,6 +340,7 @@ export default function ContactDetailPage() {
       onExport={handleExport}
       companyName={contact.companyName}
       company={company}
+      onContactUpdated={handleContactUpdated}
     />
   );
 }

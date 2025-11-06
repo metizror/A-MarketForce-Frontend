@@ -29,10 +29,11 @@ export interface Contact {
   contactLinkedInUrl: string;
   amfNotes: string;
   lastUpdateDate: string;
-  addedBy: string;
-  addedByRole: string;
+  addedBy?: string;
+  addedByRole?: string;
   addedDate: string;
   updatedDate: string;
+  createdBy?: string; // From API - who created the contact
   companyName?: string;
   employeeSize?: string;
   revenue?: string;
