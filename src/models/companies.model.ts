@@ -57,6 +57,9 @@ const companiesSchema = new mongoose.Schema(
     amfNotes: {
       type: String,
     },
+    createdBy: {
+      type: String,
+    },
   },
   {
     timestamps: true,

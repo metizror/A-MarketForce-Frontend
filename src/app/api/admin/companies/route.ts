@@ -91,14 +91,22 @@ export async function POST(request: NextRequest) {
   const auth = await requireAdminAuth(request);
   if (auth.error) return auth.error;
 
+  let role;
+  if (auth.admin?.role === "superadmin") {
+    role = "Super Admin";
+  } else {
+    role = "Admin";
+  }
   try {
     const body = await request.json();
     const { data } = body;
-    const company = await Companies.create(data);
+    const company = await Companies.create(
+      { ...data, createdBy: `${auth.admin?.name} (${role})` },
+    );
     if (auth.admin) {
       await createActivity(
         "Company created",
-        `Company ${company.companyName || "Unknown"} created by ${
+        `Company ${data.companyName || "Unknown"} created by ${
           auth.admin.name
         }`,
         auth.admin._id,
