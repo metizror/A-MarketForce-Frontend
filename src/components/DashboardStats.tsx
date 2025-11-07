@@ -14,10 +14,15 @@ export function DashboardStats({ contacts, companies, users, role }: DashboardSt
   const today = new Date().toLocaleDateString();
   const lastImportDate = '2024-01-10'; // Mock last import date
 
+  // Get counts from array lengths (arrays are created with count length)
+  const contactsCount = contacts.length;
+  const companiesCount = companies.length;
+  const usersCount = users.length;
+
   const statsCards = role === 'superadmin' ? [
     {
       title: 'Total Contacts',
-      value: contacts.length.toLocaleString(),
+      value: contactsCount.toLocaleString(),
       icon: Users,
       gradient: 'from-blue-500 to-cyan-500',
       glowColor: 'rgba(59, 130, 246, 0.3)',
@@ -26,7 +31,7 @@ export function DashboardStats({ contacts, companies, users, role }: DashboardSt
     },
     {
       title: 'Total Companies',
-      value: companies.length.toLocaleString(),
+      value: companiesCount.toLocaleString(),
       icon: Building2,
       gradient: 'from-green-500 to-emerald-500',
       glowColor: 'rgba(34, 197, 94, 0.3)',
@@ -35,7 +40,7 @@ export function DashboardStats({ contacts, companies, users, role }: DashboardSt
     },
     {
       title: 'Total Users',
-      value: users.length.toLocaleString(),
+      value: usersCount.toLocaleString(),
       icon: UserCheck,
       gradient: 'from-purple-500 to-pink-500',
       glowColor: 'rgba(168, 85, 247, 0.3)',
@@ -54,7 +59,7 @@ export function DashboardStats({ contacts, companies, users, role }: DashboardSt
   ] : [
     {
       title: 'Contacts Added',
-      value: contacts.length.toLocaleString(),
+      value: contactsCount.toLocaleString(),
       icon: Users,
       gradient: 'from-blue-500 to-cyan-500',
       glowColor: 'rgba(59, 130, 246, 0.3)',
@@ -63,7 +68,7 @@ export function DashboardStats({ contacts, companies, users, role }: DashboardSt
     },
     {
       title: 'Companies Added',
-      value: companies.length.toLocaleString(),
+      value: companiesCount.toLocaleString(),
       icon: Building2,
       gradient: 'from-green-500 to-emerald-500',
       glowColor: 'rgba(34, 197, 94, 0.3)',
