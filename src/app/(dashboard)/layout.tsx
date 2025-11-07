@@ -231,7 +231,7 @@ export default function DashboardLayout({
                   }`}></div>
                 </div>
 
-                <div className={`relative z-10 ${isDetailPage ? 'h-full overflow-y-auto' : 'h-full overflow-hidden'}`}>
+                <div className={`relative z-10 ${isDetailPage || pathSegments[0] === 'settings' ? 'h-full overflow-y-auto' : 'h-full overflow-hidden'}`}>
                   {children}
                 </div>
               </main>

@@ -63,7 +63,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-6">
       {/* Profile Settings */}
       <Card className="border-0 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
         {/* Gradient Header */}

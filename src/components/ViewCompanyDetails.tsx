@@ -70,6 +70,325 @@ interface ViewCompanyDetailsProps {
   onCompanyUpdated?: () => void; // Callback to refresh company data after update
 }
 
+// Industry and Sub-Industry mapping (same as ContactsTable)
+const industrySubIndustryMap: Record<string, string[]> = {
+  "Agriculture, Forestry and Fishing": [
+    "Commercial Fishing",
+    "Crop and Animal Production",
+    "Forestry and Logging"
+  ],
+  "Aerospace and Defense": [
+    "Aircraft Engine and Parts Manufacturing",
+    "Aircraft Manufacturing",
+    "Guided Missile and Space Vehicle Manufacturing",
+    "Space Research and Technology",
+    "Weapons and Ammunition Manufacturing"
+  ],
+  "Automotive, Transportation and Logistics": [
+    "Air Transportation Services",
+    "Airlines",
+    "Mass Transit and Ground Passenger Transportation",
+    "Miscellaneous Transportation Equipment Manufacturing",
+    "Miscellaneous Transportation Services",
+    "Motor Vehicle and Parts Dealers",
+    "Motor Vehicle Manufacturing",
+    "Motor Vehicle Parts Manufacturing",
+    "Motor Vehicle Rental",
+    "Motor Vehicle Repair and Maintenance",
+    "Motor Vehicle Wholesale",
+    "Pipeline Transportation",
+    "Postal, Shipping and Messengers",
+    "Railroad Transport",
+    "Railroad Transportation Services",
+    "Road Transportation Services",
+    "Ship and Boat Building",
+    "Shipping and Water Transport",
+    "Shipping and Water Transportation Services",
+    "Storage and Warehousing",
+    "Train and Railroad Equipment Manufacturing",
+    "Transportation Equipment Wholesale",
+    "Trucking"
+  ],
+  "Banking and Finance": [
+    "Banking",
+    "Commodities",
+    "Exchanges",
+    "Holding Companies",
+    "Investment Banking",
+    "Investment Services",
+    "Mortgage and Credit",
+    "Securities"
+  ],
+  "Business, Consulting and Professional Services": [
+    "Administrative Services",
+    "Advertising Services",
+    "Associations and Organizations",
+    "Building and Dwelling Services",
+    "Business Support Services",
+    "Commercial Real Estate Leasing",
+    "Consulting Services",
+    "Employment Services",
+    "Facilities Management",
+    "Market Research and Opinion Polling",
+    "Miscellaneous Professional Services",
+    "Photographic Services",
+    "Research and Development Services",
+    "Accounting and Tax Preparation",
+    "Architecture and Engineering",
+    "Investigation and Security Services",
+    "Legal Services",
+    "Specialized Design Services",
+    "Marketing Services",
+    "Industrial Machinery Repair and Maintenance",
+    "Miscellaneous Repair and Maintenance",
+    "Computer and Office Machine Repair and Maintenance"
+  ],
+  "Chemicals": [
+    "Agricultural Chemical Manufacturing",
+    "Basic Chemical Manufacturing",
+    "Chemical Wholesale",
+    "Miscellaneous Chemical Manufacturing",
+    "Paint, Coating, and Adhesive Manufacturing",
+    "Synthetic Chemical Manufacturing"
+  ],
+  "Construction and Building Materials": [
+    "Cement and Concrete Product Manufacturing",
+    "Civil Engineering",
+    "Construction and Hardware Materials Wholesale",
+    "Construction Machinery Manufacturing",
+    "Residential and Commercial Building Construction",
+    "Specialty Construction Trade Contractors"
+  ],
+  "Consumer Services": [
+    "Consumer Goods Rental",
+    "Death Care Services",
+    "Fitness and Recreation Centers",
+    "Laundry Services",
+    "Miscellaneous Personal Services",
+    "Personal Care Services",
+    "Photofinishing",
+    "Residential Real Estate Leasing"
+  ],
+  "Education": [
+    "Child Day Care Services",
+    "Colleges and Universities",
+    "Miscellaneous Educational Services",
+    "Primary and Secondary Education",
+    "Professional and Management Training"
+  ],
+  "Electronics": [
+    "Appliance Repair and Maintenance",
+    "Audio and Video Equipment Manufacturing",
+    "Consumer Electronics Repair and Maintenance",
+    "Electrical Equipment and Appliances Manufacturing",
+    "Electromedical and Control Instruments Manufacturing",
+    "Electronic Equipment Repair and Maintenance",
+    "Electronics and Appliances Stores",
+    "Electronics Wholesale",
+    "Magnetic and Optical Media Manufacturing",
+    "Semiconductor and Other Electronic Component Manufacturing"
+  ],
+  "Entertainment, Travel and Leisure": [
+    "Airlines",
+    "Fitness and Recreation Centers",
+    "Gambling and Casinos",
+    "Golf Courses and Country Clubs",
+    "Hotels and Accommodation",
+    "Miscellaneous Amusement and Recreation",
+    "Museums and Historical Sites",
+    "Performing Arts",
+    "Promoters and Agents",
+    "Restaurants and Bars",
+    "Spectator Sports",
+    "Sporting Goods and Recreation Stores",
+    "Travel and Reservation Services"
+  ],
+  "Food and Beverage": [
+    "Alcoholic Beverage Wholesale",
+    "Beer, Wine, and Liquor Stores",
+    "Beverage Manufacturing",
+    "Commercial Fishing",
+    "Crop and Animal Production",
+    "Food Manufacturing",
+    "Grocery Stores",
+    "Grocery Wholesale",
+    "Restaurants and Bars"
+  ],
+  "Healthcare, Biotechnology and Pharmaceuticals": [
+    "Ambulatory Services",
+    "Dentists",
+    "Diagnostic Laboratories",
+    "Fitness and Recreation Centers",
+    "Health and Personal Care Wholesale",
+    "Home Health Care Services",
+    "Hospitals",
+    "Medical Equipment and Supplies",
+    "Nursing and Residential Care",
+    "Outpatient Care",
+    "Pharmaceutical Manufacturing",
+    "Pharmacies and Personal Care Stores",
+    "Physicians and Health Practitioners",
+    "Social and Rehabilitation Services"
+  ],
+  "High Tech": [
+    "Communications Equipment Manufacturing",
+    "Computer and Peripheral Equipment Manufacturing",
+    "Computer Programming",
+    "Computer System Design Services",
+    "Data Processing",
+    "Electrical Equipment and Appliances Manufacturing",
+    "Electromedical and Control Instruments Manufacturing",
+    "Software",
+    "Internet and Web Services",
+    "Managed Service Providers (MSPs)"
+  ],
+  "Insurance": [
+    "Insurance Agents",
+    "Insurance Services",
+    "Life and Health Insurance",
+    "Pensions and Funds",
+    "Property and Casualty Insurance"
+  ],
+  "Manufacturing": [
+    "Agricultural Chemical Manufacturing",
+    "Aircraft Engine and Parts Manufacturing",
+    "Aircraft Manufacturing",
+    "Audio and Video Equipment Manufacturing",
+    "Basic Chemical Manufacturing",
+    "Beverage Manufacturing",
+    "Cement and Concrete Product Manufacturing",
+    "Clothing and Apparel Manufacturing",
+    "Communications Equipment Manufacturing",
+    "Computer and Peripheral Equipment Manufacturing",
+    "Construction Machinery Manufacturing",
+    "Electrical Equipment and Appliances Manufacturing",
+    "Electromedical and Control Instruments Manufacturing",
+    "Food Manufacturing",
+    "Furniture Manufacturing",
+    "Guided Missile and Space Vehicle Manufacturing",
+    "Machinery and Equipment Manufacturing",
+    "Magnetic and Optical Media Manufacturing",
+    "Metal Products Manufacturing",
+    "Miscellaneous Chemical Manufacturing",
+    "Miscellaneous Manufacturing",
+    "Miscellaneous Transportation Equipment Manufacturing",
+    "Motor Vehicle Manufacturing",
+    "Motor Vehicle Parts Manufacturing",
+    "NonMetallic Mineral Product Manufacturing",
+    "Paint, Coating, and Adhesive Manufacturing",
+    "Paper Product Manufacturing",
+    "Petroleum Product Manufacturing",
+    "Pharmaceutical Manufacturing",
+    "Rubber and Plastic Product Manufacturing",
+    "Semiconductor and Other Electronic Component Manufacturing",
+    "Ship and Boat Building",
+    "Synthetic Chemical Manufacturing",
+    "Textile Manufacturing",
+    "Tobacco Production",
+    "Train and Railroad Equipment Manufacturing",
+    "Weapons and Ammunition Manufacturing",
+    "Wood Product Manufacturing"
+  ],
+  "Mining, Quarrying and Drilling": [
+    "Coal Mining",
+    "Metals Mining",
+    "NonMetallic Minerals Mining",
+    "Petroleum and Natural Gas Extraction",
+    "Support Activities for Mining"
+  ],
+  "Non-Profit": [
+    "Non-profit Organisations"
+  ],
+  "Government Administration": [
+    "Administration of Public Programs",
+    "Courts, Justice and Public Safety",
+    "Executive and Legislature",
+    "National Security and International Affairs",
+    "Space Research and Technology",
+    "Local Authorities (Cities, Counties, States)"
+  ],
+  "Real Estate": [
+    "Commercial Real Estate Leasing",
+    "Property Managers",
+    "Real Estate Agents and Brokers",
+    "Real Estate Services",
+    "Residential Real Estate Leasing"
+  ],
+  "Rental and Leasing": [
+    "Commercial and Industrial Rental",
+    "Commercial Real Estate Leasing",
+    "Consumer Goods Rental",
+    "Miscellaneous Rental",
+    "Motor Vehicle Rental",
+    "Residential Real Estate Leasing"
+  ],
+  "Retail": [
+    "Beer, Wine, and Liquor Stores",
+    "Clothing and Apparel Stores",
+    "Department Stores",
+    "Electronics and Appliances Stores",
+    "Gasoline Stations and Fuel Dealers",
+    "Grocery Stores",
+    "Home and Garden Retail",
+    "Home Furnishings Retail",
+    "Miscellaneous Store Retailers",
+    "Motor Vehicle and Parts Dealers",
+    "Nonstore Retail",
+    "Pharmacies and Personal Care Stores",
+    "Sporting Goods and Recreation Stores",
+    "Convenience Store",
+    "eCommerce"
+  ],
+  "Telecommunications and Publishing": [
+    "Broadcasting and Media",
+    "Cable and Other Program Distribution",
+    "Communication Equipment Repair and Maintenance",
+    "Communications Equipment Manufacturing",
+    "Internet and Web Services",
+    "Miscellaneous Information Services",
+    "Miscellaneous Telecommunication Services",
+    "Movies",
+    "Publishing",
+    "Telecommunications Resellers",
+    "Wired Telecommunications Carriers",
+    "Wireless Telecommunications Carriers",
+    "Music",
+    "Printing"
+  ],
+  "Utilities and Energy": [
+    "Electricity Generation and Distribution",
+    "Natural Gas Distribution",
+    "Waste Management",
+    "Water and Sewage Services",
+    "Renweable Energy Services",
+    "Petroleum and Natural Gas Extraction"
+  ],
+  "Wholesale": [
+    "Alcoholic Beverage Wholesale",
+    "Chemical Wholesale",
+    "Clothing and Apparel Wholesale",
+    "Computer, Office Equipment and Software Merchant Wholesalers",
+    "Construction and Hardware Materials Wholesale",
+    "Electronics Wholesale",
+    "Grocery Wholesale",
+    "Health and Personal Care Wholesale",
+    "Home Furnishings Wholesale",
+    "Machinery Wholesale",
+    "Metals and Minerals Wholesale",
+    "Miscellaneous Wholesale",
+    "Motor Vehicle Wholesale",
+    "Paper Wholesale",
+    "Petroleum Wholesale",
+    "Professional and Commercial Equipment Wholesale",
+    "Transportation Equipment Wholesale"
+  ]
+};
+
+const industries = Object.keys(industrySubIndustryMap).map(industry => ({
+  label: industry,
+  value: industry,
+}));
+
 export function ViewCompanyDetails({
   company,
   user,
@@ -413,30 +732,64 @@ export function ViewCompanyDetails({
         </div>
         <div className="space-y-2">
           <Label>Industry</Label>
-          <Input
-            value={editForm.industry}
-            onChange={(e) =>
-              setEditForm({ ...editForm, industry: e.target.value })
-            }
-          />
+          <Select 
+            value={editForm.industry || ''} 
+            onValueChange={(value: string) => setEditForm({ ...editForm, industry: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select industry" />
+            </SelectTrigger>
+            <SelectContent>
+              {industries.map((industry) => (
+                <SelectItem key={industry.value} value={industry.value}>{industry.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label>Employee Size</Label>
-          <Input
-            value={editForm.employeeSize}
-            onChange={(e) =>
-              setEditForm({ ...editForm, employeeSize: e.target.value })
-            }
-          />
+          <Select 
+            value={editForm.employeeSize || ''} 
+            onValueChange={(value: string) => setEditForm({ ...editForm, employeeSize: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select employee size" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1-25">1 to 25</SelectItem>
+              <SelectItem value="26-50">26 to 50</SelectItem>
+              <SelectItem value="51-100">51 to 100</SelectItem>
+              <SelectItem value="101-250">101 to 250</SelectItem>
+              <SelectItem value="251-500">251 to 500</SelectItem>
+              <SelectItem value="501-1000">501 to 1000</SelectItem>
+              <SelectItem value="1001-2500">1001 to 2500</SelectItem>
+              <SelectItem value="2501-5000">2501 to 5000</SelectItem>
+              <SelectItem value="5001-10000">5001 to 10000</SelectItem>
+              <SelectItem value="over-10001">over 10,001</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label>Revenue</Label>
-          <Input
-            value={editForm.revenue}
-            onChange={(e) =>
-              setEditForm({ ...editForm, revenue: e.target.value })
-            }
-          />
+          <Select 
+            value={editForm.revenue || ''} 
+            onValueChange={(value: string) => setEditForm({ ...editForm, revenue: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select revenue" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Less-than-1M">Less than $1M</SelectItem>
+              <SelectItem value="1M-5M">$1M to $5M</SelectItem>
+              <SelectItem value="5M-10M">$5M to $10M</SelectItem>
+              <SelectItem value="10M-50M">$10M to $50M</SelectItem>
+              <SelectItem value="50M-100M">$50M to $100M</SelectItem>
+              <SelectItem value="100M-250M">$100M to $250M</SelectItem>
+              <SelectItem value="250M-500M">$250M to $500M</SelectItem>
+              <SelectItem value="500M-1B">$500M to $1B</SelectItem>
+              <SelectItem value="More-than-1B">More than $1B</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="edit-technology">Technology Stack</Label>
@@ -525,7 +878,7 @@ export function ViewCompanyDetails({
           <div className="flex items-center justify-start">
             <button
               onClick={onBack}
-              className="h-10 w-10 rounded-lg hover:bg-white/50 flex items-center justify-center transition-colors"
+              className="h-10 w-10  rounded-lg hover:bg-gray-200 cursor-pointer flex items-center justify-center transition-colors"
               type="button"
             >
               <ArrowLeft className="h-5 w-5 text-gray-700" strokeWidth={2} />
