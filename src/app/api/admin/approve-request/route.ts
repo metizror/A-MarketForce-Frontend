@@ -49,6 +49,9 @@ export async function GET(request: NextRequest) {
     const auth = await requireAdminAuth(request);
     if (auth.error) return auth.error;
 
+    const { page = 1, limit = 10 } = await request.json();
+    const skip = (page - 1) * limit;
+
     const pendingRequests = await CustomerAuth.find({
       isActive: false,
     }).countDocuments();
@@ -58,8 +61,29 @@ export async function GET(request: NextRequest) {
     const rejectedRequests = await CustomerAuth.find({
       rejectionReason: { $exists: true },
     }).countDocuments();
+
+    const allRequests = await CustomerAuth.find({
+      isActive: false,
+    })
+      .skip(skip)
+      .limit(limit);
+
+    const totalPages = Math.ceil(allRequests.length / limit);
     return NextResponse.json(
-      { pendingRequests, approvedRequests, rejectedRequests },
+      {
+        allRequests,
+        pendingRequests,
+        approvedRequests,
+        rejectedRequests,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalCount: pendingRequests + approvedRequests + rejectedRequests,
+          limit,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      },
       { status: 200 }
     );
   } catch (error) {
