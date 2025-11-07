@@ -173,9 +173,9 @@ export function ApprovalRequests({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full min-h-0 space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-shrink-0">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-gray-600">Pending Requests</CardTitle>
@@ -203,11 +203,11 @@ export function ApprovalRequests({
       </div>
 
       {/* Pending Requests Table */}
-      <Card>
-        <CardHeader>
+      <Card className="flex flex-col flex-1 min-h-0">
+        <CardHeader className="flex-shrink-0">
           <CardTitle>Customer Registration Requests</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {isLoading ? (
             <div className="text-center py-12 text-gray-500">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
@@ -219,7 +219,7 @@ export function ApprovalRequests({
               <p>No registration requests found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -306,8 +306,8 @@ export function ApprovalRequests({
           )}
 
           {/* Pagination Controls */}
-          {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+          {pagination && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t flex-shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Rows per page:</span>
                 <Select
@@ -325,27 +325,29 @@ export function ApprovalRequests({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
-                  Page {pagination.currentPage} of {pagination.totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(pagination.currentPage - 1)}
-                  disabled={!pagination.hasPreviousPage || isLoading}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(pagination.currentPage + 1)}
-                  disabled={!pagination.hasNextPage || isLoading}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
+              {pagination.totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">
+                    Page {pagination.currentPage} of {pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    disabled={!pagination.hasPreviousPage || isLoading}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    disabled={!pagination.hasNextPage || isLoading}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
