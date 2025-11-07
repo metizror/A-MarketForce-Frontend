@@ -66,19 +66,42 @@ export async function GET(request: NextRequest) {
       rejectionReason: { $exists: true },
     }).countDocuments();
 
-    const allRequests = await CustomerAuth.find({}).skip(skip).limit(limit).sort({ createdAt: -1 });
+    // Get all requests and sort them properly:
+    // 1. Pending requests first (isActive: false AND no rejectionReason) - sorted by createdAt desc
+    // 2. Then status-changed requests (approved/rejected) - sorted by updatedAt desc (latest changes first)
+    
+    // First, get all pending requests (isActive: false and no rejectionReason)
+    const pendingRequestsList = await CustomerAuth.find({
+      isActive: false,
+      rejectionReason: { $exists: false }
+    }).sort({ createdAt: -1 });
 
-    const totalPages = Math.ceil(allRequests.length / limit);
+    // Then, get all status-changed requests (isActive: true OR has rejectionReason)
+    // Sort by updatedAt descending to show latest changes first
+    const statusChangedRequests = await CustomerAuth.find({
+      $or: [
+        { isActive: true },
+        { rejectionReason: { $exists: true } }
+      ]
+    }).sort({ updatedAt: -1 });
+
+    // Combine: pending first, then status-changed
+    const allRequests = [...pendingRequestsList, ...statusChangedRequests];
+
+    // Apply pagination after combining
+    const paginatedRequests = allRequests.slice(skip, skip + limit);
+    const totalCount = allRequests.length;
+    const totalPages = Math.ceil(totalCount / limit);
     return NextResponse.json(
       {
-        allRequests,
+        allRequests: paginatedRequests,
         pendingRequests,
         approvedRequests,
         rejectedRequests,
         pagination: {
           currentPage: page,
           totalPages,
-          totalCount: pendingRequests + approvedRequests + rejectedRequests,
+          totalCount,
           limit,
           hasNextPage: page < totalPages,
           hasPreviousPage: page > 1,
