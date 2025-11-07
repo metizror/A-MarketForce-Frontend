@@ -473,9 +473,46 @@ export function CompaniesTable({
     }
   };
 
+  // Validation functions
+  const validatePhone = (phone: string): boolean => {
+    if (!phone || phone.trim() === '') return true; // Optional field
+    // Remove all non-digit characters for validation
+    const digitsOnly = phone.replace(/\D/g, '');
+    // Phone should have 10-15 digits (allowing international formats)
+    return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+  };
+
+  const validateWebsite = (website: string): boolean => {
+    if (!website || website.trim() === '') return true; // Optional field
+    try {
+      // Add protocol if missing
+      let urlToValidate = website.trim();
+      if (!urlToValidate.match(/^https?:\/\//i)) {
+        urlToValidate = 'https://' + urlToValidate;
+      }
+      const url = new URL(urlToValidate);
+      // Check if it's http or https
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
   const handleAddCompany = async () => {
     if (!newCompany.companyName) {
       toast.error('Please enter company name');
+      return;
+    }
+
+    // Validate phone number
+    if (newCompany.phone && !validatePhone(newCompany.phone)) {
+      toast.error('Please enter a valid phone number (10-15 digits)');
+      return;
+    }
+
+    // Validate website
+    if (newCompany.website && !validateWebsite(newCompany.website)) {
+      toast.error('Please enter a valid website URL (e.g., https://example.com)');
       return;
     }
 
@@ -584,6 +621,18 @@ export function CompaniesTable({
 
   const handleUpdateCompany = async () => {
     if (!editingCompany) return;
+
+    // Validate phone number
+    if (newCompany.phone && !validatePhone(newCompany.phone)) {
+      toast.error('Please enter a valid phone number (10-15 digits)');
+      return;
+    }
+
+    // Validate website
+    if (newCompany.website && !validateWebsite(newCompany.website)) {
+      toast.error('Please enter a valid website URL (e.g., https://example.com)');
+      return;
+    }
 
     try {
       // Get company ID
@@ -827,19 +876,29 @@ export function CompaniesTable({
         <Label htmlFor={isEdit ? "edit-phone" : "phone"}>Phone</Label>
         <Input
           id={isEdit ? "edit-phone" : "phone"}
+          type="tel"
           value={newCompany.phone}
           onChange={(e) => setNewCompany({...newCompany, phone: e.target.value})}
           placeholder="+1 (555) 123-4567"
+          className={newCompany.phone && !validatePhone(newCompany.phone) ? 'border-red-500' : ''}
         />
+        {newCompany.phone && !validatePhone(newCompany.phone) && (
+          <p className="text-xs text-red-500">Please enter a valid phone number (10-15 digits)</p>
+        )}
       </div>
       <div className="space-y-2">
         <Label htmlFor={isEdit ? "edit-website" : "website"}>Website</Label>
         <Input
           id={isEdit ? "edit-website" : "website"}
+          type="url"
           value={newCompany.website}
           onChange={(e) => setNewCompany({...newCompany, website: e.target.value})}
           placeholder="https://company.com"
+          className={newCompany.website && !validateWebsite(newCompany.website) ? 'border-red-500' : ''}
         />
+        {newCompany.website && !validateWebsite(newCompany.website) && (
+          <p className="text-xs text-red-500">Please enter a valid website URL (e.g., https://example.com)</p>
+        )}
       </div>
       <div className="space-y-2">
         <Label htmlFor={isEdit ? "edit-address1" : "address1"}>Address 1</Label>

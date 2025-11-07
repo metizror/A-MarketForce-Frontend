@@ -4,6 +4,7 @@ import customerRegisterReducer from "./slices/customerRegister.slice";
 import resetPasswordReducer from "./slices/resetPassword.slice";
 import contactsReducer from "./slices/contacts.slice";
 import companiesReducer from "./slices/companies.slice";
+import approveRequestsReducer from "./slices/approveRequests.slice";
 
 export const makeStore = () => {
   return configureStore({
@@ -13,6 +14,7 @@ export const makeStore = () => {
       resetPassword: resetPasswordReducer,
       contacts: contactsReducer,
       companies: companiesReducer,
+      approveRequests: approveRequestsReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({

@@ -36,12 +36,49 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
     amfNotes: '',
   });
 
+  // Validation functions
+  const validatePhone = (phone: string): boolean => {
+    if (!phone || phone.trim() === '') return true; // Optional field
+    // Remove all non-digit characters for validation
+    const digitsOnly = phone.replace(/\D/g, '');
+    // Phone should have 10-15 digits (allowing international formats)
+    return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+  };
+
+  const validateWebsite = (website: string): boolean => {
+    if (!website || website.trim() === '') return true; // Optional field
+    try {
+      // Add protocol if missing
+      let urlToValidate = website.trim();
+      if (!urlToValidate.match(/^https?:\/\//i)) {
+        urlToValidate = 'https://' + urlToValidate;
+      }
+      const url = new URL(urlToValidate);
+      // Check if it's http or https
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate required fields
     if (!formData.companyName) {
       toast.error('Company Name is required');
+      return;
+    }
+
+    // Validate phone number
+    if (formData.phone && !validatePhone(formData.phone)) {
+      toast.error('Please enter a valid phone number (10-15 digits)');
+      return;
+    }
+
+    // Validate website
+    if (formData.website && !validateWebsite(formData.website)) {
+      toast.error('Please enter a valid website URL (e.g., https://example.com)');
       return;
     }
 
@@ -137,8 +174,11 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                     value={formData.website}
                     onChange={(e) => handleInputChange('website', e.target.value)}
                     placeholder="https://www.example.com"
-                    className="h-11"
+                    className={`h-11 ${formData.website && !validateWebsite(formData.website) ? 'border-red-500' : ''}`}
                   />
+                  {formData.website && !validateWebsite(formData.website) && (
+                    <p className="text-xs text-red-500">Please enter a valid website URL (e.g., https://example.com)</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -156,11 +196,15 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Label htmlFor="phone">Phone</Label>
                   <Input
                     id="phone"
+                    type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     placeholder="+1 (555) 123-4567"
-                    className="h-11"
+                    className={`h-11 ${formData.phone && !validatePhone(formData.phone) ? 'border-red-500' : ''}`}
                   />
+                  {formData.phone && !validatePhone(formData.phone) && (
+                    <p className="text-xs text-red-500">Please enter a valid phone number (10-15 digits)</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

@@ -596,9 +596,46 @@ export function ViewCompanyDetails({
   };
 
   // Handle update company
+  // Validation functions
+  const validatePhone = (phone: string): boolean => {
+    if (!phone || phone.trim() === '') return true; // Optional field
+    // Remove all non-digit characters for validation
+    const digitsOnly = phone.replace(/\D/g, '');
+    // Phone should have 10-15 digits (allowing international formats)
+    return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+  };
+
+  const validateWebsite = (website: string): boolean => {
+    if (!website || website.trim() === '') return true; // Optional field
+    try {
+      // Add protocol if missing
+      let urlToValidate = website.trim();
+      if (!urlToValidate.match(/^https?:\/\//i)) {
+        urlToValidate = 'https://' + urlToValidate;
+      }
+      const url = new URL(urlToValidate);
+      // Check if it's http or https
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
   const handleUpdateCompany = async () => {
     if (!editForm.companyName) {
       toast.error("Please enter company name");
+      return;
+    }
+
+    // Validate phone number
+    if (editForm.phone && !validatePhone(editForm.phone)) {
+      toast.error('Please enter a valid phone number (10-15 digits)');
+      return;
+    }
+
+    // Validate website
+    if (editForm.website && !validateWebsite(editForm.website)) {
+      toast.error('Please enter a valid website URL (e.g., https://example.com)');
       return;
     }
 
@@ -647,7 +684,7 @@ export function ViewCompanyDetails({
           <Input
             id="edit-companyName"
             value={editForm.companyName}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setEditForm({ ...editForm, companyName: e.target.value })
             }
           />
@@ -656,28 +693,40 @@ export function ViewCompanyDetails({
           <Label htmlFor="edit-phone">Phone</Label>
           <Input
             id="edit-phone"
+            type="tel"
             value={editForm.phone}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setEditForm({ ...editForm, phone: e.target.value })
             }
+            placeholder="+1 (555) 123-4567"
+            className={editForm.phone && !validatePhone(editForm.phone) ? 'border-red-500' : ''}
           />
+          {editForm.phone && !validatePhone(editForm.phone) && (
+            <p className="text-xs text-red-500">Please enter a valid phone number (10-15 digits)</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="edit-website">Website</Label>
           <Input
             id="edit-website"
+            type="url"
             value={editForm.website}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setEditForm({ ...editForm, website: e.target.value })
             }
+            placeholder="https://example.com"
+            className={editForm.website && !validateWebsite(editForm.website) ? 'border-red-500' : ''}
           />
+          {editForm.website && !validateWebsite(editForm.website) && (
+            <p className="text-xs text-red-500">Please enter a valid website URL (e.g., https://example.com)</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="edit-address1">Address 1</Label>
           <Input
             id="edit-address1"
             value={editForm.address1}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setEditForm({ ...editForm, address1: e.target.value })
             }
           />
@@ -687,7 +736,7 @@ export function ViewCompanyDetails({
           <Input
             id="edit-address2"
             value={editForm.address2}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setEditForm({ ...editForm, address2: e.target.value })
             }
           />
@@ -697,7 +746,7 @@ export function ViewCompanyDetails({
           <Input
             id="edit-city"
             value={editForm.city}
-            onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+            onChange={(e: any) => setEditForm({ ...editForm, city: e.target.value })}
           />
         </div>
         <div className="space-y-2">
@@ -705,7 +754,7 @@ export function ViewCompanyDetails({
           <Input
             id="edit-state"
             value={editForm.state}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setEditForm({ ...editForm, state: e.target.value })
             }
           />
@@ -715,7 +764,7 @@ export function ViewCompanyDetails({
           <Input
             id="edit-zipCode"
             value={editForm.zipCode}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setEditForm({ ...editForm, zipCode: e.target.value })
             }
           />
@@ -725,7 +774,7 @@ export function ViewCompanyDetails({
           <Input
             id="edit-country"
             value={editForm.country}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setEditForm({ ...editForm, country: e.target.value })
             }
           />
@@ -796,7 +845,7 @@ export function ViewCompanyDetails({
           <Input
             id="edit-technology"
             value={editForm.technology}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setEditForm({ ...editForm, technology: e.target.value })
             }
           />
@@ -806,7 +855,7 @@ export function ViewCompanyDetails({
           <Input
             id="edit-companyLinkedInUrl"
             value={editForm.companyLinkedInUrl}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setEditForm({ ...editForm, companyLinkedInUrl: e.target.value })
             }
           />
@@ -816,7 +865,7 @@ export function ViewCompanyDetails({
           <Textarea
             id="edit-amfNotes"
             value={editForm.amfNotes}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setEditForm({ ...editForm, amfNotes: e.target.value })
             }
             rows={3}

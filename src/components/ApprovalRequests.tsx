@@ -1,76 +1,136 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Textarea } from './ui/textarea';
-import { CheckCircle2, XCircle, Clock, User, Mail, Building, Calendar } from 'lucide-react';
-import { ApprovalRequest } from '../App';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { CheckCircle2, XCircle, Clock, User, Mail, Building, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ApprovalRequest } from '@/types/dashboard.types';
 import { toast } from 'sonner';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { getApproveRequests, approveRequest, rejectRequest } from '@/store/slices/approveRequests.slice';
 
 interface ApprovalRequestsProps {
-  approvalRequests: ApprovalRequest[];
-  setApprovalRequests: (requests: ApprovalRequest[]) => void;
+  approvalRequests?: ApprovalRequest[];
+  setApprovalRequests?: (requests: ApprovalRequest[]) => void;
   currentUser: { name: string; role: string };
   onApprove?: (request: ApprovalRequest) => void;
 }
 
 export function ApprovalRequests({ 
-  approvalRequests, 
-  setApprovalRequests, 
+  approvalRequests: propApprovalRequests, 
+  setApprovalRequests: propSetApprovalRequests, 
   currentUser,
   onApprove 
 }: ApprovalRequestsProps) {
+  const dispatch = useAppDispatch();
+  const { requests, pagination, stats, isLoading, isApproving, isRejecting, error } = useAppSelector((state) => state.approveRequests);
+  
+  // Use Redux state if available, otherwise fall back to props
+  const approvalRequests = requests.length > 0 ? requests : (propApprovalRequests || []);
+  
   const [selectedRequest, setSelectedRequest] = useState<ApprovalRequest | null>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
-  const [notes, setNotes] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageLimit, setPageLimit] = useState(10);
 
-  const pendingRequests = approvalRequests.filter(req => req.status === 'pending');
-  const approvedRequests = approvalRequests.filter(req => req.status === 'approved');
-  const rejectedRequests = approvalRequests.filter(req => req.status === 'rejected');
+  // Fetch approve requests on component mount and when page/limit changes
+  useEffect(() => {
+    dispatch(getApproveRequests({ page: currentPage, limit: pageLimit }));
+  }, [dispatch, currentPage, pageLimit]);
+
+  // Show error toast if there's an error
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  // Update page limit when pagination changes
+  useEffect(() => {
+    if (pagination) {
+      setPageLimit(pagination.limit);
+    }
+  }, [pagination]);
 
   const handleApprove = (request: ApprovalRequest) => {
     setSelectedRequest(request);
     setActionType('approve');
-    setNotes('');
+    setRejectionReason('');
   };
 
   const handleReject = (request: ApprovalRequest) => {
     setSelectedRequest(request);
     setActionType('reject');
-    setNotes('');
+    setRejectionReason('');
   };
 
-  const confirmAction = () => {
+  const confirmAction = async () => {
     if (!selectedRequest) return;
 
-    const updatedRequests = approvalRequests.map(req =>
-      req.id === selectedRequest.id
-        ? {
-            ...req,
-            status: actionType === 'approve' ? 'approved' : 'rejected',
-            reviewedBy: currentUser.name,
-            reviewedAt: new Date().toISOString(),
-            notes: notes.trim() || undefined
-          }
-        : req
-    );
+    // Get customerId from request (it might be in id field or customerId field)
+    const customerId = (selectedRequest as any).customerId 
+      || (selectedRequest as any)._id 
+      || selectedRequest.id
+      || (selectedRequest as any).id;
 
-    setApprovalRequests(updatedRequests);
-
-    if (actionType === 'approve') {
-      toast.success(`Customer registration approved for ${selectedRequest.firstName} ${selectedRequest.lastName}`);
-      if (onApprove) {
-        onApprove(selectedRequest);
-      }
-    } else {
-      toast.success(`Customer registration rejected for ${selectedRequest.firstName} ${selectedRequest.lastName}`);
+    // Validate customerId exists
+    if (!customerId || (typeof customerId === 'string' && customerId.trim() === '')) {
+      console.error('Customer ID missing in request:', selectedRequest);
+      toast.error('Customer ID is missing. Please refresh the page and try again.');
+      return;
     }
 
-    setSelectedRequest(null);
-    setActionType(null);
-    setNotes('');
+    // Convert to string and trim
+    const customerIdString = String(customerId).trim();
+
+    if (actionType === 'approve') {
+      try {
+        await dispatch(approveRequest({ customerId: customerIdString })).unwrap();
+        toast.success(`Customer registration approved for ${selectedRequest.firstName} ${selectedRequest.lastName}`);
+        if (onApprove) {
+          onApprove(selectedRequest);
+        }
+        // Refresh the list
+        dispatch(getApproveRequests({ page: currentPage, limit: pageLimit }));
+        setSelectedRequest(null);
+        setActionType(null);
+        setRejectionReason('');
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to approve request');
+      }
+    } else {
+      // Reject action - rejection reason is mandatory
+      if (!rejectionReason.trim()) {
+        toast.error('Rejection reason is required');
+        return;
+      }
+
+      try {
+        await dispatch(rejectRequest({ customerId: customerIdString, rejectionReason: rejectionReason.trim() })).unwrap();
+        toast.success(`Customer registration rejected for ${selectedRequest.firstName} ${selectedRequest.lastName}`);
+        // Refresh the list
+        dispatch(getApproveRequests({ page: currentPage, limit: pageLimit }));
+        setSelectedRequest(null);
+        setActionType(null);
+        setRejectionReason('');
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to reject request');
+      }
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleLimitChange = (limit: number) => {
+    setPageLimit(limit);
+    setCurrentPage(1); // Reset to first page when changing limit
   };
 
   const getStatusBadge = (status: string) => {
@@ -121,7 +181,7 @@ export function ApprovalRequests({
             <CardTitle className="text-sm font-medium text-gray-600">Pending Requests</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-yellow-600">{pendingRequests.length}</div>
+            <div className="text-3xl font-bold text-yellow-600">{stats.pendingRequests}</div>
           </CardContent>
         </Card>
         <Card>
@@ -129,7 +189,7 @@ export function ApprovalRequests({
             <CardTitle className="text-sm font-medium text-gray-600">Approved</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">{approvedRequests.length}</div>
+            <div className="text-3xl font-bold text-green-600">{stats.approvedRequests}</div>
           </CardContent>
         </Card>
         <Card>
@@ -137,7 +197,7 @@ export function ApprovalRequests({
             <CardTitle className="text-sm font-medium text-gray-600">Rejected</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-600">{rejectedRequests.length}</div>
+            <div className="text-3xl font-bold text-red-600">{stats.rejectedRequests}</div>
           </CardContent>
         </Card>
       </div>
@@ -148,7 +208,12 @@ export function ApprovalRequests({
           <CardTitle>Customer Registration Requests</CardTitle>
         </CardHeader>
         <CardContent>
-          {approvalRequests.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-12 text-gray-500">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+              <p>Loading requests...</p>
+            </div>
+          ) : approvalRequests.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <User className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p>No registration requests found</p>
@@ -239,6 +304,50 @@ export function ApprovalRequests({
               </Table>
             </div>
           )}
+
+          {/* Pagination Controls */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Rows per page:</span>
+                <Select
+                  value={pageLimit.toString()}
+                  onValueChange={(value) => handleLimitChange(parseInt(value, 10))}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">
+                  Page {pagination.currentPage} of {pagination.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(pagination.currentPage - 1)}
+                  disabled={!pagination.hasPreviousPage || isLoading}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(pagination.currentPage + 1)}
+                  disabled={!pagination.hasNextPage || isLoading}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -246,7 +355,7 @@ export function ApprovalRequests({
       <Dialog open={selectedRequest !== null && actionType !== null} onOpenChange={() => {
         setSelectedRequest(null);
         setActionType(null);
-        setNotes('');
+        setRejectionReason('');
       }}>
         <DialogContent>
           <DialogHeader>
@@ -281,20 +390,25 @@ export function ApprovalRequests({
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  {actionType === 'approve' ? 'Approval Notes (Optional)' : 'Rejection Reason (Optional)'}
-                </label>
-                <Textarea
-                  placeholder={actionType === 'approve' 
-                    ? 'Add any notes about this approval...' 
-                    : 'Provide a reason for rejection...'
-                  }
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                />
-              </div>
+              {actionType === 'reject' && (
+                <div className="space-y-2">
+                  <Label htmlFor="rejection-reason" className="text-sm font-medium">
+                    Rejection Reason <span className="text-red-500">*</span>
+                  </Label>
+                  <Textarea
+                    id="rejection-reason"
+                    placeholder="Provide a reason for rejection..."
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    rows={3}
+                    required
+                    className={!rejectionReason.trim() ? 'border-red-300' : ''}
+                  />
+                  {!rejectionReason.trim() && (
+                    <p className="text-xs text-red-500">Rejection reason is required</p>
+                  )}
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-4">
                 <Button
@@ -302,19 +416,23 @@ export function ApprovalRequests({
                   onClick={() => {
                     setSelectedRequest(null);
                     setActionType(null);
-                    setNotes('');
+                    setRejectionReason('');
                   }}
+                  disabled={isApproving || isRejecting}
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={confirmAction}
+                  disabled={isApproving || isRejecting || (actionType === 'reject' && !rejectionReason.trim())}
                   className={actionType === 'approve' 
                     ? 'bg-green-600 hover:bg-green-700' 
                     : 'bg-red-600 hover:bg-red-700'
                   }
                 >
-                  {actionType === 'approve' ? (
+                  {isApproving || isRejecting ? (
+                    'Processing...'
+                  ) : actionType === 'approve' ? (
                     <>
                       <CheckCircle2 className="w-4 h-4 mr-2" />
                       Approve
