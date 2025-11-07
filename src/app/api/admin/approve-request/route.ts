@@ -66,11 +66,7 @@ export async function GET(request: NextRequest) {
       rejectionReason: { $exists: true },
     }).countDocuments();
 
-    const allRequests = await CustomerAuth.find({
-      isActive: false,
-    })
-      .skip(skip)
-      .limit(limit);
+    const allRequests = await CustomerAuth.find({}).skip(skip).limit(limit).sort({ createdAt: -1 });
 
     const totalPages = Math.ceil(allRequests.length / limit);
     return NextResponse.json(
