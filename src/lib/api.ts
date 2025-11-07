@@ -4,6 +4,7 @@ import axios, {
   AxiosResponse,
   AxiosError,
 } from "axios";
+import { clearAuthState } from "@/utils/authStorage";
 
 // Create axios instance with default config
 const axiosInstance: AxiosInstance = axios.create({
@@ -49,8 +50,9 @@ axiosInstance.interceptors.response.use(
     // Handle 401 Unauthorized - Token expired or invalid (only for authenticated endpoints)
     if (error.response?.status === 401 && !isAuthEndpoint) {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("authToken");
-        // Redirect to login page or dispatch logout action
+        // Clear all auth data from localStorage and sessionStorage
+        clearAuthState();
+        // Redirect to login page
         window.location.href = "/";
       }
     }
@@ -146,6 +148,11 @@ export const privateApiCall = async <T = any>(
   try {
     const token = getToken();
     if (!token) {
+      // Clear all auth data and redirect to login
+      if (typeof window !== "undefined") {
+        clearAuthState();
+        window.location.href = "/";
+      }
       throw new Error("No authentication token found. Please login again.");
     }
 
@@ -177,6 +184,11 @@ export const privateApiPost = async <T = any>(
   try {
     const token = getToken();
     if (!token) {
+      // Clear all auth data and redirect to login
+      if (typeof window !== "undefined") {
+        clearAuthState();
+        window.location.href = "/";
+      }
       throw new Error("No authentication token found. Please login again.");
     }
 
@@ -208,6 +220,11 @@ export const privateApiPut = async <T = any>(
   try {
     const token = getToken();
     if (!token) {
+      // Clear all auth data and redirect to login
+      if (typeof window !== "undefined") {
+        clearAuthState();
+        window.location.href = "/";
+      }
       throw new Error("No authentication token found. Please login again.");
     }
 
@@ -237,6 +254,11 @@ export const privateApiDelete = async <T = any>(
   try {
     const token = getToken();
     if (!token) {
+      // Clear all auth data and redirect to login
+      if (typeof window !== "undefined") {
+        clearAuthState();
+        window.location.href = "/";
+      }
       throw new Error("No authentication token found. Please login again.");
     }
 
