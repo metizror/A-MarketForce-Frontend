@@ -140,6 +140,15 @@ export const loginController = async (
       const normalizedEmail = email.toLowerCase().trim();
       const admin = await adminAuthModel.findOne({ email: normalizedEmail });
 
+      if (!admin.isActive) {
+        return {
+          status: 403,
+          message: "You are not activated, please wait for approval",
+          customer: null,
+          admin: null,
+        } as LoginFailResponse;
+      }
+
       if (!admin) {
         console.log(`Admin not found for email: ${email}`);
         return {
