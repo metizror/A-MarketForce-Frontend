@@ -30,6 +30,10 @@ const adminAuthSchema = new mongoose.Schema(
       type: String,
       enum: ["admin", "superadmin"],
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

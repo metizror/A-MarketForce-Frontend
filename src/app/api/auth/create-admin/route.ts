@@ -91,20 +91,115 @@ export async function GET(request: NextRequest) {
       { status: 401 }
     );
   }
+
   try {
-    const { searchParams } = new URL(request.url);
+    const url = new URL(request.url);
+    const searchParams = url.searchParams;
+    const search = searchParams.get("search");
+
+    let query: any = {};
+    if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      query = {
+        $or: [
+          { name: { $regex: escapedSearch, $options: "i" } },
+          { email: { $regex: escapedSearch, $options: "i" } },
+        ],
+      };
+    }
+
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const skip = (page - 1) * limit;
-    const totalAdmins = await adminAuthModel.countDocuments();
+    const totalAdmins = await adminAuthModel.countDocuments(query);
     const totalPages = Math.ceil(totalAdmins / limit);
     await connectToDatabase();
-    const admins = await adminAuthModel.find().select("-password").skip(skip).limit(limit);
-    return NextResponse.json({ admins, totalAdmins, totalPages }, { status: 200 });
-  } catch (error) {
+    const admins = await adminAuthModel
+      .find(query)
+      .select("-password")
+      .skip(skip)
+      .limit(limit);
     return NextResponse.json(
-        { message: "Internal server error" },
-        { status: 500 }
+      {
+        admins,
+        totalAdmins,
+        totalPages,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalAdmins,
+          limit,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.log("Get admins error:", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const { valid, admin, decoded } = await verifyAdminToken(request);
+  if (!valid || admin?.role !== "superadmin") {
+    return NextResponse.json(
+      { message: "Unauthorized: Invalid or missing JWT token" },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const { id } = await request.json();
+    if (!id) {
+      return NextResponse.json(
+        { message: "Invalid input: 'id' is required" },
+        { status: 400 }
       );
     }
+    const admin = await adminAuthModel.findByIdAndDelete(id);
+    if (!admin) {
+      return NextResponse.json({ message: "Admin not found" }, { status: 404 });
+    }
+    return NextResponse.json(
+      { message: "Admin deleted successfully", admin },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
+}
+
+export async function PUT(request: NextRequest) {
+  const { valid, admin, decoded } = await verifyAdminToken(request);
+  if (!valid || admin?.role !== "superadmin") {
+    return NextResponse.json(
+      { message: "Unauthorized: Invalid or missing JWT token" },
+      { status: 401 }
+    );
+  }
+  try {
+    const { id, name, isActive } = await request.json();
+    const admin = await adminAuthModel.findByIdAndUpdate(
+      id,
+      { name, isActive },
+      { new: true }
+    );
+    return NextResponse.json(
+      { message: "Admin updated successfully", admin },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
