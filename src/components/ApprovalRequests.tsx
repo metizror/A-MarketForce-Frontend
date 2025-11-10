@@ -50,13 +50,6 @@ export function ApprovalRequests({
     }
   }, [error]);
 
-  // Update page limit when pagination changes
-  useEffect(() => {
-    if (pagination) {
-      setPageLimit(pagination.limit);
-    }
-  }, [pagination]);
-
   const handleApprove = (request: ApprovalRequest) => {
     setSelectedRequest(request);
     setActionType('approve');
