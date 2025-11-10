@@ -59,23 +59,31 @@ export function SuperAdminDashboard({
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [adminUsersCount, setAdminUsersCount] = useState<number>(0);
   const [lastImportDate, setLastImportDate] = useState<string | null>(null);
+  const [isLoadingUsers, setIsLoadingUsers] = useState<boolean>(true);
+  const [isLoadingImportDate, setIsLoadingImportDate] = useState<boolean>(true);
   
   const dispatch = useAppDispatch();
   
   // Fetch admin users count and last import date
   useEffect(() => {
-    dispatch(getAdminUsers({ page: 1, limit: 1 })).then((result) => {
+    setIsLoadingUsers(true);
+    dispatch(getAdminUsers({ page: 1, limit: 25 })).then((result) => {
       if (getAdminUsers.fulfilled.match(result)) {
         setAdminUsersCount(result.payload.totalAdmins);
       }
+      setIsLoadingUsers(false);
+    }).catch(() => {
+      setIsLoadingUsers(false);
     });
     
     // Fetch last import date (most recent contact's createdAt)
-    privateApiCall<{ contacts: Array<{ createdAt: string }> }>("/admin/contacts?page=1&limit=1&sortBy=createdAt&sortOrder=desc")
+    setIsLoadingImportDate(true);
+    privateApiCall<{ contacts: Array<{ createdAt: string }> }>("/admin/contacts?page=1&limit=25&sortBy=createdAt&sortOrder=desc")
       .then((response) => {
         if (response && response.contacts && response.contacts.length > 0) {
           setLastImportDate(response.contacts[0].createdAt);
         }
+        setIsLoadingImportDate(false);
       })
       .catch((error) => {
         // If that endpoint doesn't work, try getting contacts and find the most recent
@@ -91,6 +99,9 @@ export function SuperAdminDashboard({
               setLastImportDate(sortedContacts[0].createdAt);
             }
           }
+          setIsLoadingImportDate(false);
+        }).catch(() => {
+          setIsLoadingImportDate(false);
         });
       });
   }, [dispatch]);
@@ -185,6 +196,12 @@ export function SuperAdminDashboard({
               role="superadmin"
               adminUsersCount={adminUsersCount}
               lastImportDate={lastImportDate}
+              isLoading={{
+                contacts: false,
+                companies: false,
+                users: isLoadingUsers,
+                importDate: isLoadingImportDate
+              }}
             />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <ImportDataModule 

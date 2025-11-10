@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { Switch } from './ui/switch';
-import { Settings, Shield, Users, Bell, Database, Key } from 'lucide-react';
+import { Settings, Shield, Users, Bell, Key } from 'lucide-react';
 import { User } from '../App';
 import { toast } from 'sonner';
 
@@ -31,16 +31,6 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
     weeklyReports: true
   });
 
-  const [dataSettings, setDataSettings] = useState({
-    autoBackup: true,
-    dataRetention: '12',
-    exportFormat: 'csv'
-  });
-
-  const [apiSettings, setApiSettings] = useState({
-    webhookUrl: ''
-  });
-
   const handleProfileUpdate = () => {
     if (!profile.name || !profile.email) {
       toast.error('Please fill in all required fields');
@@ -57,10 +47,6 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
 
   const handleNotificationUpdate = () => {
     toast.success('Notification preferences updated');
-  };
-
-  const handleDataSettingsUpdate = () => {
-    toast.success('Data settings updated');
   };
 
   return (
@@ -294,134 +280,6 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
           </Button>
         </CardContent>
       </Card>
-
-      {/* Data Management Settings - Super Admin Only */}
-      {user.role === 'superadmin' && (
-        <Card className="border-0 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
-          {/* Gradient Header */}
-          <div 
-            className="h-24 relative overflow-hidden"
-            style={{
-              background: 'linear-gradient(135deg, #F0E8FF 0%, #E6D9FF 50%, #DCCAFF 100%)'
-            }}
-          >
-            {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-400/10 rounded-full blur-2xl"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl"></div>
-            
-            {/* Icon Badge */}
-            <div className="absolute bottom-4 left-6">
-              <div 
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-purple-500 to-purple-600"
-              >
-                <Database className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </div>
-
-          <CardHeader className="pt-6">
-            <CardTitle>Data Management</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-purple-50 to-white border border-purple-200/50 hover:border-purple-300 transition-colors duration-300">
-              <div>
-                <Label htmlFor="auto-backup">Auto Backup</Label>
-                <p className="text-sm text-gray-600">Automatically backup data daily</p>
-              </div>
-              <Switch
-                id="auto-backup"
-                checked={dataSettings.autoBackup}
-                onCheckedChange={(checked) => setDataSettings({...dataSettings, autoBackup: checked})}
-              />
-            </div>
-
-            <div className="space-y-2 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-white border border-purple-200/50">
-              <Label htmlFor="data-retention">Data Retention (months)</Label>
-              <Input
-                id="data-retention"
-                type="number"
-                value={dataSettings.dataRetention}
-                onChange={(e) => setDataSettings({...dataSettings, dataRetention: e.target.value})}
-                placeholder="12"
-                className="bg-white"
-              />
-            </div>
-
-            <Button onClick={handleDataSettingsUpdate} variant="outline">
-              Save Data Settings
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* API Keys - Super Admin Only */}
-      {user.role === 'superadmin' && (
-        <Card className="border-0 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
-          {/* Gradient Header */}
-          <div 
-            className="h-24 relative overflow-hidden"
-            style={{
-              background: 'linear-gradient(135deg, #FFE8F0 0%, #FFD9E6 50%, #FFCADC 100%)'
-            }}
-          >
-            {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-pink-400/10 rounded-full blur-2xl"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-pink-500/10 rounded-full blur-xl"></div>
-            
-            {/* Icon Badge */}
-            <div className="absolute bottom-4 left-6">
-              <div 
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-pink-500 to-pink-600"
-              >
-                <Key className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </div>
-
-          <CardHeader className="pt-6">
-            <CardTitle>API Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2 p-4 rounded-xl bg-gradient-to-r from-pink-50 to-white border border-pink-200/50">
-              <Label>API Key</Label>
-              <div className="flex space-x-2">
-                <PasswordInput
-                  value="sk-1234567890abcdef"
-                  readOnly
-                  className="font-mono bg-white"
-                />
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="hover:bg-pink-50 hover:border-pink-300 transition-colors duration-300"
-                >
-                  Regenerate
-                </Button>
-              </div>
-              <p className="text-xs text-gray-600">
-                Use this API key to integrate with external systems
-              </p>
-            </div>
-
-            <div className="space-y-2 p-4 rounded-xl bg-gradient-to-r from-pink-50 to-white border border-pink-200/50">
-              <Label>Webhook URL</Label>
-              <Input
-                placeholder="https://your-domain.com/webhook"
-                value={apiSettings.webhookUrl}
-                onChange={(e) => setApiSettings({...apiSettings, webhookUrl: e.target.value})}
-                className="bg-white"
-              />
-              <p className="text-xs text-gray-600">
-                Receive notifications when data changes
-              </p>
-            </div>
-
-            <Button variant="outline">
-              Save API Settings
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

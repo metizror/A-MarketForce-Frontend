@@ -1,7 +1,9 @@
 import React from 'react';
 import { Card, CardContent } from './ui/card';
+import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 import { Users, Building2, UserCheck, Upload, TrendingUp, Calendar } from 'lucide-react';
-import { Contact, Company, User } from '../App';
+import type { Contact, Company, User } from '@/types/dashboard.types';
 
 interface DashboardStatsProps {
   contacts: Contact[];
@@ -10,9 +12,15 @@ interface DashboardStatsProps {
   role: 'superadmin' | 'admin';
   adminUsersCount?: number;
   lastImportDate?: string | null;
+  isLoading?: {
+    contacts?: boolean;
+    companies?: boolean;
+    users?: boolean;
+    importDate?: boolean;
+  };
 }
 
-export function DashboardStats({ contacts, companies, users, role, adminUsersCount, lastImportDate }: DashboardStatsProps) {
+export function DashboardStats({ contacts, companies, users, role, adminUsersCount, lastImportDate, isLoading }: DashboardStatsProps) {
   const today = new Date().toLocaleDateString();
 
   // Get counts from array lengths (arrays are created with count length)
@@ -103,10 +111,23 @@ export function DashboardStats({ contacts, companies, users, role, adminUsersCou
     }
   ];
 
+  // Determine which cards are loading
+  const getLoadingState = (index: number) => {
+    if (role === 'superadmin') {
+      if (index === 0) return isLoading?.contacts ?? false;
+      if (index === 1) return isLoading?.companies ?? false;
+      if (index === 2) return isLoading?.users ?? false;
+      if (index === 3) return isLoading?.importDate ?? false;
+    }
+    return false;
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {statsCards.map((stat, index) => {
         const Icon = stat.icon;
+        const isCardLoading = getLoadingState(index);
+        
         return (
           <Card 
             key={index} 
@@ -122,33 +143,58 @@ export function DashboardStats({ contacts, companies, users, role, adminUsersCou
             <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.gradient}`} />
             
             <CardContent className="relative p-6">
-              {/* Icon Badge */}
-              <div className="flex items-start justify-between mb-4">
-                <div className={`relative p-3.5 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg transform group-hover:scale-110 transition-all duration-300`}>
-                  <Icon className="w-7 h-7 text-white" strokeWidth={2.5} />
-                  
-                  {/* Icon Glow Effect */}
-                  <div 
-                    className={`absolute inset-0 rounded-xl bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-60 blur-lg transition-opacity duration-300`}
-                  />
-                </div>
-              </div>
+              {isCardLoading ? (
+                // Skeleton Loading State
+                <SkeletonTheme baseColor="#f3f4f6" highlightColor="#e5e7eb">
+                  {/* Icon Badge Skeleton */}
+                  <div className="flex items-start justify-between mb-4">
+                    <Skeleton width={56} height={56} borderRadius={12} />
+                  </div>
 
-              {/* Title */}
-              <h3 className="text-sm font-medium text-gray-500 mb-2">
-                {stat.title}
-              </h3>
+                  {/* Title Skeleton */}
+                  <Skeleton height={16} width={96} style={{ marginBottom: '8px' }} />
 
-              {/* Value */}
-              <div className={`text-3xl font-semibold mb-2 bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>
-                {stat.value}
-              </div>
+                  {/* Value Skeleton */}
+                  <Skeleton height={36} width={64} style={{ marginBottom: '8px' }} />
 
-              {/* Label */}
-              <p className="text-xs text-gray-400 flex items-center gap-1">
-                <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${stat.gradient}`} />
-                {stat.label}
-              </p>
+                  {/* Label Skeleton */}
+                  <div className="flex items-center gap-1">
+                    <Skeleton circle width={6} height={6} />
+                    <Skeleton height={12} width={128} />
+                  </div>
+                </SkeletonTheme>
+              ) : (
+                // Actual Content
+                <>
+                  {/* Icon Badge */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`relative p-3.5 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg transform group-hover:scale-110 transition-all duration-300`}>
+                      <Icon className="w-7 h-7 text-white" strokeWidth={2.5} />
+                      
+                      {/* Icon Glow Effect */}
+                      <div 
+                        className={`absolute inset-0 rounded-xl bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-60 blur-lg transition-opacity duration-300`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">
+                    {stat.title}
+                  </h3>
+
+                  {/* Value */}
+                  <div className={`text-3xl font-semibold mb-2 bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>
+                    {stat.value}
+                  </div>
+
+                  {/* Label */}
+                  <p className="text-xs text-gray-400 flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${stat.gradient}`} />
+                    {stat.label}
+                  </p>
+                </>
+              )}
             </CardContent>
 
             {/* Bottom Subtle Gradient */}

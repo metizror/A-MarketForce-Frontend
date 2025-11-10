@@ -7,6 +7,7 @@ import companiesReducer from "./slices/companies.slice";
 import approveRequestsReducer from "./slices/approveRequests.slice";
 import adminUsersReducer from "./slices/adminUsers.slice";
 import contactsImportReducer from "./slices/contactsImport.slice";
+import activityLogsReducer from "./slices/activityLogs.slice";
 
 export const makeStore = () => {
   return configureStore({
@@ -19,6 +20,7 @@ export const makeStore = () => {
       approveRequests: approveRequestsReducer,
       adminUsers: adminUsersReducer,
       contactsImport: contactsImportReducer,
+      activityLogs: activityLogsReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({

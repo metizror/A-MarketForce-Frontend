@@ -231,7 +231,10 @@ export default function DashboardLayout({
                   }`}></div>
                 </div>
 
-                <div className={`relative z-10 ${isDetailPage || pathSegments[0] === 'settings' || pathSegments[0] === 'approve-requests' ? 'h-full overflow-y-auto' : 'h-full overflow-hidden'}`}>
+                <div className={`relative z-10 h-full overflow-y-auto ${shouldAddPadding ? 'dashboard-scroll-container' : ''}`} style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#EF8037 #f1f1f1'
+                }}>
                   {children}
                 </div>
               </main>

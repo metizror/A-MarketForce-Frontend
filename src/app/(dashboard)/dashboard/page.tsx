@@ -9,8 +9,9 @@ import { getContacts } from "@/store/slices/contacts.slice";
 import { getCompanies } from "@/store/slices/companies.slice";
 import { getApproveRequests } from "@/store/slices/approveRequests.slice";
 import { getAdminUsers } from "@/store/slices/adminUsers.slice";
+import { getActivityLogs } from "@/store/slices/activityLogs.slice";
 import { privateApiCall } from "@/lib/api";
-import type { Contact, Company, ActivityLog } from "@/types/dashboard.types";
+import type { Contact, Company } from "@/types/dashboard.types";
 
 interface UsersResponse {
   users: any[];
@@ -30,56 +31,79 @@ export default function DashboardPage() {
   const [companiesCount, setCompaniesCount] = useState(0);
   const [adminUsersCount, setAdminUsersCount] = useState(0);
   const [lastImportDate, setLastImportDate] = useState<string | null>(null);
-  const [activityLogs] = useState([] as ActivityLog[]);
+  
+  // Loading states
+  const [isLoadingContacts, setIsLoadingContacts] = useState(true);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [isLoadingImportDate, setIsLoadingImportDate] = useState(true);
   
   const { pagination: adminUsersPagination } = useAppSelector((state) => state.adminUsers);
+  const { logs: activityLogs, isLoading: isLoadingActivityLogs } = useAppSelector((state) => state.activityLogs);
 
   const role = user?.role || null;
 
   // Fetch counts on component mount
   useEffect(() => {
     // Fetch contacts count
+    setIsLoadingContacts(true);
     dispatch(getContacts({ page: 1, limit: 1 })).then((result) => {
       if (getContacts.fulfilled.match(result)) {
         setContactsCount(result.payload.pagination.totalCount);
       }
+      setIsLoadingContacts(false);
+    }).catch(() => {
+      setIsLoadingContacts(false);
     });
 
     // Fetch companies count
+    setIsLoadingCompanies(true);
     dispatch(getCompanies({ page: 1, limit: 1 })).then((result) => {
       if (getCompanies.fulfilled.match(result)) {
         setCompaniesCount(result.payload.pagination.totalCount);
       }
+      setIsLoadingCompanies(false);
+    }).catch(() => {
+      setIsLoadingCompanies(false);
     });
 
     // Fetch admin users count from getUser API (if superadmin)
     if (role === "superadmin") {
-      privateApiCall("/auth/create-admin?page=1&limit=1")
+      setIsLoadingUsers(true);
+      privateApiCall("/auth/create-admin?page=1&limit=25")
         .then((response: any) => {
           if (response && response.totalAdmins !== undefined) {
             setAdminUsersCount(response.totalAdmins);
           }
+          setIsLoadingUsers(false);
         })
         .catch((error) => {
           console.error("Failed to fetch admin users count:", error);
           // Fallback to Redux if direct API call fails
-          dispatch(getAdminUsers({ page: 1, limit: 1 })).then((result) => {
+          dispatch(getAdminUsers({ page: 1, limit: 25 })).then((result) => {
             if (getAdminUsers.fulfilled.match(result)) {
               setAdminUsersCount(result.payload.totalAdmins);
             }
+            setIsLoadingUsers(false);
+          }).catch(() => {
+            setIsLoadingUsers(false);
           });
         });
+    } else {
+      setIsLoadingUsers(false);
     }
     
     // Fetch last import date (most recent contact's addedDate)
     if (role === "superadmin") {
-      privateApiCall("/admin/contacts?page=1&limit=1&sortBy=addedDate&sortOrder=desc")
+      setIsLoadingImportDate(true);
+      privateApiCall("/admin/contacts?page=1&limit=25&sortBy=addedDate&sortOrder=desc")
         .then((response: any) => {
           if (response && response.contacts && response.contacts.length > 0) {
             // Use addedDate or createdAt if available
             const contact = response.contacts[0];
             setLastImportDate(contact.createdAt || contact.addedDate || null);
           }
+          setIsLoadingImportDate(false);
         })
         .catch((error) => {
           // If that endpoint doesn't work, try getting contacts and find the most recent
@@ -95,12 +119,20 @@ export default function DashboardPage() {
                 setLastImportDate(sortedContacts[0].addedDate);
               }
             }
+            setIsLoadingImportDate(false);
+          }).catch(() => {
+            setIsLoadingImportDate(false);
           });
         });
+    } else {
+      setIsLoadingImportDate(false);
     }
 
     // Fetch approve requests to get stats
-    dispatch(getApproveRequests({ page: 1, limit: 1 }));
+    dispatch(getApproveRequests({ page: 1, limit: 25 }));
+
+    // Fetch activity logs
+    dispatch(getActivityLogs({ page: 1, limit: 5 }));
   }, [dispatch, role]);
 
   // Update counts from Redux state if available
@@ -137,6 +169,12 @@ export default function DashboardPage() {
         role={role === "superadmin" ? "superadmin" : "admin"}
         adminUsersCount={adminUsersCount}
         lastImportDate={lastImportDate}
+        isLoading={{
+          contacts: isLoadingContacts,
+          companies: isLoadingCompanies,
+          users: isLoadingUsers,
+          importDate: isLoadingImportDate
+        }}
       />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {role === "superadmin" && (
@@ -168,7 +206,12 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
-        <ActivityLogsPanel logs={activityLogs.slice(0, 5)} />
+        <ActivityLogsPanel 
+          logs={activityLogs} 
+          pagination={null}
+          isLoading={isLoadingActivityLogs} 
+          isFullScreen={false}
+        />
       </div>
     </div>
   );

@@ -244,6 +244,25 @@ html {
   background: #d96a2a;
 }
 
+/* Custom scrollbar for dashboard main section */
+.dashboard-scroll-container::-webkit-scrollbar {
+  width: 12px;
+}
+
+.dashboard-scroll-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+.dashboard-scroll-container::-webkit-scrollbar-thumb {
+  background: #EF8037;
+  border-radius: 6px;
+}
+
+.dashboard-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #d96a2a;
+}
+
 /* Custom styles for select dropdown in mapping section */
 .select-dropdown-scroll {
   max-height: 350px !important;

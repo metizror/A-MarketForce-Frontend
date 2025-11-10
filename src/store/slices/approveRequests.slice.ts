@@ -102,7 +102,7 @@ export const getApproveRequests = createAsyncThunk<
 >('approveRequests/getApproveRequests', async (params, { rejectWithValue }) => {
   try {
     const page = params.page || 1;
-    const limit = params.limit || 10;
+    const limit = params.limit || 25;
     
     // Use GET with query parameters
     const response = await privateApiCall<ApproveRequestsResponse>(
