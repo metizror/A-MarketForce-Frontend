@@ -39,7 +39,7 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
 
   // Update local users when Redux state changes
   useEffect(() => {
-    if (adminUsers.length > 0) {
+    if (adminUsers && adminUsers.length > 0) {
       setUsers(adminUsers);
     }
   }, [adminUsers, setUsers]);
@@ -51,7 +51,7 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
     }
   }, [error]);
 
-  const filteredUsers = (adminUsers.length > 0 ? adminUsers : users).filter(user =>
+  const filteredUsers = ((adminUsers && adminUsers.length > 0) ? adminUsers : users).filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );

@@ -14,15 +14,14 @@ export interface GetAdminUsersParams {
 }
 
 export interface AdminUsersResponse {
-  users: AdminUser[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalCount: number;
-    limit: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  };
+  admins: Array<{
+    _id: string;
+    name: string;
+    email: string;
+    role: "admin" | "superadmin";
+  }>;
+  totalAdmins: number;
+  totalPages: number;
 }
 
 export interface CreateAdminUserPayload {
@@ -121,8 +120,24 @@ const adminUsersSlice = createSlice({
       })
       .addCase(getAdminUsers.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.users = action.payload.users;
-        state.pagination = action.payload.pagination;
+        // Map the API response to match our AdminUser interface
+        state.users = action.payload.admins.map((admin) => ({
+          id: admin._id.toString(),
+          name: admin.name,
+          email: admin.email,
+          role: admin.role,
+        }));
+        // Calculate pagination from API response
+        const page = action.meta.arg.page || 1;
+        const limit = action.meta.arg.limit || 25;
+        state.pagination = {
+          currentPage: page,
+          totalPages: action.payload.totalPages,
+          totalCount: action.payload.totalAdmins,
+          limit: limit,
+          hasNextPage: page < action.payload.totalPages,
+          hasPreviousPage: page > 1,
+        };
         state.error = null;
       })
       .addCase(getAdminUsers.rejected, (state, action) => {
