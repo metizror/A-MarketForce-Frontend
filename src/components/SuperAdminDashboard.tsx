@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardStats } from './DashboardStats';
 import { ContactsTable } from './ContactsTable';
@@ -14,6 +14,10 @@ import { SupportContactForm } from './SupportContactForm';
 import { Button } from './ui/button';
 import { LogOut, Filter } from 'lucide-react';
 import { ApprovalRequests } from './ApprovalRequests';
+import { useAppDispatch } from '@/store/hooks';
+import { getAdminUsers } from '@/store/slices/adminUsers.slice';
+import { getContacts } from '@/store/slices/contacts.slice';
+import { privateApiCall } from '@/lib/api';
 import type { User, Contact, Company, ActivityLog, ApprovalRequest } from '@/types/dashboard.types';
 
 interface SuperAdminDashboardProps {
@@ -53,6 +57,43 @@ export function SuperAdminDashboard({
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showSupportModal, setShowSupportModal] = useState(false);
+  const [adminUsersCount, setAdminUsersCount] = useState<number>(0);
+  const [lastImportDate, setLastImportDate] = useState<string | null>(null);
+  
+  const dispatch = useAppDispatch();
+  
+  // Fetch admin users count and last import date
+  useEffect(() => {
+    dispatch(getAdminUsers({ page: 1, limit: 1 })).then((result) => {
+      if (getAdminUsers.fulfilled.match(result)) {
+        setAdminUsersCount(result.payload.totalAdmins);
+      }
+    });
+    
+    // Fetch last import date (most recent contact's createdAt)
+    privateApiCall<{ contacts: Array<{ createdAt: string }> }>("/admin/contacts?page=1&limit=1&sortBy=createdAt&sortOrder=desc")
+      .then((response) => {
+        if (response && response.contacts && response.contacts.length > 0) {
+          setLastImportDate(response.contacts[0].createdAt);
+        }
+      })
+      .catch((error) => {
+        // If that endpoint doesn't work, try getting contacts and find the most recent
+        dispatch(getContacts({ page: 1, limit: 100 })).then((result) => {
+          if (getContacts.fulfilled.match(result) && result.payload.contacts && result.payload.contacts.length > 0) {
+            // Find the most recent contact by createdAt
+            const sortedContacts = [...result.payload.contacts].sort((a: any, b: any) => {
+              const dateA = new Date(a.createdAt || 0).getTime();
+              const dateB = new Date(b.createdAt || 0).getTime();
+              return dateB - dateA;
+            });
+            if (sortedContacts[0]?.createdAt) {
+              setLastImportDate(sortedContacts[0].createdAt);
+            }
+          }
+        });
+      });
+  }, [dispatch]);
 
   const pendingRequestsCount = approvalRequests.filter(req => req.status === 'pending').length;
 
@@ -142,12 +183,16 @@ export function SuperAdminDashboard({
               companies={companies}
               users={users}
               role="superadmin"
+              adminUsersCount={adminUsersCount}
+              lastImportDate={lastImportDate}
             />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <ImportDataModule 
                 onImportComplete={(newContacts, newCompanies) => {
                   setContacts([...contacts, ...newContacts]);
                   setCompanies([...companies, ...newCompanies]);
+                  // Update last import date to current date
+                  setLastImportDate(new Date().toISOString());
                 }}
               />
               <ActivityLogsPanel logs={activityLogs.slice(0, 5)} />

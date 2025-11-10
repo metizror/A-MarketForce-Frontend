@@ -8,16 +8,24 @@ interface DashboardStatsProps {
   companies: Company[];
   users: User[];
   role: 'superadmin' | 'admin';
+  adminUsersCount?: number;
+  lastImportDate?: string | null;
 }
 
-export function DashboardStats({ contacts, companies, users, role }: DashboardStatsProps) {
+export function DashboardStats({ contacts, companies, users, role, adminUsersCount, lastImportDate }: DashboardStatsProps) {
   const today = new Date().toLocaleDateString();
-  const lastImportDate = '2024-01-10'; // Mock last import date
 
   // Get counts from array lengths (arrays are created with count length)
   const contactsCount = contacts.length;
   const companiesCount = companies.length;
-  const usersCount = users.length;
+  const usersCount = adminUsersCount !== undefined ? adminUsersCount : users.length;
+
+  console.log(usersCount, "usersCount");
+  
+  // Format last import date or show "No imports yet"
+  const formattedLastImportDate = lastImportDate 
+    ? new Date(lastImportDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    : 'No imports yet';
 
   const statsCards = role === 'superadmin' ? [
     {
@@ -49,7 +57,7 @@ export function DashboardStats({ contacts, companies, users, role }: DashboardSt
     },
     {
       title: 'Last Import Date',
-      value: lastImportDate,
+      value: formattedLastImportDate,
       icon: Upload,
       gradient: 'from-orange-500 to-amber-500',
       glowColor: 'rgba(239, 128, 55, 0.3)',

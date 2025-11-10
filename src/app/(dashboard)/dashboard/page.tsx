@@ -8,6 +8,7 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { getContacts } from "@/store/slices/contacts.slice";
 import { getCompanies } from "@/store/slices/companies.slice";
 import { getApproveRequests } from "@/store/slices/approveRequests.slice";
+import { getAdminUsers } from "@/store/slices/adminUsers.slice";
 import { privateApiCall } from "@/lib/api";
 import type { Contact, Company, ActivityLog } from "@/types/dashboard.types";
 
@@ -27,8 +28,11 @@ export default function DashboardPage() {
   
   const [contactsCount, setContactsCount] = useState(0);
   const [companiesCount, setCompaniesCount] = useState(0);
-  const [usersCount, setUsersCount] = useState(0);
+  const [adminUsersCount, setAdminUsersCount] = useState(0);
+  const [lastImportDate, setLastImportDate] = useState<string | null>(null);
   const [activityLogs] = useState([] as ActivityLog[]);
+  
+  const { pagination: adminUsersPagination } = useAppSelector((state) => state.adminUsers);
 
   const role = user?.role || null;
 
@@ -48,19 +52,50 @@ export default function DashboardPage() {
       }
     });
 
-    // Fetch users count (if superadmin)
-    // Note: Users API endpoint may not exist, so we handle it gracefully
+    // Fetch admin users count from getUser API (if superadmin)
     if (role === "superadmin") {
-      // Try to fetch users count, but handle gracefully if endpoint doesn't exist
-      privateApiCall<UsersResponse>("/admin/users?page=1&limit=1")
-        .then((response) => {
-          if (response && response.pagination) {
-            setUsersCount(response.pagination.totalCount);
+      privateApiCall("/auth/create-admin?page=1&limit=1")
+        .then((response: any) => {
+          if (response && response.totalAdmins !== undefined) {
+            setAdminUsersCount(response.totalAdmins);
           }
         })
         .catch((error) => {
-          // Silently fail - users count will remain 0
-          console.log("Users API endpoint not available, using default count");
+          console.error("Failed to fetch admin users count:", error);
+          // Fallback to Redux if direct API call fails
+          dispatch(getAdminUsers({ page: 1, limit: 1 })).then((result) => {
+            if (getAdminUsers.fulfilled.match(result)) {
+              setAdminUsersCount(result.payload.totalAdmins);
+            }
+          });
+        });
+    }
+    
+    // Fetch last import date (most recent contact's addedDate)
+    if (role === "superadmin") {
+      privateApiCall("/admin/contacts?page=1&limit=1&sortBy=addedDate&sortOrder=desc")
+        .then((response: any) => {
+          if (response && response.contacts && response.contacts.length > 0) {
+            // Use addedDate or createdAt if available
+            const contact = response.contacts[0];
+            setLastImportDate(contact.createdAt || contact.addedDate || null);
+          }
+        })
+        .catch((error) => {
+          // If that endpoint doesn't work, try getting contacts and find the most recent
+          dispatch(getContacts({ page: 1, limit: 100 })).then((result) => {
+            if (getContacts.fulfilled.match(result) && result.payload.contacts && result.payload.contacts.length > 0) {
+              // Find the most recent contact by addedDate
+              const sortedContacts = [...result.payload.contacts].sort((a: Contact, b: Contact) => {
+                const dateA = new Date(a.addedDate || a.updatedDate || 0).getTime();
+                const dateB = new Date(b.addedDate || b.updatedDate || 0).getTime();
+                return dateB - dateA;
+              });
+              if (sortedContacts[0]?.addedDate) {
+                setLastImportDate(sortedContacts[0].addedDate);
+              }
+            }
+          });
         });
     }
 
@@ -81,11 +116,17 @@ export default function DashboardPage() {
     }
   }, [companiesPagination]);
 
+  useEffect(() => {
+    if (adminUsersPagination) {
+      setAdminUsersCount(adminUsersPagination.totalCount);
+    }
+  }, [adminUsersPagination]);
+
   // Create mock arrays with correct length for DashboardStats component
   // The component uses .length, so we create arrays with the count length
   const contacts = Array(contactsCount).fill(null) as Contact[];
   const companies = Array(companiesCount).fill(null) as Company[];
-  const users = Array(usersCount).fill(null) as any[];
+  const users = Array(adminUsersCount).fill(null) as any[];
 
   return (
     <div className="space-y-6">
@@ -94,6 +135,8 @@ export default function DashboardPage() {
         companies={companies}
         users={users}
         role={role === "superadmin" ? "superadmin" : "admin"}
+        adminUsersCount={adminUsersCount}
+        lastImportDate={lastImportDate}
       />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {role === "superadmin" && (
@@ -101,6 +144,8 @@ export default function DashboardPage() {
             onImportComplete={(newContacts, newCompanies) => {
               // Handle import complete - can be connected to state management later
               console.log("Import complete", { newContacts, newCompanies });
+              // Update last import date to current date
+              setLastImportDate(new Date().toISOString());
             }}
           />
         )}
