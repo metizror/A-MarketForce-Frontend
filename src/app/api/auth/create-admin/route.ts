@@ -118,16 +118,17 @@ export async function GET(request: NextRequest) {
       .find({ ...query, role: "admin" })
       .select("-password")
       .skip(skip)
-      .limit(limit).sort({ createdAt: -1 });
+      .limit(limit)
+      .sort({ createdAt: -1 });
     return NextResponse.json(
       {
         admins,
-        totalAdmins,
+        totalAdmins: admins.length,
         totalPages,
         pagination: {
           currentPage: page,
           totalPages,
-          totalAdmins,
+          totalAdmins: admins.length,
           limit,
           hasNextPage: page < totalPages,
           hasPreviousPage: page > 1,
