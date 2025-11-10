@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     // Bulk insert all contacts
     const insertedContacts = await Contacts.insertMany(contactsToInsert, {
-      ordered: false,
+      ordered: true,
     });
 
     return NextResponse.json(
@@ -85,24 +85,10 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error("Import error:", error);
-
-    // Handle bulk write errors
-    if (error.code === 11000) {
-      return NextResponse.json(
-        {
-          message:
-            "Some contacts could not be imported due to duplicate emails",
-          error: error.message,
-        },
-        { status: 400 }
-      );
-    }
-
     return NextResponse.json(
       {
         message: "Error importing contacts",
-        error: error.message,
+        error: error,
       },
       { status: 500 }
     );
