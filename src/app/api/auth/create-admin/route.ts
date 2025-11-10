@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(totalAdmins / limit);
     await connectToDatabase();
     const admins = await adminAuthModel
-      .find(query)
+      .find({ ...query, role: "admin" })
       .select("-password")
       .skip(skip)
       .limit(limit);
