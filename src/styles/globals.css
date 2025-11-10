@@ -203,3 +203,43 @@ html {
 .animate-caret-blink {
   animation: caret-blink 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Custom scrollbar for preview table */
+.preview-table-scroll::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.preview-table-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+.preview-table-scroll::-webkit-scrollbar-thumb {
+  background: #EF8037;
+  border-radius: 6px;
+}
+
+.preview-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #d96a2a;
+}
+
+/* Custom scrollbar for mapping section */
+.mapping-scroll-container::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.mapping-scroll-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+.mapping-scroll-container::-webkit-scrollbar-thumb {
+  background: #EF8037;
+  border-radius: 6px;
+}
+
+.mapping-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #d96a2a;
+}

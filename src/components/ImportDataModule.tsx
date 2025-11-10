@@ -11,6 +11,8 @@ import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, ArrowRight, Search, 
 import { type Contact, type Company } from '@/types/dashboard.types';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { importContacts, type ContactImportData } from '@/store/slices/contactsImport.slice';
 
 interface ImportDataModuleProps {
   onImportComplete: (contacts: Contact[], companies: Company[]) => void;
@@ -27,6 +29,10 @@ interface ImportedRow {
 }
 
 export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+  const { isImporting, importResult, error: importError } = useAppSelector((state) => state.contactsImport);
+  
   const [currentStep, setCurrentStep] = useState('upload' as ImportStep);
   const [file, setFile] = useState(null as File | null);
   const [csvData, setCsvData] = useState([] as string[][]);
@@ -40,6 +46,8 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
   const [sortDirection, setSortDirection] = useState('asc' as 'asc' | 'desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [previewPage, setPreviewPage] = useState(1);
+  const [previewRowsPerPage, setPreviewRowsPerPage] = useState(25);
 
   // Excel fields from specification (24 fields)
   const requiredFields = [
@@ -50,11 +58,11 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
     // Contact Fields (9)
     'firstName', 'lastName', 'jobTitle', 'jobLevel', 'jobRole', 
     'email', 'phone', 'directPhone', 'contactLinkedIn',
-    // Company Fields (12)
-    'companyName', 'address', 'address2', 'city', 'state', 'zipCode', 'country',
-    'website', 'revenue', 'employeeSize', 'industry', 'companyLinkedIn', 'technology',
+    // Company Fields (13)
+    'companyName', 'address', 'address1', 'address2', 'city', 'state', 'zipCode', 'country',
+    'website', 'revenue', 'employeeSize', 'industry', 'subIndustry', 'companyLinkedIn', 'technology',
     // System Fields (3)
-    'amfNotes', 'lastUpdateDate'
+    'amfNotes', 'lastUpdateDate', 'LinkedInUrl'
   ];
 
   const handleFileUpload = (event: { target: { files?: FileList | null } }) => {
@@ -131,92 +139,94 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
     setCurrentStep('importing');
     setImportProgress(0);
 
-    // Simulate import progress
-    for (let i = 0; i <= 100; i += 10) {
-      setImportProgress(i);
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
+    try {
+      // Get createdBy value from user
+      const createdBy = user?.name || (user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'System Admin');
 
-    // Mock data creation
-    const mockContacts: Contact[] = [];
-    const mockCompanies: Company[] = [];
+      // Transform imported rows to API format
+      const importData: ContactImportData[] = importedRows.map((row: ImportedRow) => {
+        const mappedData: Record<string, string> = {};
+        
+        // Map Excel columns to fields
+        Object.entries(columnMapping).forEach(([excelColumn, field]) => {
+          if (field === 'skip') return;
+          mappedData[field as string] = row[excelColumn] || '';
+        });
 
-    // Create mock contacts and companies based on imported data
-    for (let i = 0; i < importedRows.length; i++) {
-      const row = importedRows[i];
-      const mappedData: any = {};
-      
-      Object.entries(columnMapping).forEach(([excelColumn, field]) => {
-        if (field === 'skip') return;
-        mappedData[field as string] = row[excelColumn] || '';
+        // Transform to API format
+        return {
+          firstName: mappedData.firstName || '',
+          lastName: mappedData.lastName || '',
+          jobTitle: mappedData.jobTitle || '',
+          jobLevel: mappedData.jobLevel || '',
+          jobRole: mappedData.jobRole || '',
+          email: mappedData.email || '',
+          phone: mappedData.phone || '',
+          directPhone: mappedData.directPhone || '',
+          address1: mappedData.address1 || mappedData.address || '',
+          address2: mappedData.address2 || '',
+          city: mappedData.city || '',
+          state: mappedData.state || '',
+          zipCode: mappedData.zipCode || '',
+          country: mappedData.country || '',
+          website: mappedData.website || '',
+          industry: mappedData.industry || '',
+          subIndustry: mappedData.subIndustry || '',
+          LinkedInUrl: mappedData.LinkedInUrl || mappedData.contactLinkedIn || mappedData.companyLinkedIn || '',
+          companyName: mappedData.companyName || '',
+          employeeSize: mappedData.employeeSize || '',
+          revenue: mappedData.revenue || '',
+          amfNotes: mappedData.amfNotes || '',
+          createdBy: createdBy || 'System Admin'
+        };
       });
 
-      const contact: Contact = {
-        id: `imported-${i}`,
-        firstName: mappedData.firstName || `First${i}`,
-        lastName: mappedData.lastName || `Last${i}`,
-        jobTitle: mappedData.jobTitle || 'Software Engineer',
-        jobRole: mappedData.jobRole || 'Engineering',
-        jobLevel: mappedData.jobLevel || 'Senior',
-        email: mappedData.email || '',
-        phone: mappedData.phone || '',
-        directPhone: mappedData.directPhone || '',
-        address1: mappedData.address || '',
-        address2: mappedData.address2 || '',
-        city: mappedData.city || '',
-        state: mappedData.state || '',
-        zipCode: mappedData.zipCode || '',
-        country: mappedData.country || 'United States',
-        website: mappedData.website || '',
-        industry: mappedData.industry || 'Technology',
-        contactLinkedInUrl: mappedData.contactLinkedIn || '',
-        amfNotes: mappedData.amfNotes || '',
-        lastUpdateDate: mappedData.lastUpdateDate || new Date().toISOString().split('T')[0],
-        companyName: mappedData.companyName || `Company ${i}`,
-        employeeSize: mappedData.employeeSize || '100-500',
-        revenue: mappedData.revenue || '$10M-$50M',
-        addedBy: 'Super Admin',
-        addedByRole: 'superadmin',
-        addedDate: new Date().toISOString().split('T')[0],
-        updatedDate: new Date().toISOString().split('T')[0]
-      };
+      // Simulate progress while API call is in progress
+      const progressInterval = setInterval(() => {
+        setImportProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 10;
+        });
+      }, 200);
 
-      mockContacts.push(contact);
+      // Call the API
+      const result = await dispatch(importContacts({ data: importData })).unwrap();
+      
+      clearInterval(progressInterval);
+      setImportProgress(100);
 
-      const company: Company = {
-        id: `imported-company-${i}`,
-        companyName: mappedData.companyName || `Company ${i}`,
-        employeeSize: mappedData.employeeSize || '100-500',
-        revenue: mappedData.revenue || '$10M-$50M',
-        industry: mappedData.industry || 'Technology',
-        address1: mappedData.address || '',
-        address2: mappedData.address2 || '',
-        city: mappedData.city || '',
-        state: mappedData.state || 'California',
-        zipCode: mappedData.zipCode || '',
-        country: mappedData.country || 'United States',
-        website: mappedData.website || '',
-        technology: mappedData.technology || 'React, Node.js',
-        companyLinkedInUrl: mappedData.companyLinkedIn || '',
-        amfNotes: mappedData.amfNotes || '',
-        lastUpdateDate: mappedData.lastUpdateDate || new Date().toISOString().split('T')[0],
-        addedBy: 'Super Admin',
-        addedByRole: 'superadmin',
-        addedDate: new Date().toISOString().split('T')[0],
-        updatedDate: new Date().toISOString().split('T')[0]
-      };
+      // Update results
+      const successCount = result.success || importData.length;
+      const failedCount = result.failed || 0;
+      
+      setImportResults({ 
+        contacts: successCount, 
+        companies: 0 // API only imports contacts
+      });
 
-      mockCompanies.push(company);
+      // Show success/error messages
+      if (result.success && result.success > 0) {
+        toast.success(`Successfully imported ${result.success} contact(s)`);
+      }
+      if (result.failed && result.failed > 0) {
+        toast.warning(`${result.failed} contact(s) failed to import`);
+      }
+      if (result.errors && result.errors.length > 0) {
+        result.errors.forEach((error: { row: number; email: string; error: string }) => {
+          toast.error(`Row ${error.row} (${error.email}): ${error.error}`);
+        });
+      }
+
+      setCurrentStep('complete');
+    } catch (error: any) {
+      setImportProgress(0);
+      const errorMessage = error.message || importError || 'Failed to import contacts';
+      toast.error(errorMessage);
+      setCurrentStep('preview'); // Go back to preview on error
     }
-
-    setImportResults({ 
-      contacts: mockContacts.length, 
-      companies: mockCompanies.length 
-    });
-    
-    setCurrentStep('table');
-    onImportComplete(mockContacts, mockCompanies);
-    toast.success('Data imported successfully!');
   };
 
   const resetImport = () => {
@@ -311,6 +321,17 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
     return Object.values(columnMapping).filter(field => field && field !== 'skip');
   }, [columnMapping]);
 
+  // Filter rows based on search query for preview (must be at top level)
+  const filteredPreviewRows = useMemo(() => {
+    if (!searchQuery) return importedRows;
+    const query = searchQuery.toLowerCase();
+    return importedRows.filter((row: ImportedRow) => 
+      Object.values(row).some(val => 
+        String(val).toLowerCase().includes(query)
+      )
+    );
+  }, [importedRows, searchQuery]);
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 'upload':
@@ -339,16 +360,26 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
 
       case 'mapping':
         return (
-          <div>
+          <div className="flex flex-col" style={{ minHeight: '500px' }}>
             <h3 className="text-lg font-medium mb-4">Map Columns</h3>
             <p className="text-gray-600 mb-6">Map your Excel columns to the appropriate fields</p>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
+            <div 
+              className="space-y-4 mb-6 border rounded-lg p-4 bg-gray-50 mapping-scroll-container"
+              style={{ 
+                maxHeight: 'calc(100vh - 450px)',
+                minHeight: '300px',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#EF8037 #f1f1f1'
+              }}
+            >
               {excelHeaders.map((column: string, index: number) => (
-                <div key={index} className="flex items-center space-x-4">
-                  <div className="w-32">
-                    <Badge variant="outline">{column}</Badge>
+                <div key={index} className="flex items-center space-x-4 bg-white p-3 rounded-md border border-gray-200 hover:border-orange-300 transition-colors">
+                  <div className="w-32 flex-shrink-0">
+                    <Badge variant="outline" className="font-medium">{column}</Badge>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-gray-400" />
+                  <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <Select
                     value={columnMapping[column] || 'skip'}
                     onValueChange={(value: string) => 
@@ -370,57 +401,166 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
                 </div>
               ))}
             </div>
-            <div className="flex justify-end space-x-2 mt-6">
-              <Button variant="outline" onClick={() => setCurrentStep('upload')}>
+            <div className="sticky bottom-0 left-0 right-0 flex justify-end gap-3 pt-6 pb-4 mt-auto border-t-2 border-gray-300 bg-white shadow-lg z-50 flex-shrink-0">
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentStep('upload')}
+                className="min-w-[110px] h-11 border-gray-300 hover:bg-gray-50 font-medium"
+              >
                 Back
               </Button>
-              <Button onClick={handleMapping} style={{ backgroundColor: '#EF8037' }}>
+              <Button 
+                onClick={handleMapping} 
+                style={{ backgroundColor: '#EF8037' }}
+                className="min-w-[150px] h-11 font-semibold shadow-md hover:opacity-90"
+              >
                 Next: Preview
               </Button>
             </div>
           </div>
         );
 
-      case 'preview':
+      case 'preview': {
+        // Show all rows - no pagination, just scrolling
+
         return (
-          <div>
-            <h3 className="text-lg font-medium mb-4">Preview Data</h3>
-            <p className="text-gray-600 mb-6">Review the first few rows of your data</p>
-            <div className="overflow-x-auto mb-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {Object.values(columnMapping).filter(field => field && field !== 'skip').map(field => (
-                      <TableHead key={field}>{field}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {importedRows.slice(0, 3).map((row: ImportedRow, index: number) => (
-                    <TableRow key={index}>
-                      {Object.entries(columnMapping).map(([excelColumn, field]) => {
-                        if (!field || field === 'skip') return null;
-                        return (
-                          <TableCell key={field}>
-                            {row[excelColumn] || '-'}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          <div className="flex flex-col space-y-4 pb-20">
+            <div>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Preview Data</h3>
+              <p className="text-sm text-gray-600">
+                Review all rows of your data • <span className="font-semibold text-orange-600">{filteredPreviewRows.length}</span> {filteredPreviewRows.length === 1 ? 'row' : 'rows'} total
+              </p>
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setCurrentStep('mapping')}>
+            
+            {/* Search Bar */}
+            <div className="flex-shrink-0">
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="Search data..."
+                  value={searchQuery}
+                  onChange={(e: { target: { value: string } }) => {
+                    setSearchQuery(e.target.value);
+                  }}
+                  className="pl-10 h-10 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                />
+              </div>
+            </div>
+
+            {/* Table Container with Scroll - Shows All Data */}
+            <div 
+              className="mb-4 border rounded-lg bg-white shadow-sm preview-table-scroll"
+              style={{ 
+                height: '500px',
+                overflow: 'auto',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#EF8037 #f1f1f1'
+              }}
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-white z-10 shadow-sm border-b-2 border-gray-200">
+                    <tr>
+                      {displayColumns.map(field => (
+                        <th 
+                          key={field} 
+                          className="bg-white font-semibold text-left px-4 py-3 text-gray-700 whitespace-nowrap"
+                        >
+                          {field}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredPreviewRows.length === 0 ? (
+                      <tr>
+                        <td 
+                          colSpan={displayColumns.length} 
+                          className="text-center py-12 text-gray-500"
+                        >
+                          {searchQuery ? 'No results found' : 'No data to display'}
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredPreviewRows.map((row: ImportedRow, index: number) => (
+                        <tr 
+                          key={index}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          {Object.entries(columnMapping).map(([excelColumn, field]) => {
+                            if (!field || field === 'skip') return null;
+                            return (
+                              <td 
+                                key={field}
+                                className="px-4 py-3 text-gray-700 whitespace-nowrap"
+                              >
+                                {row[excelColumn] || '-'}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Data Count Info */}
+            {filteredPreviewRows.length > 0 && (
+              <div className="flex items-center justify-between flex-shrink-0 bg-gray-50 px-4 py-2 rounded-md border border-gray-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700">
+                    <span className="font-semibold text-gray-900">{filteredPreviewRows.length}</span> {filteredPreviewRows.length === 1 ? 'row' : 'rows'}
+                    {searchQuery && (
+                      <span className="text-gray-500 ml-1">
+                        (filtered from {importedRows.length} total)
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                  <span className="text-xs text-gray-500 font-medium">
+                    Scroll to view all data ↓
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons - Sticky at Bottom - Always Visible */}
+            <div className="sticky bottom-0 left-0 right-0 flex justify-end gap-3 mt-6 pt-4 pb-4 border-t-2 border-gray-300 bg-white shadow-xl z-50 flex-shrink-0">
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentStep('mapping')}
+                className="min-w-[110px] h-10 border-gray-300 hover:bg-gray-50"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
                 Back
               </Button>
-              <Button onClick={handleImport} style={{ backgroundColor: '#EF8037' }}>
-                Import Data
+              <Button 
+                onClick={handleImport} 
+                style={{ backgroundColor: '#EF8037' }}
+                disabled={isImporting || filteredPreviewRows.length === 0}
+                className="min-w-[160px] h-10 font-semibold shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isImporting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                    Importing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Import Data
+                  </>
+                )}
               </Button>
             </div>
           </div>
         );
+      }
 
       case 'importing':
         return (
@@ -432,6 +572,9 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
             <p className="text-gray-600 mb-6">Please wait while we process your file</p>
             <Progress value={importProgress} className="w-full max-w-md mx-auto" />
             <p className="text-sm text-gray-500 mt-2">{importProgress}% complete</p>
+            {importError && (
+              <p className="text-sm text-red-500 mt-4">{importError}</p>
+            )}
           </div>
         );
 
