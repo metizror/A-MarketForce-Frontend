@@ -36,7 +36,7 @@ export function ApprovalRequests({
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageLimit, setPageLimit] = useState(10);
+  const [pageLimit, setPageLimit] = useState(25);
 
   // Fetch approve requests on component mount and when page/limit changes
   useEffect(() => {
@@ -117,11 +117,19 @@ export function ApprovalRequests({
     }
   };
 
-  const handlePageChange = (page: number) => {
+  // Use pagination from API or default values for display
+  const displayPage = pagination?.currentPage || currentPage;
+  const rowsPerPage = pagination?.limit || pageLimit;
+  const totalPages = pagination?.totalPages || 1;
+  const totalCount = pagination?.totalCount || 0;
+  const startIndex = pagination ? (pagination.currentPage - 1) * pagination.limit : 0;
+
+  const handlePageNavigation = (page: number) => {
     setCurrentPage(page);
   };
 
-  const handleLimitChange = (limit: number) => {
+  const handleRowsPerPageChange = (value: string) => {
+    const limit = parseInt(value, 10);
     setPageLimit(limit);
     setCurrentPage(1); // Reset to first page when changing limit
   };
@@ -298,49 +306,65 @@ export function ApprovalRequests({
             </div>
           )}
 
-          {/* Pagination Controls */}
+          {/* Pagination Controls - Fixed at bottom */}
           {pagination && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Rows per page:</span>
-                <Select
-                  value={pageLimit.toString()}
-                  onValueChange={(value) => handleLimitChange(parseInt(value, 10))}
-                >
+              <div className="flex items-center space-x-2">
+                <Label>Rows per page:</Label>
+                <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
                   <SelectTrigger className="w-20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
                     <SelectItem value="25">25</SelectItem>
                     <SelectItem value="50">50</SelectItem>
                     <SelectItem value="100">100</SelectItem>
                   </SelectContent>
                 </Select>
+                <span className="text-sm text-gray-600">
+                  Showing {startIndex + 1} to {Math.min(startIndex + rowsPerPage, totalCount)} of {totalCount} results
+                </span>
               </div>
-              {pagination.totalPages > 1 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
-                    Page {pagination.currentPage} of {pagination.totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(pagination.currentPage - 1)}
-                    disabled={!pagination.hasPreviousPage || isLoading}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(pagination.currentPage + 1)}
-                    disabled={!pagination.hasNextPage || isLoading}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
+              
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageNavigation(Math.max(displayPage - 1, 1))}
+                  disabled={!pagination?.hasPreviousPage || displayPage === 1 || isLoading}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Previous
+                </Button>
+                
+                <div className="flex space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={displayPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageNavigation(pageNum)}
+                        style={displayPage === pageNum ? { backgroundColor: currentUser.role === 'superadmin' ? '#EF8037' : '#EB432F' } : {}}
+                        disabled={isLoading}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
                 </div>
-              )}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageNavigation(Math.min(displayPage + 1, totalPages))}
+                  disabled={!pagination?.hasNextPage || displayPage === totalPages || isLoading}
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Plus, Edit, Trash2, Search, Shield, Users } from 'lucide-react';
-import { User } from '../App';
+import { User } from '@/types/dashboard.types';
 import { toast } from 'sonner';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { getAdminUsers, createAdminUser } from '@/store/slices/adminUsers.slice';
 
 interface UsersTableProps {
   users: User[];
@@ -17,39 +19,76 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ users, setUsers }: UsersTableProps) {
+  const dispatch = useAppDispatch();
+  const { users: adminUsers, isLoading, isCreating, error } = useAppSelector((state) => state.adminUsers);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState(null as User | null);
   const [newUser, setNewUser] = useState({
     email: '',
     name: '',
+    password: '',
     role: 'admin' as 'superadmin' | 'admin'
   });
 
-  const filteredUsers = users.filter(user =>
+  // Fetch users on component mount
+  useEffect(() => {
+    dispatch(getAdminUsers({ page: 1, limit: 25 }));
+  }, [dispatch]);
+
+  // Update local users when Redux state changes
+  useEffect(() => {
+    if (adminUsers.length > 0) {
+      setUsers(adminUsers);
+    }
+  }, [adminUsers, setUsers]);
+
+  // Show error toast if there's an error
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  const filteredUsers = (adminUsers.length > 0 ? adminUsers : users).filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddUser = () => {
-    if (!newUser.email || !newUser.name) {
+  const handleAddUser = async () => {
+    if (!newUser.email || !newUser.name || !newUser.password) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    const user: User = {
-      id: Date.now().toString(),
-      ...newUser
-    };
+    if (newUser.password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
+      return;
+    }
 
-    setUsers([...users, user]);
-    setNewUser({
-      email: '',
-      name: '',
-      role: 'admin'
-    });
-    setIsAddDialogOpen(false);
-    toast.success('User added successfully');
+    try {
+      await dispatch(createAdminUser({
+        name: newUser.name,
+        email: newUser.email,
+        password: newUser.password,
+        role: newUser.role
+      })).unwrap();
+
+      toast.success('User added successfully');
+      setNewUser({
+        email: '',
+        name: '',
+        password: '',
+        role: 'admin'
+      });
+      setIsAddDialogOpen(false);
+      
+      // Refresh the users list
+      dispatch(getAdminUsers({ page: 1, limit: 25 }));
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add user');
+    }
   };
 
   const handleEditUser = (user: User) => {
@@ -109,7 +148,7 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                     id="email"
                     type="email"
                     value={newUser.email}
-                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                    onChange={(e: any) => setNewUser({...newUser, email: e.target.value})}
                     placeholder="user@company.com"
                   />
                 </div>
@@ -118,8 +157,18 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                   <Input
                     id="name"
                     value={newUser.name}
-                    onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                    onChange={(e: any) => setNewUser({...newUser, name: e.target.value})}
                     placeholder="John Doe"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={newUser.password}
+                    onChange={(e: any) => setNewUser({...newUser, password: e.target.value})}
+                    placeholder="Enter password (min 8 characters)"
                   />
                 </div>
                 <div className="space-y-2">
@@ -136,11 +185,11 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                 </div>
               </div>
               <div className="flex justify-end space-x-2 mt-6">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={isCreating}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddUser} style={{ backgroundColor: '#EF8037' }}>
-                  Add User
+                <Button onClick={handleAddUser} style={{ backgroundColor: '#EF8037' }} disabled={isCreating}>
+                  {isCreating ? 'Adding...' : 'Add User'}
                 </Button>
               </div>
             </DialogContent>
@@ -152,26 +201,39 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
           <Input
             placeholder="Search users..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e: any) => setSearchQuery(e.target.value)}
             className="pl-9"
           />
         </div>
       </CardHeader>
       
       <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
+        {isLoading ? (
+          <div className="text-center py-12 text-gray-500">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p>Loading users...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                      No users found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
@@ -213,7 +275,7 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                                 id="edit-email"
                                 type="email"
                                 value={newUser.email}
-                                onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                                onChange={(e: any) => setNewUser({...newUser, email: e.target.value})}
                               />
                             </div>
                             <div className="space-y-2">
@@ -221,7 +283,7 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                               <Input
                                 id="edit-name"
                                 value={newUser.name}
-                                onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                                onChange={(e: any) => setNewUser({...newUser, name: e.target.value})}
                               />
                             </div>
                             <div className="space-y-2">
@@ -257,11 +319,13 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                  </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
