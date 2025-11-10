@@ -82,3 +82,23 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function GET(request: NextRequest) {
+  const { valid, admin, decoded } = await verifyAdminToken(request);
+  if (!valid || admin?.role !== "superadmin") {
+    return NextResponse.json(
+      { message: "Unauthorized: Invalid or missing JWT token" },
+      { status: 401 }
+    );
+  }
+  try {
+    await connectToDatabase();
+    const admins = await adminAuthModel.find().select("-password");
+    return NextResponse.json({ admins });
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
