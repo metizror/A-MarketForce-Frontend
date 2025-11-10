@@ -5,6 +5,7 @@ import { useFormik } from "formik";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Loader2, ArrowLeft, CheckCircle } from "lucide-react";
@@ -117,18 +118,15 @@ export default function ResetPasswordStep() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="newPassword">New Password *</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                id="newPassword"
-                name="newPassword"
-                type="password"
-                placeholder="Enter new password"
-                value={values.newPassword}
-                onChange={handleChange}
-                className={`h-11 pl-10 ${errors.newPassword && touched.newPassword ? "border-red-500" : ""}`}
-              />
-            </div>
+            <PasswordInput
+              id="newPassword"
+              name="newPassword"
+              placeholder="Enter new password"
+              value={values.newPassword}
+              onChange={handleChange}
+              leftIcon={<Lock className="w-5 h-5 text-gray-400" />}
+              className={`h-11 ${errors.newPassword && touched.newPassword ? "border-red-500" : ""}`}
+            />
             {errors.newPassword && touched.newPassword && (
               <p className="text-xs text-red-600 font-medium">{errors.newPassword}</p>
             )}
@@ -136,18 +134,15 @@ export default function ResetPasswordStep() {
 
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm New Password *</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="Re-enter new password"
-                value={values.confirmPassword}
-                onChange={handleChange}
-                className={`h-11 pl-10 ${errors.confirmPassword && touched.confirmPassword ? "border-red-500" : ""}`}
-              />
-            </div>
+            <PasswordInput
+              id="confirmPassword"
+              name="confirmPassword"
+              placeholder="Re-enter new password"
+              value={values.confirmPassword}
+              onChange={handleChange}
+              leftIcon={<Lock className="w-5 h-5 text-gray-400" />}
+              className={`h-11 ${errors.confirmPassword && touched.confirmPassword ? "border-red-500" : ""}`}
+            />
             {errors.confirmPassword && touched.confirmPassword && (
               <p className="text-xs text-red-600 font-medium">{errors.confirmPassword}</p>
             )}

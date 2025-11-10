@@ -6,6 +6,7 @@ export interface AdminUser {
   name: string;
   email: string;
   role: "admin" | "superadmin";
+  isActive?: boolean;
 }
 
 export interface GetAdminUsersParams {
@@ -19,6 +20,7 @@ export interface AdminUsersResponse {
     name: string;
     email: string;
     role: "admin" | "superadmin";
+    isActive?: boolean;
   }>;
   totalAdmins: number;
   totalPages: number;
@@ -45,6 +47,7 @@ export interface UpdateAdminUserPayload {
   name?: string;
   email?: string;
   role?: "admin" | "superadmin";
+  isActive?: boolean;
 }
 
 export interface UpdateAdminUserResponse {
@@ -189,6 +192,7 @@ const adminUsersSlice = createSlice({
           name: admin.name,
           email: admin.email,
           role: admin.role,
+          isActive: admin.isActive !== undefined ? admin.isActive : true,
         }));
         // Calculate pagination from API response
         const page = action.meta.arg.page || 1;
@@ -236,11 +240,13 @@ const adminUsersSlice = createSlice({
         // Update the user in the state without refreshing all users
         const updatedUserId = action.meta.arg.id;
         const updatedName = action.meta.arg.name;
+        const updatedStatus = action.meta.arg.isActive;
         const userIndex = state.users.findIndex(user => user.id === updatedUserId);
-        if (userIndex !== -1 && updatedName) {
+        if (userIndex !== -1) {
           state.users[userIndex] = {
             ...state.users[userIndex],
-            name: updatedName,
+            ...(updatedName && { name: updatedName }),
+            ...(updatedStatus !== undefined && { isActive: updatedStatus }),
           };
         }
         state.error = null;

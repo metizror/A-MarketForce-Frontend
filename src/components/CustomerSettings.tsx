@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Lock, Bell, CreditCard, Shield, Globe, Trash2, Save, Upload, Camera, CheckCircle, AlertCircle, Download } from 'lucide-react';
+import { PasswordInput } from './ui/password-input';
 
 export default function CustomerSettings() {
   const [activeSection, setActiveSection] = useState('profile');
@@ -186,22 +187,19 @@ export default function CustomerSettings() {
                     <div className="space-y-5">
                       <div>
                         <label className="block text-sm text-gray-700 mb-2">Current Password</label>
-                        <input
-                          type="password"
+                        <PasswordInput
                           className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent"
                         />
                       </div>
                       <div>
                         <label className="block text-sm text-gray-700 mb-2">New Password</label>
-                        <input
-                          type="password"
+                        <PasswordInput
                           className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent"
                         />
                       </div>
                       <div>
                         <label className="block text-sm text-gray-700 mb-2">Confirm New Password</label>
-                        <input
-                          type="password"
+                        <PasswordInput
                           className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent"
                         />
                       </div>

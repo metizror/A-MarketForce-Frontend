@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useFormik } from 'formik';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { PasswordInput } from './ui/password-input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { User, Mail, Lock, Building, CheckCircle, Loader2 } from 'lucide-react';
@@ -180,18 +181,15 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="password">Password *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="Min. 8 characters"
-                      value={values.password}
-                      onChange={handleChange}
-                      className={`h-11 pl-10 ${errors.password && touched.password ? 'border-red-500' : ''}`}
-                    />
-                  </div>
+                  <PasswordInput
+                    id="password"
+                    name="password"
+                    placeholder="Min. 8 characters"
+                    value={values.password}
+                    onChange={handleChange}
+                    leftIcon={<Lock className="w-5 h-5 text-gray-400" />}
+                    className={`h-11 ${errors.password && touched.password ? 'border-red-500' : ''}`}
+                  />
                   {errors.password && touched.password && (
                     <p className="text-xs text-red-600 font-medium">{errors.password}</p>
                   )}
@@ -199,18 +197,15 @@ export function CustomerRegistration({ onRegistrationComplete, onBackToLogin, on
 
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      placeholder="Re-enter password"
-                      value={values.confirmPassword}
-                      onChange={handleChange}
-                      className={`h-11 pl-10 ${errors.confirmPassword && touched.confirmPassword ? 'border-red-500' : ''}`}
-                    />
-                  </div>
+                  <PasswordInput
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    placeholder="Re-enter password"
+                    value={values.confirmPassword}
+                    onChange={handleChange}
+                    leftIcon={<Lock className="w-5 h-5 text-gray-400" />}
+                    className={`h-11 ${errors.confirmPassword && touched.confirmPassword ? 'border-red-500' : ''}`}
+                  />
                   {errors.confirmPassword && touched.confirmPassword && (
                     <p className="text-xs text-red-600 font-medium">{errors.confirmPassword}</p>
                   )}

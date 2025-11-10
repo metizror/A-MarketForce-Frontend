@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { PasswordInput } from './ui/password-input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Separator } from './ui/separator';
@@ -173,29 +174,26 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="current-password">Current Password</Label>
-              <Input
+              <PasswordInput
                 id="current-password"
-                type="password"
                 value={profile.currentPassword}
-                onChange={(e) => setProfile({...profile, currentPassword: e.target.value})}
+                onChange={(e: any) => setProfile({...profile, currentPassword: e.target.value})}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-password">New Password</Label>
-              <Input
+              <PasswordInput
                 id="new-password"
-                type="password"
                 value={profile.newPassword}
-                onChange={(e) => setProfile({...profile, newPassword: e.target.value})}
+                onChange={(e: any) => setProfile({...profile, newPassword: e.target.value})}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input
+              <PasswordInput
                 id="confirm-password"
-                type="password"
                 value={profile.confirmPassword}
-                onChange={(e) => setProfile({...profile, confirmPassword: e.target.value})}
+                onChange={(e: any) => setProfile({...profile, confirmPassword: e.target.value})}
               />
             </div>
           </div>
@@ -387,8 +385,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
             <div className="space-y-2 p-4 rounded-xl bg-gradient-to-r from-pink-50 to-white border border-pink-200/50">
               <Label>API Key</Label>
               <div className="flex space-x-2">
-                <Input
-                  type="password"
+                <PasswordInput
                   value="sk-1234567890abcdef"
                   readOnly
                   className="font-mono bg-white"

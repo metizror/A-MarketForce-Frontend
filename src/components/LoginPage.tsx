@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useFormik } from 'formik';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { PasswordInput } from './ui/password-input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -232,10 +233,9 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="superadmin-password">Password</Label>
-                    <Input
+                    <PasswordInput
                       id="superadmin-password"
                       name="password"
-                      type="password"
                       placeholder="Enter your password"
                       value={superadminValues.password}
                       onChange={handleSuperadminChange}
@@ -290,10 +290,9 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="admin-password">Password</Label>
-                    <Input
+                    <PasswordInput
                       id="admin-password"
                       name="password"
-                      type="password"
                       placeholder="Enter your password"
                       value={adminValues.password}
                       onChange={handleAdminChange}
@@ -348,10 +347,9 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="customer-password">Password</Label>
-                    <Input
+                    <PasswordInput
                       id="customer-password"
                       name="password"
-                      type="password"
                       placeholder="Enter your password"
                       value={customerValues.password}
                       onChange={handleCustomerChange}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { PasswordInput } from './ui/password-input';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
@@ -32,7 +33,8 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
     email: '',
     name: '',
     password: '',
-    role: 'admin' as 'superadmin' | 'admin'
+    role: 'admin' as 'superadmin' | 'admin',
+    isActive: true as boolean
   });
 
   // Fetch users on component mount
@@ -83,7 +85,8 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
         email: '',
         name: '',
         password: '',
-        role: 'admin'
+        role: 'admin',
+        isActive: true
       });
       setIsAddDialogOpen(false);
       
@@ -99,7 +102,8 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
     setNewUser({
       email: user.email,
       name: user.name,
-      role: 'admin' // Always set to admin, cannot be changed
+      role: 'admin', // Always set to admin, cannot be changed
+      isActive: (user as any).isActive !== undefined ? (user as any).isActive : true
     });
   };
 
@@ -115,6 +119,7 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
       await dispatch(updateAdminUser({
         id: editingUser.id,
         name: newUser.name,
+        isActive: newUser.isActive,
         // Email and role are not editable, so we don't send them
       })).unwrap();
 
@@ -124,7 +129,8 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
         email: '',
         name: '',
         password: '',
-        role: 'admin'
+        role: 'admin',
+        isActive: true
       });
       // The slice already updates the user in state, no need to refresh
     } catch (error: any) {
@@ -191,9 +197,8 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password *</Label>
-                  <Input
+                  <PasswordInput
                     id="password"
-                    type="password"
                     value={newUser.password}
                     onChange={(e: any) => setNewUser({...newUser, password: e.target.value})}
                     placeholder="Enter password (min 8 characters)"
@@ -278,8 +283,14 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-green-600 border-green-200">
-                      Active
+                    <Badge 
+                      variant="outline" 
+                      className={(user as any).isActive === false 
+                        ? "text-red-600 border-red-200" 
+                        : "text-green-600 border-green-200"
+                      }
+                    >
+                      {(user as any).isActive === false ? 'Inactive' : 'Active'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -298,7 +309,8 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                             email: '',
                             name: '',
                             password: '',
-                            role: 'admin'
+                            role: 'admin',
+                            isActive: true
                           });
                         }
                       }}>
@@ -334,6 +346,21 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="admin">Admin</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Status</Label>
+                              <Select 
+                                value={newUser.isActive ? 'true' : 'false'} 
+                                onValueChange={(value: string) => setNewUser({...newUser, isActive: value === 'true'})}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="true">Active</SelectItem>
+                                  <SelectItem value="false">Inactive</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
