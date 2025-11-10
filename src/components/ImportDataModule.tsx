@@ -51,19 +51,56 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
 
   // Excel fields from specification (24 fields)
   const requiredFields = [
-    'firstName', 'lastName', 'email', 'companyName'
+    'firstName', 'lastName', 'jobTitle', 'email', 'companyName', 'employeeSize', 'revenue'
   ];
 
   const availableFields = [
     // Contact Fields (9)
     'firstName', 'lastName', 'jobTitle', 'jobLevel', 'jobRole', 
     'email', 'phone', 'directPhone', 'contactLinkedIn',
-    // Company Fields (13)
+    // Company Fields (14)
     'companyName', 'address', 'address1', 'address2', 'city', 'state', 'zipCode', 'country',
     'website', 'revenue', 'employeeSize', 'industry', 'subIndustry', 'companyLinkedIn', 'technology',
-    // System Fields (3)
-    'amfNotes', 'lastUpdateDate', 'LinkedInUrl'
+    // System Fields (2)
+    'lastUpdateDate', 'LinkedInUrl'
   ];
+
+  // Helper function to normalize column names for comparison
+  const normalizeColumnName = (name: string): string => {
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  };
+
+  // Check if an Excel column name matches a mandatory field
+  const isMandatoryColumn = (columnName: string): boolean => {
+    const normalized = normalizeColumnName(columnName);
+    
+    // Map of mandatory fields to their common Excel column name variations
+    // These are exact matches only to avoid false positives
+    const mandatoryFieldMappings: Record<string, string[]> = {
+      'firstname': ['first', 'fname'],
+      'lastname': ['last', 'lname', 'surname'],
+      'jobtitle': ['title', 'position'],
+      'email': ['e-mail', 'mail', 'emailaddress'],
+      'companyname': ['company', 'org', 'organization'],
+      'employeesize': ['employees', 'headcount'],
+      'revenue': ['income', 'sales']
+    };
+
+    return requiredFields.some(field => {
+      const normalizedField = normalizeColumnName(field);
+      
+      // Direct exact match (e.g., "First Name" → "firstname" matches "firstName" → "firstname")
+      if (normalized === normalizedField) return true;
+      
+      // Check against known variations for this mandatory field (exact match only)
+      const variations = mandatoryFieldMappings[normalizedField] || [];
+      return variations.some(variation => {
+        const normalizedVariation = normalizeColumnName(variation);
+        // Exact match with variation (e.g., "First" → "first" matches variation "first")
+        return normalized === normalizedVariation;
+      });
+    });
+  };
 
   const handleFileUpload = (event: { target: { files?: FileList | null } }) => {
     const uploadedFile = event.target.files?.[0];
@@ -136,13 +173,48 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
   };
 
   const handleImport = async () => {
+    // Validate that all required fields are mapped
+    const missingRequired = requiredFields.filter(field => 
+      !Object.values(columnMapping).includes(field)
+    );
+
+    if (missingRequired.length > 0) {
+      toast.error(`Please map all required fields: ${missingRequired.join(', ')}`);
+      return;
+    }
+
+    // Validate that all rows have values for mandatory fields
+    const mandatoryFields = ['firstName', 'lastName', 'jobTitle', 'email', 'companyName', 'employeeSize', 'revenue'];
+    const rowsWithMissingFields: number[] = [];
+
+    importedRows.forEach((row: ImportedRow, index: number) => {
+      const missingFields: string[] = [];
+      
+      mandatoryFields.forEach(field => {
+        const mappedColumn = Object.keys(columnMapping).find(
+          col => columnMapping[col] === field
+        );
+        if (mappedColumn && (!row[mappedColumn] || row[mappedColumn].trim() === '')) {
+          missingFields.push(field);
+        }
+      });
+
+      if (missingFields.length > 0) {
+        rowsWithMissingFields.push(index + 1);
+      }
+    });
+
+    if (rowsWithMissingFields.length > 0) {
+      toast.error(
+        `Rows ${rowsWithMissingFields.slice(0, 5).join(', ')}${rowsWithMissingFields.length > 5 ? '...' : ''} are missing mandatory fields. Please ensure all rows have values for: ${mandatoryFields.join(', ')}`
+      );
+      return;
+    }
+
     setCurrentStep('importing');
     setImportProgress(0);
 
     try {
-      // Get createdBy value from user
-      const createdBy = user?.name || (user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'System Admin');
-
       // Transform imported rows to API format
       const importData: ContactImportData[] = importedRows.map((row: ImportedRow) => {
         const mappedData: Record<string, string> = {};
@@ -153,7 +225,7 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
           mappedData[field as string] = row[excelColumn] || '';
         });
 
-        // Transform to API format
+        // Transform to API format (removed amfNotes and createdBy)
         return {
           firstName: mappedData.firstName || '',
           lastName: mappedData.lastName || '',
@@ -175,9 +247,7 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
           LinkedInUrl: mappedData.LinkedInUrl || mappedData.contactLinkedIn || mappedData.companyLinkedIn || '',
           companyName: mappedData.companyName || '',
           employeeSize: mappedData.employeeSize || '',
-          revenue: mappedData.revenue || '',
-          amfNotes: mappedData.amfNotes || '',
-          createdBy: createdBy || 'System Admin'
+          revenue: mappedData.revenue || ''
         };
       });
 
@@ -389,13 +459,30 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
                     <SelectTrigger className="w-48">
                       <SelectValue placeholder="Select field" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="skip">Skip this column</SelectItem>
-                      {availableFields.map(field => (
-                        <SelectItem key={field} value={field}>
-                          {field} {requiredFields.includes(field) && '*'}
-                        </SelectItem>
-                      ))}
+                    <SelectContent 
+                      className="max-h-[350px] overflow-y-auto select-dropdown-scroll"
+                      position="popper"
+                    >
+                      {/* Only show "Skip this column" if the column is not a mandatory field */}
+                      {!isMandatoryColumn(column) && (
+                        <SelectItem value="skip">Skip this column</SelectItem>
+                      )}
+                      {/* Show required fields first with asterisk */}
+                      {availableFields
+                        .filter(field => requiredFields.includes(field))
+                        .map(field => (
+                          <SelectItem key={field} value={field} className="font-semibold text-orange-600">
+                            {field} *
+                          </SelectItem>
+                        ))}
+                      {/* Show other optional fields */}
+                      {availableFields
+                        .filter(field => !requiredFields.includes(field))
+                        .map(field => (
+                          <SelectItem key={field} value={field}>
+                            {field}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -424,35 +511,21 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
         // Show all rows - no pagination, just scrolling
 
         return (
-          <div className="flex flex-col space-y-4 pb-20">
-            <div>
+          <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 200px)' }}>
+            <div className="flex-shrink-0 mb-4">
               <h3 className="text-xl font-semibold mb-2 text-gray-800">Preview Data</h3>
               <p className="text-sm text-gray-600">
-                Review all rows of your data • <span className="font-semibold text-orange-600">{filteredPreviewRows.length}</span> {filteredPreviewRows.length === 1 ? 'row' : 'rows'} total
+                Review all rows of your data • <span className="font-semibold text-orange-600">{importedRows.length}</span> {importedRows.length === 1 ? 'row' : 'rows'} total
               </p>
-            </div>
-            
-            {/* Search Bar */}
-            <div className="flex-shrink-0">
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  type="text"
-                  placeholder="Search data..."
-                  value={searchQuery}
-                  onChange={(e: { target: { value: string } }) => {
-                    setSearchQuery(e.target.value);
-                  }}
-                  className="pl-10 h-10 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                />
-              </div>
             </div>
 
             {/* Table Container with Scroll - Shows All Data */}
             <div 
               className="mb-4 border rounded-lg bg-white shadow-sm preview-table-scroll"
               style={{ 
-                height: '500px',
+                height: 'calc(100vh - 380px)',
+                minHeight: '350px',
+                maxHeight: '500px',
                 overflow: 'auto',
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#EF8037 #f1f1f1'
@@ -473,17 +546,17 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {filteredPreviewRows.length === 0 ? (
+                    {importedRows.length === 0 ? (
                       <tr>
                         <td 
                           colSpan={displayColumns.length} 
                           className="text-center py-12 text-gray-500"
                         >
-                          {searchQuery ? 'No results found' : 'No data to display'}
+                          No data to display
                         </td>
                       </tr>
                     ) : (
-                      filteredPreviewRows.map((row: ImportedRow, index: number) => (
+                      importedRows.map((row: ImportedRow, index: number) => (
                         <tr 
                           key={index}
                           className="hover:bg-gray-50 transition-colors"
@@ -507,34 +580,12 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
               </div>
             </div>
 
-            {/* Data Count Info */}
-            {filteredPreviewRows.length > 0 && (
-              <div className="flex items-center justify-between flex-shrink-0 bg-gray-50 px-4 py-2 rounded-md border border-gray-200">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700">
-                    <span className="font-semibold text-gray-900">{filteredPreviewRows.length}</span> {filteredPreviewRows.length === 1 ? 'row' : 'rows'}
-                    {searchQuery && (
-                      <span className="text-gray-500 ml-1">
-                        (filtered from {importedRows.length} total)
-                      </span>
-                    )}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-                  <span className="text-xs text-gray-500 font-medium">
-                    Scroll to view all data ↓
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons - Sticky at Bottom - Always Visible */}
-            <div className="sticky bottom-0 left-0 right-0 flex justify-end gap-3 mt-6 pt-4 pb-4 border-t-2 border-gray-300 bg-white shadow-xl z-50 flex-shrink-0">
+            {/* Action Buttons - Always Visible at Bottom */}
+            <div className="flex justify-end gap-3 pt-4 pb-4 mt-auto border-t-2 border-gray-300 bg-white shadow-lg flex-shrink-0">
               <Button 
                 variant="outline" 
                 onClick={() => setCurrentStep('mapping')}
-                className="min-w-[110px] h-10 border-gray-300 hover:bg-gray-50"
+                className="min-w-[110px] h-11 border-gray-300 hover:bg-gray-50 font-medium"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Back
@@ -542,8 +593,8 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
               <Button 
                 onClick={handleImport} 
                 style={{ backgroundColor: '#EF8037' }}
-                disabled={isImporting || filteredPreviewRows.length === 0}
-                className="min-w-[160px] h-10 font-semibold shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isImporting || importedRows.length === 0}
+                className="min-w-[160px] h-11 font-semibold shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isImporting ? (
                   <>

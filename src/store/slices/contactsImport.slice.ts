@@ -23,8 +23,6 @@ export interface ContactImportData {
   companyName: string;
   employeeSize: string;
   revenue: string;
-  amfNotes: string;
-  createdBy: string;
 }
 
 export interface ImportContactsPayload {

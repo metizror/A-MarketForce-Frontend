@@ -243,3 +243,33 @@ html {
 .mapping-scroll-container::-webkit-scrollbar-thumb:hover {
   background: #d96a2a;
 }
+
+/* Custom styles for select dropdown in mapping section */
+.select-dropdown-scroll {
+  max-height: 350px !important;
+  overflow-y: auto !important;
+}
+
+.select-dropdown-scroll [data-slot="select-viewport"] {
+  max-height: 330px !important;
+  overflow-y: auto !important;
+}
+
+/* Custom scrollbar for select dropdown */
+.select-dropdown-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.select-dropdown-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.select-dropdown-scroll::-webkit-scrollbar-thumb {
+  background: #EF8037;
+  border-radius: 4px;
+}
+
+.select-dropdown-scroll::-webkit-scrollbar-thumb:hover {
+  background: #d96a2a;
+}
