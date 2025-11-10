@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
       .find({ ...query, role: "admin" })
       .select("-password")
       .skip(skip)
-      .limit(limit);
+      .limit(limit).sort({ createdAt: -1 });
     return NextResponse.json(
       {
         admins,
