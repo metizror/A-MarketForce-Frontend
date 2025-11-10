@@ -5,13 +5,14 @@ import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from './ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Plus, Edit, Trash2, Search, Shield, Users } from 'lucide-react';
 import { User } from '@/types/dashboard.types';
 import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { getAdminUsers, createAdminUser } from '@/store/slices/adminUsers.slice';
+import { getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser } from '@/store/slices/adminUsers.slice';
 
 interface UsersTableProps {
   users: User[];
@@ -20,11 +21,13 @@ interface UsersTableProps {
 
 export function UsersTable({ users, setUsers }: UsersTableProps) {
   const dispatch = useAppDispatch();
-  const { users: adminUsers, isLoading, isCreating, error } = useAppSelector((state) => state.adminUsers);
+  const { users: adminUsers, isLoading, isCreating, isUpdating, isDeleting, error } = useAppSelector((state) => state.adminUsers);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null as User | null);
+  const [userToDelete, setUserToDelete] = useState(null as User | null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [newUser, setNewUser] = useState({
     email: '',
     name: '',
@@ -72,7 +75,7 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
         name: newUser.name,
         email: newUser.email,
         password: newUser.password,
-        role: newUser.role
+        role: 'admin' // Always set to admin
       })).unwrap();
 
       toast.success('User added successfully');
@@ -96,35 +99,60 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
     setNewUser({
       email: user.email,
       name: user.name,
-      role: user.role || 'admin'
+      role: 'admin' // Always set to admin, cannot be changed
     });
   };
 
-  const handleUpdateUser = () => {
+  const handleUpdateUser = async () => {
     if (!editingUser) return;
 
-    const updatedUsers = users.map(user =>
-      user.id === editingUser.id
-        ? { ...user, ...newUser }
-        : user
-    );
+    if (!newUser.name) {
+      toast.error('Name is required');
+      return;
+    }
 
-    setUsers(updatedUsers);
-    setEditingUser(null);
-    setNewUser({
-      email: '',
-      name: '',
-      role: 'admin'
-    });
-    toast.success('User updated successfully');
+    try {
+      await dispatch(updateAdminUser({
+        id: editingUser.id,
+        name: newUser.name,
+        // Email and role are not editable, so we don't send them
+      })).unwrap();
+
+      toast.success('User updated successfully');
+      setEditingUser(null);
+      setNewUser({
+        email: '',
+        name: '',
+        password: '',
+        role: 'admin'
+      });
+      // The slice already updates the user in state, no need to refresh
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update user');
+    }
   };
 
-  const handleDeleteUser = (userId: string) => {
-    setUsers(users.filter(user => user.id !== userId));
-    toast.success('User deleted successfully');
+  const handleDeleteClick = (user: User) => {
+    setUserToDelete(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await dispatch(deleteAdminUser({ id: userToDelete.id })).unwrap();
+      toast.success('User deleted successfully');
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
+      // The slice already removes the user from state, no need to refresh
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete user');
+    }
   };
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -173,13 +201,12 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                 </div>
                 <div className="space-y-2">
                   <Label>Role</Label>
-                  <Select value={newUser.role} onValueChange={(value: 'superadmin' | 'admin') => setNewUser({...newUser, role: value})}>
+                  <Select value="admin" disabled>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="superadmin">Super Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -257,12 +284,24 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                        </DialogTrigger>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleEditUser(user)}
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Dialog open={editingUser?.id === user.id} onOpenChange={(open: boolean) => {
+                        if (!open) {
+                          setEditingUser(null);
+                          setNewUser({
+                            email: '',
+                            name: '',
+                            password: '',
+                            role: 'admin'
+                          });
+                        }
+                      }}>
                         <DialogContent>
                           <DialogHeader>
                             <DialogTitle>Edit User</DialogTitle>
@@ -270,12 +309,13 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                           </DialogHeader>
                           <div className="space-y-4">
                             <div className="space-y-2">
-                              <Label htmlFor="edit-email">Email *</Label>
+                              <Label htmlFor="edit-email">Email</Label>
                               <Input
                                 id="edit-email"
                                 type="email"
                                 value={newUser.email}
-                                onChange={(e: any) => setNewUser({...newUser, email: e.target.value})}
+                                disabled
+                                className="bg-gray-100 cursor-not-allowed"
                               />
                             </div>
                             <div className="space-y-2">
@@ -288,23 +328,22 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                             </div>
                             <div className="space-y-2">
                               <Label>Role</Label>
-                              <Select value={newUser.role} onValueChange={(value: 'superadmin' | 'admin') => setNewUser({...newUser, role: value})}>
+                              <Select value="admin" disabled>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select role" />
+                                  <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="superadmin">Super Admin</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
                           </div>
                           <div className="flex justify-end space-x-2 mt-6">
-                            <Button variant="outline" onClick={() => setEditingUser(null)}>
+                            <Button variant="outline" onClick={() => setEditingUser(null)} disabled={isUpdating}>
                               Cancel
                             </Button>
-                            <Button onClick={handleUpdateUser} style={{ backgroundColor: '#EF8037' }}>
-                              Update User
+                            <Button onClick={handleUpdateUser} style={{ backgroundColor: '#EF8037' }} disabled={isUpdating}>
+                              {isUpdating ? 'Updating...' : 'Update User'}
                             </Button>
                           </div>
                         </DialogContent>
@@ -312,8 +351,9 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDeleteUser(user.id)}
+                        onClick={() => handleDeleteClick(user)}
                         className="text-red-600 hover:text-red-700"
+                        disabled={isDeleting}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
@@ -325,8 +365,36 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
               </TableBody>
             </Table>
           </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {userToDelete?.name}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting} onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setUserToDelete(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+    );
+  }

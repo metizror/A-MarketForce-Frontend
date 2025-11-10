@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { privateApiCall, privateApiPost } from "@/lib/api";
+import { privateApiCall, privateApiPost, privateApiPut, privateApiDelete } from "@/lib/api";
 
 export interface AdminUser {
   id: string;
@@ -40,6 +40,25 @@ export interface CreateAdminUserResponse {
   };
 }
 
+export interface UpdateAdminUserPayload {
+  id: string;
+  name?: string;
+  email?: string;
+  role?: "admin" | "superadmin";
+}
+
+export interface UpdateAdminUserResponse {
+  message: string;
+}
+
+export interface DeleteAdminUserPayload {
+  id: string;
+}
+
+export interface DeleteAdminUserResponse {
+  message: string;
+}
+
 interface AdminUsersState {
   users: AdminUser[];
   pagination: {
@@ -52,6 +71,8 @@ interface AdminUsersState {
   } | null;
   isLoading: boolean;
   isCreating: boolean;
+  isUpdating: boolean;
+  isDeleting: boolean;
   error: string | null;
 }
 
@@ -60,6 +81,8 @@ const initialState: AdminUsersState = {
   pagination: null,
   isLoading: false,
   isCreating: false,
+  isUpdating: false,
+  isDeleting: false,
   error: null,
 };
 
@@ -99,6 +122,46 @@ export const createAdminUser = createAsyncThunk<
     return response;
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error.message || 'Failed to create admin user';
+    return rejectWithValue({ message: errorMessage });
+  }
+});
+
+// Update admin user
+export const updateAdminUser = createAsyncThunk<
+  UpdateAdminUserResponse,
+  UpdateAdminUserPayload,
+  { rejectValue: { message: string } }
+>('adminUsers/updateAdminUser', async (payload, { rejectWithValue }) => {
+  try {
+    const response = await privateApiPut<UpdateAdminUserResponse>(
+      '/auth/create-admin',
+      payload
+    );
+    
+    return response;
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error.message || 'Failed to update admin user';
+    return rejectWithValue({ message: errorMessage });
+  }
+});
+
+// Delete admin user
+export const deleteAdminUser = createAsyncThunk<
+  DeleteAdminUserResponse,
+  DeleteAdminUserPayload,
+  { rejectValue: { message: string } }
+>('adminUsers/deleteAdminUser', async (payload, { rejectWithValue }) => {
+  try {
+    const response = await privateApiDelete<DeleteAdminUserResponse>(
+      '/auth/create-admin',
+      {
+        data: payload,
+      }
+    );
+    
+    return response;
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error.message || 'Failed to delete admin user';
     return rejectWithValue({ message: errorMessage });
   }
 });
@@ -160,6 +223,53 @@ const adminUsersSlice = createSlice({
       .addCase(createAdminUser.rejected, (state, action) => {
         state.isCreating = false;
         state.error = action.payload?.message || 'Failed to create admin user';
+      });
+
+    // Update admin user
+    builder
+      .addCase(updateAdminUser.pending, (state) => {
+        state.isUpdating = true;
+        state.error = null;
+      })
+      .addCase(updateAdminUser.fulfilled, (state, action) => {
+        state.isUpdating = false;
+        // Update the user in the state without refreshing all users
+        const updatedUserId = action.meta.arg.id;
+        const updatedName = action.meta.arg.name;
+        const userIndex = state.users.findIndex(user => user.id === updatedUserId);
+        if (userIndex !== -1 && updatedName) {
+          state.users[userIndex] = {
+            ...state.users[userIndex],
+            name: updatedName,
+          };
+        }
+        state.error = null;
+      })
+      .addCase(updateAdminUser.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.error = action.payload?.message || 'Failed to update admin user';
+      });
+
+    // Delete admin user
+    builder
+      .addCase(deleteAdminUser.pending, (state) => {
+        state.isDeleting = true;
+        state.error = null;
+      })
+      .addCase(deleteAdminUser.fulfilled, (state, action) => {
+        state.isDeleting = false;
+        // Remove deleted user from state
+        const deletedId = action.meta.arg.id;
+        state.users = state.users.filter(user => user.id !== deletedId);
+        // Update pagination totalCount if available
+        if (state.pagination) {
+          state.pagination.totalCount = Math.max(0, state.pagination.totalCount - 1);
+        }
+        state.error = null;
+      })
+      .addCase(deleteAdminUser.rejected, (state, action) => {
+        state.isDeleting = false;
+        state.error = action.payload?.message || 'Failed to delete admin user';
       });
   },
 });
