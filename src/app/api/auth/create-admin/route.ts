@@ -92,13 +92,19 @@ export async function GET(request: NextRequest) {
     );
   }
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const skip = (page - 1) * limit;
+    const totalAdmins = await adminAuthModel.countDocuments();
+    const totalPages = Math.ceil(totalAdmins / limit);
     await connectToDatabase();
-    const admins = await adminAuthModel.find().select("-password");
-    return NextResponse.json({ admins });
+    const admins = await adminAuthModel.find().select("-password").skip(skip).limit(limit);
+    return NextResponse.json({ admins, totalAdmins, totalPages }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+        { message: "Internal server error" },
+        { status: 500 }
+      );
+    }
   }
-}
