@@ -64,8 +64,21 @@ export function DashboardSidebar({
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
       {/* Logo & User Info */}
       <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-center mb-4 px-2">
-          <Image src={marketForceLogo} alt="Market Force" width={180} height={180} />
+        <div className="flex items-center justify-center mb-4 px-2" style={{ minHeight: '60px', position: 'relative' }}>
+          <Image 
+            src={marketForceLogo} 
+            alt="Market Force" 
+            width={180} 
+            height={60}
+            priority
+            style={{ 
+              width: 'auto', 
+              height: '60px', 
+              objectFit: 'contain',
+              maxWidth: '180px'
+            }}
+            className="transition-opacity duration-300"
+          />
         </div>
 
         <div>
