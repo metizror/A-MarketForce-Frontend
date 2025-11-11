@@ -70,6 +70,13 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
     return name.toLowerCase().replace(/[^a-z0-9]/g, '');
   };
 
+  // Helper function to clean revenue and employeeSize values by removing $ signs and spaces
+  const cleanValue = (value: string): string => {
+    if (!value) return '';
+    // Remove all $ signs and spaces from the value
+    return value.replace(/\$/g, '').replace(/\s+/g, '').trim();
+  };
+
   // Check if an Excel column name matches a mandatory field
   const isMandatoryColumn = (columnName: string): boolean => {
     const normalized = normalizeColumnName(columnName);
@@ -246,14 +253,14 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
           subIndustry: mappedData.subIndustry || '',
           LinkedInUrl: mappedData.LinkedInUrl || mappedData.contactLinkedIn || mappedData.companyLinkedIn || '',
           companyName: mappedData.companyName || '',
-          employeeSize: mappedData.employeeSize || '',
-          revenue: mappedData.revenue || ''
+          employeeSize: cleanValue(mappedData.employeeSize || ''),
+          revenue: cleanValue(mappedData.revenue || '')
         };
       });
 
       // Simulate progress while API call is in progress
       const progressInterval = setInterval(() => {
-        setImportProgress((prev) => {
+        setImportProgress((prev: number) => {
           if (prev >= 90) {
             clearInterval(progressInterval);
             return prev;
@@ -535,7 +542,7 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-white z-10 shadow-sm border-b-2 border-gray-200">
                     <tr>
-                      {displayColumns.map(field => (
+                      {displayColumns.map((field: string) => (
                         <th 
                           key={field} 
                           className="bg-white font-semibold text-left px-4 py-3 text-gray-700 whitespace-nowrap"

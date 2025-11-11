@@ -45,27 +45,40 @@ export default function DashboardPage() {
 
   // Fetch counts on component mount
   useEffect(() => {
-    // Fetch contacts count
-    setIsLoadingContacts(true);
-    dispatch(getContacts({ page: 1, limit: 1 })).then((result) => {
-      if (getContacts.fulfilled.match(result)) {
-        setContactsCount(result.payload.pagination.totalCount);
-      }
-      setIsLoadingContacts(false);
-    }).catch(() => {
-      setIsLoadingContacts(false);
-    });
+    // Only fetch admin-only data if user is admin or superadmin
+    if (role === "admin" || role === "superadmin") {
+      // Fetch contacts count
+      setIsLoadingContacts(true);
+      dispatch(getContacts({ page: 1, limit: 1 })).then((result) => {
+        if (getContacts.fulfilled.match(result)) {
+          setContactsCount(result.payload.pagination.totalCount);
+        }
+        setIsLoadingContacts(false);
+      }).catch(() => {
+        setIsLoadingContacts(false);
+      });
 
-    // Fetch companies count
-    setIsLoadingCompanies(true);
-    dispatch(getCompanies({ page: 1, limit: 1 })).then((result) => {
-      if (getCompanies.fulfilled.match(result)) {
-        setCompaniesCount(result.payload.pagination.totalCount);
-      }
+      // Fetch companies count
+      setIsLoadingCompanies(true);
+      dispatch(getCompanies({ page: 1, limit: 1 })).then((result) => {
+        if (getCompanies.fulfilled.match(result)) {
+          setCompaniesCount(result.payload.pagination.totalCount);
+        }
+        setIsLoadingCompanies(false);
+      }).catch(() => {
+        setIsLoadingCompanies(false);
+      });
+
+      // Fetch approve requests to get stats
+      dispatch(getApproveRequests({ page: 1, limit: 25 }));
+
+      // Fetch activity logs
+      dispatch(getActivityLogs({ page: 1, limit: 5 }));
+    } else {
+      // For customers, set loading to false immediately
+      setIsLoadingContacts(false);
       setIsLoadingCompanies(false);
-    }).catch(() => {
-      setIsLoadingCompanies(false);
-    });
+    }
 
     // Fetch admin users count from getUser API (if superadmin)
     if (role === "superadmin") {
@@ -127,12 +140,6 @@ export default function DashboardPage() {
     } else {
       setIsLoadingImportDate(false);
     }
-
-    // Fetch approve requests to get stats
-    dispatch(getApproveRequests({ page: 1, limit: 25 }));
-
-    // Fetch activity logs
-    dispatch(getActivityLogs({ page: 1, limit: 5 }));
   }, [dispatch, role]);
 
   // Update counts from Redux state if available

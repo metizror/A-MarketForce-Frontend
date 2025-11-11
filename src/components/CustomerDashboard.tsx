@@ -9,6 +9,7 @@ import CustomerPayment from './CustomerPayment';
 import CustomerInvoices from './CustomerInvoices';
 import CustomerSettings from './CustomerSettings';
 import { SupportContactForm } from './SupportContactForm';
+import { useAppSelector } from '@/store/hooks';
 
 interface CustomerDashboardProps {
   onLogout: () => void;
@@ -18,11 +19,12 @@ export default function CustomerDashboard({ onLogout }: CustomerDashboardProps) 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
+  const { user } = useAppSelector((state) => state.auth);
 
-  // Mock user data
-  const userName = 'John Doe';
-  const userEmail = 'john.doe@company.com';
-  const isPaid = false; // Set to false to show paywall features
+  // Get user data from Redux
+  const userName = user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email || 'Customer';
+  const userEmail = user?.email || '';
+  const isPaid = false; // Set to false to show paywall features - can be updated based on user subscription status
 
   // Listen for hash changes for deep linking
   useEffect(() => {

@@ -123,8 +123,8 @@ export default function Page() {
       if (user.role === 'superadmin' || user.role === 'admin') {
         router.push('/dashboard');
       } else if (user.role === 'customer') {
-        // Customers are redirected to /dashboard where the layout will handle routing
-        router.push('/dashboard');
+        // Customers are redirected to their customer dashboard
+        router.push('/customer/dashboard');
       }
     }
   }, [isLoading, isAuthenticated, user, token, router]);

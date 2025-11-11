@@ -139,7 +139,7 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
       try {
         await dispatch(login(loginPayload)).unwrap();
         action.resetForm();
-        router.push('/dashboard');
+        router.push('/customer/dashboard');
       } catch (err) {
         console.error('Login failed:', err);
       }

@@ -22,27 +22,27 @@ export function FilterPanel({ filters, setFilters, onFilterChange, onClose }: Fi
   const [localFilters, setLocalFilters] = useState(filters);
 
   const employeeSizes = [
-    { label: '1 to 25', value: '1-25' },
-    { label: '26 to 50', value: '26-50' },
-    { label: '51 to 100', value: '51-100' },
-    { label: '101 to 250', value: '101-250' },
-    { label: '251 to 500', value: '251-500' },
-    { label: '501 to 1000', value: '501-1000' },
-    { label: '1001 to 2500', value: '1001-2500' },
-    { label: '2501 to 5000', value: '2501-5000' },
-    { label: '5001 to 10000', value: '5001-10000' },
-    { label: 'over 10,001', value: 'over-10001' }
+    { label: '1 to 25', value: '1to25' },
+    { label: '26 to 50', value: '26to50' },
+    { label: '51 to 100', value: '51to100' },
+    { label: '101 to 250', value: '101to250' },
+    { label: '251 to 500', value: '251to500' },
+    { label: '501 to 1000', value: '501to1000' },
+    { label: '1001 to 2500', value: '1001to2500' },
+    { label: '2501 to 5000', value: '2501to5000' },
+    { label: '5001 to 10000', value: '5001to10000' },
+    { label: 'over 10,001', value: 'over10001' }
   ];
   const revenues = [
-    { label: 'Less than $1M', value: 'Less-than-1M' },
-    { label: '$1M to $5M', value: '1M-5M' },
-    { label: '$5M to $10M', value: '5M-10M' },
-    { label: '$10M to $50M', value: '10M-50M' },
-    { label: '$50M to $100M', value: '50M-100M' },
-    { label: '$100M to $250M', value: '100M-250M' },
-    { label: '$250M to $500M', value: '250M-500M' },
-    { label: '$500M to $1B', value: '500M-1B' },
-    { label: 'More than $1B', value: 'More-than-1B' },
+    { label: 'Less than $1M', value: 'Lessthan1M' },
+    { label: '$1M to $5M', value: '1Mto5M' },
+    { label: '$5M to $10M', value: '5Mto10M' },
+    { label: '$10M to $50M', value: '10Mto50M' },
+    { label: '$50M to $100M', value: '50Mto100M' },
+    { label: '$100M to $250M', value: '100Mto250M' },
+    { label: '$250M to $500M', value: '250Mto500M' },
+    { label: '$500M to $1B', value: '500Mto1B' },
+    { label: 'More than $1B', value: 'Morethan1B' },
   ];
   const industrySubIndustryMap: Record<string, string[]> = {
     "Agriculture, Forestry and Fishing": [

@@ -55,7 +55,7 @@ export default function DashboardLayout({
     router.push("/");
   };
 
-  // Redirect customers to their dashboard and unauthenticated users to login
+  // Redirect unauthenticated users to login and customers to their dashboard
   useEffect(() => {
     if (!isLoading) {
       // Redirect if not authenticated
@@ -64,9 +64,10 @@ export default function DashboardLayout({
         return;
       }
       
-      // Redirect customers to their dashboard
+      // Redirect customers to their customer dashboard
       if (role === "customer") {
         router.push("/customer/dashboard");
+        return;
       }
     }
   }, [isLoading, isAuthenticated, user, token, role, router]);
@@ -85,18 +86,6 @@ export default function DashboardLayout({
 
   // Redirect if not authenticated
   if (!isAuthenticated || !user || !token) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show redirect screen for customers
-  if (role === "customer") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -153,7 +142,7 @@ export default function DashboardLayout({
   const activeView = getActiveView();
   const showFilterButton = activeView === 'contacts' || activeView === 'companies';
   const pageTitle = pathname === '/dashboard' 
-    ? (role === 'superadmin' ? 'Super Admin Dashboard' : 'Admin Dashboard')
+    ? (role === 'superadmin' ? 'Super Admin Dashboard' : role === 'admin' ? 'Admin Dashboard' : 'Customer Dashboard')
     : activeView === 'approve-requests' 
     ? 'Approve Requests'
     : activeView.charAt(0).toUpperCase() + activeView.slice(1).replace('-', ' ');
