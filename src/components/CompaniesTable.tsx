@@ -401,10 +401,10 @@ export function CompaniesTable({
   const dispatch = useAppDispatch();
   const { isCreating, isUpdating, isDeleting } = useAppSelector((state) => state.companies);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
-  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
-  const [sortField, setSortField] = useState<SortField>('companyName');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [editingCompany, setEditingCompany] = useState(null as Company | null);
+  const [selectedCompanies, setSelectedCompanies] = useState([] as string[]);
+  const [sortField, setSortField] = useState('companyName' as SortField);
+  const [sortDirection, setSortDirection] = useState('asc' as SortDirection);
   
   const [newCompany, setNewCompany] = useState({
     companyName: '',
@@ -705,7 +705,7 @@ export function CompaniesTable({
       toast.success('Company deleted successfully');
 
       // Clear selection if this company was selected
-      setSelectedCompanies(selectedCompanies.filter(selectedId => selectedId !== companyId));
+      setSelectedCompanies(selectedCompanies.filter((selectedId: string) => selectedId !== companyId));
 
       // Refetch companies
       const fetchParams: GetCompaniesParams = {
@@ -869,7 +869,7 @@ export function CompaniesTable({
         <Input
           id={isEdit ? "edit-companyName" : "companyName"}
           value={newCompany.companyName}
-          onChange={(e) => setNewCompany({...newCompany, companyName: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, companyName: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -878,7 +878,7 @@ export function CompaniesTable({
           id={isEdit ? "edit-phone" : "phone"}
           type="tel"
           value={newCompany.phone}
-          onChange={(e) => setNewCompany({...newCompany, phone: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, phone: e.target.value})}
           placeholder="+1 (555) 123-4567"
           className={newCompany.phone && !validatePhone(newCompany.phone) ? 'border-red-500' : ''}
         />
@@ -892,7 +892,7 @@ export function CompaniesTable({
           id={isEdit ? "edit-website" : "website"}
           type="url"
           value={newCompany.website}
-          onChange={(e) => setNewCompany({...newCompany, website: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, website: e.target.value})}
           placeholder="https://company.com"
           className={newCompany.website && !validateWebsite(newCompany.website) ? 'border-red-500' : ''}
         />
@@ -905,7 +905,7 @@ export function CompaniesTable({
         <Input
           id={isEdit ? "edit-address1" : "address1"}
           value={newCompany.address1}
-          onChange={(e) => setNewCompany({...newCompany, address1: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, address1: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -913,7 +913,7 @@ export function CompaniesTable({
         <Input
           id={isEdit ? "edit-address2" : "address2"}
           value={newCompany.address2}
-          onChange={(e) => setNewCompany({...newCompany, address2: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, address2: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -921,7 +921,7 @@ export function CompaniesTable({
         <Input
           id={isEdit ? "edit-city" : "city"}
           value={newCompany.city}
-          onChange={(e) => setNewCompany({...newCompany, city: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, city: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -929,7 +929,7 @@ export function CompaniesTable({
         <Input
           id={isEdit ? "edit-state" : "state"}
           value={newCompany.state}
-          onChange={(e) => setNewCompany({...newCompany, state: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, state: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -937,7 +937,7 @@ export function CompaniesTable({
         <Input
           id={isEdit ? "edit-zipCode" : "zipCode"}
           value={newCompany.zipCode}
-          onChange={(e) => setNewCompany({...newCompany, zipCode: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, zipCode: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -945,12 +945,12 @@ export function CompaniesTable({
         <Input
           id={isEdit ? "edit-country" : "country"}
           value={newCompany.country}
-          onChange={(e) => setNewCompany({...newCompany, country: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, country: e.target.value})}
         />
       </div>
       <div className="space-y-2">
         <Label>Industry</Label>
-        <Select value={newCompany.industry} onValueChange={(value) => setNewCompany({...newCompany, industry: value})}>
+        <Select value={newCompany.industry} onValueChange={(value: string) => setNewCompany({...newCompany, industry: value})}>
           <SelectTrigger>
             <SelectValue placeholder="Select industry" />
           </SelectTrigger>
@@ -963,7 +963,7 @@ export function CompaniesTable({
       </div>
       <div className="space-y-2">
         <Label>Employee Size</Label>
-        <Select value={newCompany.employeeSize} onValueChange={(value) => setNewCompany({...newCompany, employeeSize: value})}>
+        <Select value={newCompany.employeeSize} onValueChange={(value: string) => setNewCompany({...newCompany, employeeSize: value})}>
           <SelectTrigger>
             <SelectValue placeholder="Select employee size" />
           </SelectTrigger>
@@ -983,7 +983,7 @@ export function CompaniesTable({
       </div>
       <div className="space-y-2">
         <Label>Revenue</Label>
-        <Select value={newCompany.revenue} onValueChange={(value) => setNewCompany({...newCompany, revenue: value})}>
+        <Select value={newCompany.revenue} onValueChange={(value: string) => setNewCompany({...newCompany, revenue: value})}>
           <SelectTrigger>
             <SelectValue placeholder="Select revenue" />
           </SelectTrigger>
@@ -1005,7 +1005,7 @@ export function CompaniesTable({
         <Input
           id={isEdit ? "edit-technology" : "technology"}
           value={newCompany.technology}
-          onChange={(e) => setNewCompany({...newCompany, technology: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, technology: e.target.value})}
           placeholder="React, Node.js, AWS"
         />
       </div>
@@ -1014,7 +1014,7 @@ export function CompaniesTable({
         <Input
           id={isEdit ? "edit-companyLinkedInUrl" : "companyLinkedInUrl"}
           value={newCompany.companyLinkedInUrl}
-          onChange={(e) => setNewCompany({...newCompany, companyLinkedInUrl: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, companyLinkedInUrl: e.target.value})}
           placeholder="https://linkedin.com/company/..."
         />
       </div>
@@ -1023,7 +1023,7 @@ export function CompaniesTable({
         <Textarea
           id={isEdit ? "edit-amfNotes" : "amfNotes"}
           value={newCompany.amfNotes}
-          onChange={(e) => setNewCompany({...newCompany, amfNotes: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewCompany({...newCompany, amfNotes: e.target.value})}
           rows={3}
         />
       </div>
@@ -1052,7 +1052,7 @@ export function CompaniesTable({
               <Input
                 placeholder="Search companies..."
                 value={searchQuery || ''}
-                onChange={(e) => {
+                onChange={(e: { target: { value: string } }) => {
                   const value = e.target.value;
                   handleSearchInputChange(value);
                 }}
@@ -1143,7 +1143,7 @@ export function CompaniesTable({
                 <TableHead className="w-12">
                   <Checkbox 
                     checked={selectedCompanies.length === displayedCompanies.length && displayedCompanies.length > 0}
-                    onCheckedChange={(checked) => {
+                    onCheckedChange={(checked: boolean) => {
                       if (checked) {
                         setSelectedCompanies(displayedCompanies.map(company => company.id));
                       } else {
@@ -1213,7 +1213,7 @@ export function CompaniesTable({
                 <TableRow 
                   key={company.id}
                   className="cursor-pointer hover:bg-gray-50"
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     // Don't trigger row click if clicking on interactive elements
                     const target = e.target as HTMLElement;
                     if (!target.closest('button') && !target.closest('[role="checkbox"]') && !target.closest('[role="menuitem"]')) {
@@ -1221,14 +1221,14 @@ export function CompaniesTable({
                     }
                   }}
                 >
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+                  <TableCell onClick={(e: any) => e.stopPropagation()}>
                     <Checkbox 
                       checked={selectedCompanies.includes(company.id)}
-                      onCheckedChange={(checked) => {
+                      onCheckedChange={(checked: boolean) => {
                         if (checked) {
                           setSelectedCompanies([...selectedCompanies, company.id]);
                         } else {
-                          setSelectedCompanies(selectedCompanies.filter(id => id !== company.id));
+                          setSelectedCompanies(selectedCompanies.filter((id: string) => id !== company.id));
                         }
                       }}
                     />
@@ -1248,7 +1248,7 @@ export function CompaniesTable({
                   <TableCell>{company.revenue}</TableCell>
                   <TableCell>{company.employeeSize}</TableCell>
                   <TableCell className="max-w-xs truncate">{company.website}</TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+                  <TableCell onClick={(e: any) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -1349,7 +1349,7 @@ export function CompaniesTable({
       </CardContent>
 
       {/* Edit Dialog */}
-      <Dialog open={editingCompany !== null} onOpenChange={(open) => !open && setEditingCompany(null)}>
+      <Dialog open={editingCompany !== null} onOpenChange={(open: boolean) => !open && setEditingCompany(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Edit Company</DialogTitle>

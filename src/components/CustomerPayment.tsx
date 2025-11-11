@@ -118,7 +118,7 @@ export default function CustomerPayment({ setActiveTab }: CustomerPaymentProps) 
                     type="number"
                     min="50"
                     value={contactsToPurchase}
-                    onChange={(e) => setContactsToPurchase(Math.max(50, parseInt(e.target.value) || 50))}
+                    onChange={(e: { target: { value: string } }) => setContactsToPurchase(Math.max(50, parseInt(e.target.value) || 50))}
                     className="h-14 text-lg"
                   />
                   <p className="text-sm text-gray-500 mt-2">Minimum 50 contacts per purchase</p>

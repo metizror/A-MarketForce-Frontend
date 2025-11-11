@@ -45,11 +45,11 @@ const SYSTEM_FIELDS = [
 ];
 
 export function XLSFieldMapping({ onMappingComplete, onCancel }: XLSFieldMappingProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [xlsColumns, setXlsColumns] = useState<string[]>([]);
-  const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [file, setFile] = useState(null as File | null);
+  const [xlsColumns, setXlsColumns] = useState([] as string[]);
+  const [mapping, setMapping] = useState({} as Record<string, string>);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: any) => {
     const uploadedFile = event.target.files?.[0];
     if (!uploadedFile) return;
 
@@ -97,7 +97,7 @@ export function XLSFieldMapping({ onMappingComplete, onCancel }: XLSFieldMapping
   };
 
   const handleMapField = (systemFieldId: string, xlsColumn: string) => {
-    setMapping(prev => {
+    setMapping((prev: Record<string, string>) => {
       const newMapping = { ...prev };
       
       // If selecting 'skip', remove the mapping
@@ -271,14 +271,14 @@ export function XLSFieldMapping({ onMappingComplete, onCancel }: XLSFieldMapping
                 <div className="flex-1 min-w-0">
                   <Select
                     value={mapping[field.id] || 'skip'}
-                    onValueChange={(value) => handleMapField(field.id, value)}
+                    onValueChange={(value: string) => handleMapField(field.id, value)}
                   >
                     <SelectTrigger className="w-full bg-white h-10">
                       <SelectValue placeholder="Skip this column" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="skip">Skip this column</SelectItem>
-                      {xlsColumns.map(column => (
+                      {xlsColumns.map((column: string) => (
                         <SelectItem 
                           key={column} 
                           value={column}

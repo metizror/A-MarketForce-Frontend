@@ -30,7 +30,7 @@ export default function DashboardPage() {
   const [contactsCount, setContactsCount] = useState(0);
   const [companiesCount, setCompaniesCount] = useState(0);
   const [adminUsersCount, setAdminUsersCount] = useState(0);
-  const [lastImportDate, setLastImportDate] = useState<string | null>(null);
+  const [lastImportDate, setLastImportDate] = useState(null as string | null);
   
   // Loading states
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);

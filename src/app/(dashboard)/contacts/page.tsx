@@ -13,11 +13,11 @@ export default function ContactsPage() {
   const router = useRouter();
   const { user } = useAppSelector((state) => state.auth);
   const { contacts, pagination, isLoading, error } = useAppSelector((state) => state.contacts);
-  const [companies] = useState<Company[]>([]);
-  const [filters, setFilters] = useState<GetContactsParams>({
+  const [companies] = useState([] as Company[]);
+  const [filters, setFilters] = useState({
     page: 1,
     limit: 25,
-  });
+  } as GetContactsParams);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -43,8 +43,8 @@ export default function ContactsPage() {
   }, [searchQuery, debouncedSearchQuery]);
 
   // Track previous filters to avoid duplicate API calls
-  const prevFiltersRef = useRef<GetContactsParams | null>(null);
-  const prevSearchRef = useRef<string>('');
+  const prevFiltersRef = useRef(null as GetContactsParams | null);
+  const prevSearchRef = useRef('' as string);
 
   // Fetch contacts when filters or debounced search change
   // Note: Filters are only applied when "Apply Filters" is clicked, but pagination/search work immediately

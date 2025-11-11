@@ -643,7 +643,7 @@ export function ViewContactDetails({
           <Input
             id="edit-firstName"
             value={editForm.firstName}
-            onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, firstName: e.target.value})}
           />
         </div>
         <div className="space-y-2">
@@ -651,7 +651,7 @@ export function ViewContactDetails({
           <Input
             id="edit-lastName"
             value={editForm.lastName}
-            onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, lastName: e.target.value})}
           />
         </div>
         <div className="space-y-2">
@@ -659,14 +659,14 @@ export function ViewContactDetails({
           <Input
             id="edit-jobTitle"
             value={editForm.jobTitle}
-            onChange={(e) => setEditForm({...editForm, jobTitle: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, jobTitle: e.target.value})}
           />
         </div>
         <div className="space-y-2">
           <Label>Job Level</Label>
           <Select 
             value={editForm.jobLevel || ''} 
-            onValueChange={(value) => setEditForm({...editForm, jobLevel: value})}
+            onValueChange={(value: string) => setEditForm({...editForm, jobLevel: value})}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select level" />
@@ -690,7 +690,7 @@ export function ViewContactDetails({
           <Label>Job Role</Label>
           <Select 
             value={editForm.jobRole || ''} 
-            onValueChange={(value) => setEditForm({...editForm, jobRole: value})}
+            onValueChange={(value: string) => setEditForm({...editForm, jobRole: value})}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select role" />
@@ -730,7 +730,7 @@ export function ViewContactDetails({
             id="edit-email"
             type="email"
             value={editForm.email}
-            onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, email: e.target.value})}
           />
         </div>
         <div className="space-y-2">
@@ -738,7 +738,7 @@ export function ViewContactDetails({
           <Input
             id="edit-phone"
             value={editForm.phone}
-            onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, phone: e.target.value})}
           />
         </div>
         <div className="space-y-2">
@@ -746,7 +746,7 @@ export function ViewContactDetails({
           <Input
             id="edit-directPhone"
             value={editForm.directPhone}
-            onChange={(e) => setEditForm({...editForm, directPhone: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, directPhone: e.target.value})}
           />
         </div>
         <div className="space-y-2">
@@ -754,7 +754,7 @@ export function ViewContactDetails({
           <Input
             id="edit-address1"
             value={editForm.address1}
-            onChange={(e) => setEditForm({...editForm, address1: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, address1: e.target.value})}
           />
         </div>
         <div className="space-y-2">
@@ -762,7 +762,7 @@ export function ViewContactDetails({
           <Input
             id="edit-address2"
             value={editForm.address2}
-            onChange={(e) => setEditForm({...editForm, address2: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, address2: e.target.value})}
           />
         </div>
         <div className="space-y-2">
@@ -770,7 +770,7 @@ export function ViewContactDetails({
           <Input
             id="edit-city"
             value={editForm.city}
-            onChange={(e) => setEditForm({...editForm, city: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, city: e.target.value})}
           />
         </div>
         <div className="space-y-2">
@@ -778,7 +778,7 @@ export function ViewContactDetails({
           <Input
             id="edit-state"
             value={editForm.state}
-            onChange={(e) => setEditForm({...editForm, state: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, state: e.target.value})}
           />
         </div>
         <div className="space-y-2">
@@ -786,7 +786,7 @@ export function ViewContactDetails({
           <Input
             id="edit-zipCode"
             value={editForm.zipCode}
-            onChange={(e) => setEditForm({...editForm, zipCode: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, zipCode: e.target.value})}
           />
         </div>
         <div className="space-y-2">
@@ -794,7 +794,7 @@ export function ViewContactDetails({
           <Input
             id="edit-country"
             value={editForm.country}
-            onChange={(e) => setEditForm({...editForm, country: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, country: e.target.value})}
           />
         </div>
         <div className="space-y-2">
@@ -802,7 +802,7 @@ export function ViewContactDetails({
           <Input
             id="edit-website"
             value={editForm.website}
-            onChange={(e) => setEditForm({...editForm, website: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, website: e.target.value})}
             placeholder="https://example.com"
           />
         </div>
@@ -810,7 +810,7 @@ export function ViewContactDetails({
           <Label>Industry</Label>
           <Select 
             value={editForm.industry || ''} 
-            onValueChange={(value) => {
+            onValueChange={(value: string) => {
               setEditForm({...editForm, industry: value, subIndustry: ''});
             }}
           >
@@ -830,7 +830,7 @@ export function ViewContactDetails({
             <Label>Sub-Industry</Label>
             <Select 
               value={editForm.subIndustry || ''} 
-              onValueChange={(value) => setEditForm({...editForm, subIndustry: value})}
+              onValueChange={(value: string) => setEditForm({...editForm, subIndustry: value})}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select sub-industry" />
@@ -848,7 +848,7 @@ export function ViewContactDetails({
           <Input
             id="edit-contactLinkedInUrl"
             value={editForm.contactLinkedInUrl}
-            onChange={(e) => setEditForm({...editForm, contactLinkedInUrl: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, contactLinkedInUrl: e.target.value})}
             placeholder="https://linkedin.com/in/username"
           />
         </div>
@@ -858,7 +858,7 @@ export function ViewContactDetails({
             id="edit-lastUpdateDate"
             type="date"
             value={editForm.lastUpdateDate}
-            onChange={(e) => setEditForm({...editForm, lastUpdateDate: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, lastUpdateDate: e.target.value})}
           />
         </div>
         
@@ -873,7 +873,7 @@ export function ViewContactDetails({
           <Input
             id="edit-companyName"
             value={editForm.companyName}
-            onChange={(e) => setEditForm({...editForm, companyName: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, companyName: e.target.value})}
             placeholder="Enter company name"
             required
           />
@@ -882,7 +882,7 @@ export function ViewContactDetails({
           <Label htmlFor="edit-employeeSize">Employee Size *</Label>
           <Select 
             value={editForm.employeeSize || ''} 
-            onValueChange={(value) => setEditForm({...editForm, employeeSize: value})}
+            onValueChange={(value: string) => setEditForm({...editForm, employeeSize: value})}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select employee size" />
@@ -905,7 +905,7 @@ export function ViewContactDetails({
           <Label htmlFor="edit-revenue">Revenue *</Label>
           <Select 
             value={editForm.revenue || ''} 
-            onValueChange={(value) => setEditForm({...editForm, revenue: value})}
+            onValueChange={(value: string) => setEditForm({...editForm, revenue: value})}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select revenue" />
@@ -929,7 +929,7 @@ export function ViewContactDetails({
           <Textarea
             id="edit-amfNotes"
             value={editForm.amfNotes}
-            onChange={(e) => setEditForm({...editForm, amfNotes: e.target.value})}
+            onChange={(e: { target: { value: string } }) => setEditForm({...editForm, amfNotes: e.target.value})}
             rows={3}
             placeholder="Additional notes about the contact..."
           />
@@ -1311,7 +1311,7 @@ export function ViewContactDetails({
                   </div>
                   
                   {/* Company LinkedIn */}
-                  {(company?.contactLinkedInUrl || contact.contactLinkedInUrl) && (
+                  {((company as any)?.companyLinkedInUrl || contact.contactLinkedInUrl) && (
                     <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-200">
                       <div className="mt-0.5">
                         <Linkedin className="w-4 h-4 text-gray-500" />
@@ -1319,8 +1319,8 @@ export function ViewContactDetails({
                       <div className="flex-1 min-w-0">
                         <div className="text-xs text-gray-500 mb-0.5">Company_LinkedIn</div>
                         <div className="text-sm font-medium text-blue-600">
-                          <a href={company?.contactLinkedInUrl || contact.contactLinkedInUrl || '#'} target="_blank" rel="noopener noreferrer" className="hover:underline break-all">
-                            {company?.contactLinkedInUrl || contact.contactLinkedInUrl}
+                          <a href={(company as any)?.companyLinkedInUrl || contact.contactLinkedInUrl || '#'} target="_blank" rel="noopener noreferrer" className="hover:underline break-all">
+                            {(company as any)?.companyLinkedInUrl || contact.contactLinkedInUrl}
                           </a>
                         </div>
                       </div>

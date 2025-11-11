@@ -10,9 +10,7 @@ function InputOTP({
   className,
   containerClassName,
   ...props
-}: React.ComponentProps<typeof OTPInput> & {
-  containerClassName?: string;
-}) {
+}: any) {
   return (
     <OTPInput
       data-slot="input-otp"
@@ -26,7 +24,7 @@ function InputOTP({
   );
 }
 
-function InputOTPGroup({ className, ...props }: React.ComponentProps<"div">) {
+function InputOTPGroup({ className, ...props }: any) {
   return (
     <div
       data-slot="input-otp-group"
@@ -40,15 +38,13 @@ function InputOTPSlot({
   index,
   className,
   ...props
-}: React.ComponentProps<"div"> & {
-  index: number;
-}) {
+}: any) {
   const inputOTPContext = React.useContext(OTPInputContext);
   const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {};
   const isEmpty = !char;
   
   // Check if all slots are filled (OTP is complete)
-  const allSlotsFilled = inputOTPContext?.slots?.every(slot => slot?.char) ?? false;
+  const allSlotsFilled = inputOTPContext?.slots?.every((slot: any) => slot?.char) ?? false;
 
   return (
     <div
@@ -99,7 +95,7 @@ function InputOTPSlot({
   );
 }
 
-function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
+function InputOTPSeparator({ ...props }: any) {
   return (
     <div data-slot="input-otp-separator" role="separator" {...props}>
       <MinusIcon />

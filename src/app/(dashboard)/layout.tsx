@@ -8,6 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { useState } from "react";
 import type { User, Contact, Company, ActivityLog, ApprovalRequest } from "@/types/dashboard.types";
+import type { UserObject } from "@/types/auth.types";
 import { SupportContactForm } from "@/components/SupportContactForm";
 import { Button } from "@/components/ui/button";
 import { LogOut, Filter } from "lucide-react";
@@ -39,6 +40,16 @@ export default function DashboardLayout({
         email: user.email,
         name: user.name || `${user.firstName} ${user.lastName}`.trim() || user.email,
         role: user.role || null,
+      }
+    : null;
+
+  // Convert User to UserObject for DashboardSidebar
+  const sidebarUser: UserObject | null = dashboardUser
+    ? {
+        _id: dashboardUser.id,
+        email: dashboardUser.email,
+        name: dashboardUser.name,
+        role: dashboardUser.role || "customer",
       }
     : null;
 
@@ -107,7 +118,7 @@ export default function DashboardLayout({
     );
   }
 
-  const pendingRequestsCount = approvalRequests.filter(req => req.status === 'pending').length;
+  const pendingRequestsCount = approvalRequests.filter((req: ApprovalRequest) => req.status === 'pending').length;
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', path: '/dashboard' },
@@ -152,7 +163,7 @@ export default function DashboardLayout({
       <DashboardSidebar
         activeView={activeView}
         menuItems={menuItems}
-        user={dashboardUser}
+        user={sidebarUser!}
         onLogout={handleLogout}
         onSupportClick={() => setShowSupportModal(true)}
         pendingRequestsCount={pendingRequestsCount}

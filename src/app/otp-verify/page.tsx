@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { verifyOtp, clearVerifiedCustomer, resetAuthState, resendOtp } from '@/store/slices/auth.slice';
 
-export default function OtpVerifyPage() {
+function OtpVerifyContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -330,6 +330,27 @@ export default function OtpVerifyPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function OtpVerifyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50 p-4">
+        <div className="w-full max-w-md">
+          <Card className="shadow-lg border-0">
+            <CardContent className="pt-8 pb-8">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#EF8037]" />
+                <p className="mt-4 text-gray-600">Loading...</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    }>
+      <OtpVerifyContent />
+    </Suspense>
   );
 }
 

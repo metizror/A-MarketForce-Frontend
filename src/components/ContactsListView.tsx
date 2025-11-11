@@ -21,7 +21,7 @@ import {
   BarChart,
   Cpu
 } from 'lucide-react';
-import { Contact, Company } from '../App';
+import type { Contact, Company } from '@/types/dashboard.types';
 
 interface ContactsListViewProps {
   contacts: Contact[];
@@ -31,7 +31,7 @@ interface ContactsListViewProps {
 
 export function ContactsListView({ contacts, companies, onViewContact }: ContactsListViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedContact, setExpandedContact] = useState<string | null>(null);
+  const [expandedContact, setExpandedContact] = useState(null as string | null);
 
   // Helper function to get company data by contact's companyId
   const getCompanyData = (contact: Contact) => {
@@ -58,7 +58,7 @@ export function ContactsListView({ contacts, companies, onViewContact }: Contact
     label, 
     value 
   }: { 
-    icon: React.ElementType; 
+    icon: any; 
     label: string; 
     value: string | undefined;
   }) => {
@@ -97,7 +97,7 @@ export function ContactsListView({ contacts, companies, onViewContact }: Contact
             type="text"
             placeholder="Search contacts by name, email, job title, or company..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e: { target: { value: string } }) => setSearchQuery(e.target.value)}
             className="pl-10 h-12"
           />
         </div>
@@ -260,7 +260,7 @@ export function ContactsListView({ contacts, companies, onViewContact }: Contact
                             <InfoField
                               icon={Linkedin}
                               label="Company_LinkedIn"
-                              value={company.contactLinkedInUrl}
+                              value={company.companyLinkedInUrl}
                             />
                             <InfoField
                               icon={Cpu}

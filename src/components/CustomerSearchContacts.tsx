@@ -18,7 +18,7 @@ export default function CustomerSearchContacts({ isPaid, setActiveTab }: Custome
   });
 
   const [showFilters, setShowFilters] = useState(true);
-  const [sortBy, setSortBy] = useState<'company' | 'jobTitle'>('company');
+  const [sortBy, setSortBy] = useState('company' as 'company' | 'jobTitle');
 
   const resetFilters = () => {
     setFilters({
@@ -231,7 +231,7 @@ export default function CustomerSearchContacts({ isPaid, setActiveTab }: Custome
               type="text"
               placeholder="Company Name"
               value={filters.company}
-              onChange={(e) => setFilters({ ...filters, company: e.target.value })}
+              onChange={(e: { target: { value: string } }) => setFilters({ ...filters, company: e.target.value })}
               className="w-40 px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent shadow-sm"
             />
           </div>
@@ -239,7 +239,7 @@ export default function CustomerSearchContacts({ isPaid, setActiveTab }: Custome
           <div className="relative">
             <select
               value={filters.industry}
-              onChange={(e) => setFilters({ ...filters, industry: e.target.value })}
+              onChange={(e: { target: { value: string } }) => setFilters({ ...filters, industry: e.target.value })}
               className="w-40 px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent appearance-none bg-white shadow-sm"
             >
               <option value="">All Industries</option>
@@ -255,7 +255,7 @@ export default function CustomerSearchContacts({ isPaid, setActiveTab }: Custome
           <div className="relative">
             <select
               value={filters.location}
-              onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+              onChange={(e: { target: { value: string } }) => setFilters({ ...filters, location: e.target.value })}
               className="w-40 px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent appearance-none bg-white shadow-sm"
             >
               <option value="">All Locations</option>
@@ -270,7 +270,7 @@ export default function CustomerSearchContacts({ isPaid, setActiveTab }: Custome
           <div className="relative">
             <select
               value={filters.jobRole}
-              onChange={(e) => setFilters({ ...filters, jobRole: e.target.value })}
+              onChange={(e: { target: { value: string } }) => setFilters({ ...filters, jobRole: e.target.value })}
               className="w-40 px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent appearance-none bg-white shadow-sm"
             >
               <option value="">Job Role</option>
@@ -289,7 +289,7 @@ export default function CustomerSearchContacts({ isPaid, setActiveTab }: Custome
           <div className="relative">
             <select
               value={filters.jobLevel}
-              onChange={(e) => setFilters({ ...filters, jobLevel: e.target.value })}
+              onChange={(e: { target: { value: string } }) => setFilters({ ...filters, jobLevel: e.target.value })}
               className="w-40 px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent appearance-none bg-white shadow-sm"
             >
               <option value="">Job Level</option>
@@ -306,7 +306,7 @@ export default function CustomerSearchContacts({ isPaid, setActiveTab }: Custome
           <div className="relative">
             <select
               value={filters.employeeSize}
-              onChange={(e) => setFilters({ ...filters, employeeSize: e.target.value })}
+              onChange={(e: { target: { value: string } }) => setFilters({ ...filters, employeeSize: e.target.value })}
               className="w-40 px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent appearance-none bg-white shadow-sm"
             >
               <option value="">Employee Size</option>
@@ -356,7 +356,7 @@ export default function CustomerSearchContacts({ isPaid, setActiveTab }: Custome
               <div className="relative">
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'company' | 'jobTitle')}
+                  onChange={(e: { target: { value: string } }) => setSortBy(e.target.value as 'company' | 'jobTitle')}
                   className="px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent appearance-none bg-white shadow-sm pr-10"
                 >
                   <option value="company">Sort by Company</option>

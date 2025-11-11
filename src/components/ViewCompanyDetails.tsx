@@ -400,7 +400,7 @@ export function ViewCompanyDetails({
   const { isUpdating, isDeleting } = useAppSelector((state) => state.companies);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState([] as Contact[]);
   const [contactsCount, setContactsCount] = useState(0);
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
 
@@ -530,7 +530,7 @@ export function ViewCompanyDetails({
 
     const csvHeader =
       "First Name,Last Name,Job Title,Job Level,Job Role,Email,Phone,Direct Phone,Address 1,Address 2,City,State,Zip Code,Country,Website,Industry,Contact LinkedIn URL,aMF Notes,Last Update Date";
-    const csvRows = contacts.map((contact) =>
+    const csvRows = contacts.map((contact: Contact) =>
       [
         escapeCSV(contact.firstName || ""),
         escapeCSV(contact.lastName || ""),

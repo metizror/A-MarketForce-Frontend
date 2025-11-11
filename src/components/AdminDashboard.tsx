@@ -41,14 +41,14 @@ export function AdminDashboard({
   setApprovalRequests,
   onLogout
 }: AdminDashboardProps) {
-  const [activeView, setActiveView] = useState<ViewType>('dashboard');
+  const [activeView, setActiveView] = useState('dashboard' as ViewType);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({});
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState(null as Company | null);
+  const [selectedContact, setSelectedContact] = useState(null as Contact | null);
   const [showSupportModal, setShowSupportModal] = useState(false);
 
-  const pendingRequestsCount = approvalRequests.filter(req => req.status === 'pending').length;
+  const pendingRequestsCount = approvalRequests.filter((req: ApprovalRequest) => req.status === 'pending').length;
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
@@ -161,24 +161,24 @@ export function AdminDashboard({
                   </Button>
                 </div>
               </div>
-              <ActivityLogsPanel logs={userLogs.slice(0, 5)} />
+              <ActivityLogsPanel logs={userLogs.slice(0, 5)} pagination={null} />
             </div>
           </div>
         );
       case 'contacts':
-        return <ContactsTable contacts={userContacts} setContacts={setContacts} user={user} companies={userCompanies} filters={filters} onViewContact={handleViewContact} />;
+        return <ContactsTable contacts={userContacts} user={user} companies={userCompanies} filters={filters} onViewContact={handleViewContact} />;
       case 'companies':
-        return <CompaniesTable companies={userCompanies} setCompanies={setCompanies} user={user} filters={filters} onViewCompany={handleViewCompany} />;
+        return <CompaniesTable companies={userCompanies} user={user} filters={filters} onViewCompany={handleViewCompany} />;
       case 'view-company':
         return selectedCompany ? (
           <ViewCompanyDetails
             company={selectedCompany}
-            contacts={contacts}
-            setContacts={setContacts}
             user={user}
             onBack={handleBackToCompanies}
-            onEdit={handleEditCompany}
-            onDelete={handleDeleteCompany}
+            onExport={(company) => {
+              // Handle export
+              console.log('Export company', company);
+            }}
           />
         ) : null;
       case 'view-contact':
@@ -222,7 +222,7 @@ export function AdminDashboard({
           />
         );
       case 'activity':
-        return <ActivityLogsPanel logs={userLogs} />;
+        return <ActivityLogsPanel logs={userLogs} pagination={null} />;
       case 'settings':
         return <SettingsPanel user={user} />;
       default:

@@ -26,7 +26,7 @@ export function SupportContactForm({ isOpen, onClose, userEmail, userName }: Sup
     message: '',
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     
     if (!formData.name || !formData.email || !formData.subject || !formData.category || !formData.message) {
@@ -58,7 +58,7 @@ export function SupportContactForm({ isOpen, onClose, userEmail, userName }: Sup
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: typeof formData) => ({ ...prev, [field]: value }));
   };
 
   if (isSuccess) {
@@ -106,7 +106,7 @@ export function SupportContactForm({ isOpen, onClose, userEmail, userName }: Sup
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e: { target: { value: string } }) => handleInputChange('name', e.target.value)}
                 placeholder="John Doe"
                 className="h-11"
                 required
@@ -119,7 +119,7 @@ export function SupportContactForm({ isOpen, onClose, userEmail, userName }: Sup
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                onChange={(e: { target: { value: string } }) => handleInputChange('email', e.target.value)}
                 placeholder="john@example.com"
                 className="h-11"
                 required
@@ -131,7 +131,7 @@ export function SupportContactForm({ isOpen, onClose, userEmail, userName }: Sup
             <Label htmlFor="category">Category *</Label>
             <Select
               value={formData.category}
-              onValueChange={(value) => handleInputChange('category', value)}
+              onValueChange={(value: string) => handleInputChange('category', value)}
             >
               <SelectTrigger className="h-11">
                 <SelectValue placeholder="Select a category..." />
@@ -152,7 +152,7 @@ export function SupportContactForm({ isOpen, onClose, userEmail, userName }: Sup
             <Input
               id="subject"
               value={formData.subject}
-              onChange={(e) => handleInputChange('subject', e.target.value)}
+              onChange={(e: { target: { value: string } }) => handleInputChange('subject', e.target.value)}
               placeholder="Brief description of your request"
               className="h-11"
               required
@@ -164,7 +164,7 @@ export function SupportContactForm({ isOpen, onClose, userEmail, userName }: Sup
             <Textarea
               id="message"
               value={formData.message}
-              onChange={(e) => handleInputChange('message', e.target.value)}
+              onChange={(e: { target: { value: string } }) => handleInputChange('message', e.target.value)}
               placeholder="Please provide as much detail as possible about your request..."
               rows={6}
               className="resize-none"

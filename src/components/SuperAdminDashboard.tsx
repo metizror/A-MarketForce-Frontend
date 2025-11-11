@@ -51,16 +51,16 @@ export function SuperAdminDashboard({
   setApprovalRequests,
   onLogout
 }: SuperAdminDashboardProps) {
-  const [activeView, setActiveView] = useState<ViewType>('dashboard');
-  const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [filters, setFilters] = useState<Record<string, any>>({});
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [activeView, setActiveView] = useState('dashboard' as ViewType);
+  const [showFilters, setShowFilters] = useState(false as boolean);
+  const [filters, setFilters] = useState({} as Record<string, any>);
+  const [selectedCompany, setSelectedCompany] = useState(null as Company | null);
+  const [selectedContact, setSelectedContact] = useState(null as Contact | null);
   const [showSupportModal, setShowSupportModal] = useState(false);
-  const [adminUsersCount, setAdminUsersCount] = useState<number>(0);
-  const [lastImportDate, setLastImportDate] = useState<string | null>(null);
-  const [isLoadingUsers, setIsLoadingUsers] = useState<boolean>(true);
-  const [isLoadingImportDate, setIsLoadingImportDate] = useState<boolean>(true);
+  const [adminUsersCount, setAdminUsersCount] = useState(0 as number);
+  const [lastImportDate, setLastImportDate] = useState(null as string | null);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true as boolean);
+  const [isLoadingImportDate, setIsLoadingImportDate] = useState(true as boolean);
   
   const dispatch = useAppDispatch();
   
@@ -91,12 +91,13 @@ export function SuperAdminDashboard({
           if (getContacts.fulfilled.match(result) && result.payload.contacts && result.payload.contacts.length > 0) {
             // Find the most recent contact by createdAt
             const sortedContacts = [...result.payload.contacts].sort((a: any, b: any) => {
-              const dateA = new Date(a.createdAt || 0).getTime();
-              const dateB = new Date(b.createdAt || 0).getTime();
+              const dateA = new Date((a as any).createdAt || a.addedDate || 0).getTime();
+              const dateB = new Date((b as any).createdAt || b.addedDate || 0).getTime();
               return dateB - dateA;
             });
-            if (sortedContacts[0]?.createdAt) {
-              setLastImportDate(sortedContacts[0].createdAt);
+            if (sortedContacts[0]) {
+              const contact = sortedContacts[0] as any;
+              setLastImportDate(contact.createdAt || contact.addedDate || null);
             }
           }
           setIsLoadingImportDate(false);
@@ -106,7 +107,7 @@ export function SuperAdminDashboard({
       });
   }, [dispatch]);
 
-  const pendingRequestsCount = approvalRequests.filter(req => req.status === 'pending').length;
+  const pendingRequestsCount = approvalRequests.filter((req: ApprovalRequest) => req.status === 'pending').length;
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
@@ -212,24 +213,24 @@ export function SuperAdminDashboard({
                   setLastImportDate(new Date().toISOString());
                 }}
               />
-              <ActivityLogsPanel logs={activityLogs.slice(0, 5)} />
+              <ActivityLogsPanel logs={activityLogs.slice(0, 5)} pagination={null} />
             </div>
           </div>
         );
       case 'contacts':
-        return <ContactsTable contacts={contacts} setContacts={setContacts} user={user} companies={companies} filters={filters} onViewContact={handleViewContact} />;
+        return <ContactsTable contacts={contacts} user={user} companies={companies} filters={filters} onViewContact={handleViewContact} />;
       case 'companies':
-        return <CompaniesTable companies={companies} setCompanies={setCompanies} user={user} filters={filters} onViewCompany={handleViewCompany} />;
+        return <CompaniesTable companies={companies} user={user} filters={filters} onViewCompany={handleViewCompany} />;
       case 'view-company':
         return selectedCompany ? (
           <ViewCompanyDetails
             company={selectedCompany}
-            contacts={contacts}
-            setContacts={setContacts}
             user={user}
             onBack={handleBackToCompanies}
-            onEdit={handleEditCompany}
-            onDelete={handleDeleteCompany}
+            onExport={(company) => {
+              // Handle export
+              console.log('Export company', company);
+            }}
           />
         ) : null;
       case 'view-contact':
@@ -277,7 +278,7 @@ export function SuperAdminDashboard({
           />
         );
       case 'activity':
-        return <ActivityLogsPanel logs={activityLogs} />;
+        return <ActivityLogsPanel logs={activityLogs} pagination={null} />;
       case 'settings':
         return <SettingsPanel user={user} />;
       default:

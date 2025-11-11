@@ -152,7 +152,7 @@ export default function CustomerSearchCompanies({ isPaid, setActiveTab }: Custom
               type="text"
               placeholder="Company Name"
               value={filters.companyName}
-              onChange={(e) => setFilters({ ...filters, companyName: e.target.value })}
+              onChange={(e: { target: { value: string } }) => setFilters({ ...filters, companyName: e.target.value })}
               className="w-40 px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent shadow-sm"
             />
           </div>
@@ -160,7 +160,7 @@ export default function CustomerSearchCompanies({ isPaid, setActiveTab }: Custom
           <div className="relative">
             <select
               value={filters.industry}
-              onChange={(e) => setFilters({ ...filters, industry: e.target.value })}
+              onChange={(e: { target: { value: string } }) => setFilters({ ...filters, industry: e.target.value })}
               className="w-40 px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent appearance-none bg-white shadow-sm"
             >
               <option value="">All Industries</option>
@@ -175,7 +175,7 @@ export default function CustomerSearchCompanies({ isPaid, setActiveTab }: Custom
           <div className="relative">
             <select
               value={filters.location}
-              onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+              onChange={(e: { target: { value: string } }) => setFilters({ ...filters, location: e.target.value })}
               className="w-40 px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent appearance-none bg-white shadow-sm"
             >
               <option value="">Location</option>
@@ -196,7 +196,7 @@ export default function CustomerSearchCompanies({ isPaid, setActiveTab }: Custom
           <div className="relative">
             <select
               value={filters.employeeSize}
-              onChange={(e) => setFilters({ ...filters, employeeSize: e.target.value })}
+              onChange={(e: { target: { value: string } }) => setFilters({ ...filters, employeeSize: e.target.value })}
               className="w-40 px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent appearance-none bg-white shadow-sm"
             >
               <option value="">Employee Size</option>
@@ -215,7 +215,7 @@ export default function CustomerSearchCompanies({ isPaid, setActiveTab }: Custom
           <div className="relative">
             <select
               value={filters.revenue}
-              onChange={(e) => setFilters({ ...filters, revenue: e.target.value })}
+              onChange={(e: { target: { value: string } }) => setFilters({ ...filters, revenue: e.target.value })}
               className="w-40 px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent appearance-none bg-white shadow-sm"
             >
               <option value="">All Revenue</option>

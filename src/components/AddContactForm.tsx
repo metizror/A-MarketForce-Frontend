@@ -7,7 +7,7 @@ import { Textarea } from './ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { UserPlus, ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { User, Company } from '../App';
+import type { User, Company } from '@/types/dashboard.types';
 
 interface AddContactFormProps {
   onSave: (contact: any, newCompany?: any) => void;
@@ -48,7 +48,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
     amfNotes: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     
     // Validate required contact fields
@@ -111,7 +111,11 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: typeof formData) => ({ ...prev, [field]: value }));
+  };
+
+  const handleChange = (field: string) => (e: { target: { value: string } }) => {
+    handleInputChange(field, e.target.value);
   };
 
   const canDelete = currentUser.role === 'superadmin';
@@ -159,7 +163,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                   <Input
                     id="firstName"
                     value={formData.firstName}
-                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    onChange={handleChange('firstName')}
                     placeholder="John"
                     className="h-11"
                     required
@@ -171,7 +175,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                   <Input
                     id="lastName"
                     value={formData.lastName}
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                    onChange={handleChange('lastName')}
                     placeholder="Doe"
                     className="h-11"
                     required
@@ -184,7 +188,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    onChange={handleChange('email')}
                     placeholder="john.doe@example.com"
                     className="h-11"
                     required
@@ -197,7 +201,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     id="phone"
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    onChange={handleChange('phone')}
                     placeholder="+1 (555) 123-4567"
                     className="h-11"
                   />
@@ -208,7 +212,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                   <Input
                     id="directPhone"
                     value={formData.directPhone}
-                    onChange={(e) => handleInputChange('directPhone', e.target.value)}
+                    onChange={handleChange('directPhone')}
                     placeholder="Extension or direct line"
                     className="h-11"
                   />
@@ -219,7 +223,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                   <Input
                     id="jobTitle"
                     value={formData.jobTitle}
-                    onChange={(e) => handleInputChange('jobTitle', e.target.value)}
+                    onChange={handleChange('jobTitle')}
                     placeholder="e.g., Senior Software Engineer"
                     className="h-11"
                   />
@@ -230,7 +234,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                   <Input
                     id="jobLevel"
                     value={formData.jobLevel}
-                    onChange={(e) => handleInputChange('jobLevel', e.target.value)}
+                    onChange={handleChange('jobLevel')}
                     placeholder="e.g., Senior, Manager, Director"
                     className="h-11"
                   />
@@ -241,7 +245,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                   <Input
                     id="jobRole"
                     value={formData.jobRole}
-                    onChange={(e) => handleInputChange('jobRole', e.target.value)}
+                    onChange={handleChange('jobRole')}
                     placeholder="e.g., Engineering, Sales"
                     className="h-11"
                   />
@@ -253,7 +257,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     id="contactLinkedIn"
                     type="url"
                     value={formData.contactLinkedIn}
-                    onChange={(e) => handleInputChange('contactLinkedIn', e.target.value)}
+                    onChange={handleChange('contactLinkedIn')}
                     placeholder="https://www.linkedin.com/in/..."
                     className="h-11"
                   />
@@ -279,7 +283,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     <Input
                       id="companyName"
                       value={formData.companyName}
-                      onChange={(e) => handleInputChange('companyName', e.target.value)}
+                      onChange={handleChange('companyName')}
                       placeholder="Enter company name"
                       className="h-11"
                       required
@@ -291,7 +295,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     <Input
                       id="employeeSize"
                       value={formData.employeeSize}
-                      onChange={(e) => handleInputChange('employeeSize', e.target.value)}
+                      onChange={handleChange('employeeSize')}
                       placeholder="e.g., 100-500"
                       className="h-11"
                       required
@@ -303,7 +307,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     <Input
                       id="revenue"
                       value={formData.revenue}
-                      onChange={(e) => handleInputChange('revenue', e.target.value)}
+                      onChange={handleChange('revenue')}
                       placeholder="e.g., $10M-$50M"
                       className="h-11"
                       required
@@ -316,7 +320,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                       id="website"
                       type="url"
                       value={formData.website}
-                      onChange={(e) => handleInputChange('website', e.target.value)}
+                      onChange={handleChange('website')}
                       placeholder="https://www.example.com"
                       className="h-11"
                     />
@@ -327,7 +331,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     <Input
                       id="industry"
                       value={formData.industry}
-                      onChange={(e) => handleInputChange('industry', e.target.value)}
+                      onChange={handleChange('industry')}
                       placeholder="e.g., Technology"
                       className="h-11"
                     />
@@ -338,7 +342,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     <Input
                       id="address"
                       value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
+                      onChange={handleChange('address')}
                       placeholder="Street address"
                       className="h-11"
                     />
@@ -349,7 +353,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     <Input
                       id="address2"
                       value={formData.address2}
-                      onChange={(e) => handleInputChange('address2', e.target.value)}
+                      onChange={handleChange('address2')}
                       placeholder="Suite, unit, etc."
                       className="h-11"
                     />
@@ -360,7 +364,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     <Input
                       id="city"
                       value={formData.city}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      onChange={handleChange('city')}
                       placeholder="City"
                       className="h-11"
                     />
@@ -371,7 +375,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     <Input
                       id="state"
                       value={formData.state}
-                      onChange={(e) => handleInputChange('state', e.target.value)}
+                      onChange={handleChange('state')}
                       placeholder="State or Province"
                       className="h-11"
                     />
@@ -382,7 +386,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     <Input
                       id="zipCode"
                       value={formData.zipCode}
-                      onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                      onChange={handleChange('zipCode')}
                       placeholder="ZIP or Postal Code"
                       className="h-11"
                     />
@@ -393,7 +397,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     <Input
                       id="country"
                       value={formData.country}
-                      onChange={(e) => handleInputChange('country', e.target.value)}
+                      onChange={handleChange('country')}
                       placeholder="Country"
                       className="h-11"
                     />
@@ -404,7 +408,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                     <Input
                       id="technology"
                       value={formData.technology}
-                      onChange={(e) => handleInputChange('technology', e.target.value)}
+                      onChange={handleChange('technology')}
                       placeholder="e.g., AWS, React, Python"
                       className="h-11"
                     />
@@ -416,7 +420,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                       id="companyLinkedIn"
                       type="url"
                       value={formData.companyLinkedIn}
-                      onChange={(e) => handleInputChange('companyLinkedIn', e.target.value)}
+                      onChange={handleChange('companyLinkedIn')}
                       placeholder="https://www.linkedin.com/company/..."
                       className="h-11"
                     />
@@ -440,7 +444,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
                 <Textarea
                   id="amfNotes"
                   value={formData.amfNotes}
-                  onChange={(e) => handleInputChange('amfNotes', e.target.value)}
+                  onChange={handleChange('amfNotes')}
                   placeholder="Add internal notes about this contact..."
                   rows={4}
                   className="resize-none"

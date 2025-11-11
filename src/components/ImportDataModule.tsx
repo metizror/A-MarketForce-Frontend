@@ -570,9 +570,10 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
                         >
                           {Object.entries(columnMapping).map(([excelColumn, field]) => {
                             if (!field || field === 'skip') return null;
+                            const fieldKey = typeof field === 'string' ? field : excelColumn;
                             return (
                               <td 
-                                key={field}
+                                key={fieldKey}
                                 className="px-4 py-3 text-gray-700 whitespace-nowrap"
                               >
                                 {row[excelColumn] || '-'}

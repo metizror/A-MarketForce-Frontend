@@ -13,10 +13,10 @@ export default function CompaniesPage() {
   const router = useRouter();
   const { user } = useAppSelector((state) => state.auth);
   const { companies, pagination, isLoading, error } = useAppSelector((state) => state.companies);
-  const [filters, setFilters] = useState<GetCompaniesParams>({
+  const [filters, setFilters] = useState({
     page: 1,
     limit: 25,
-  });
+  } as GetCompaniesParams);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -42,8 +42,8 @@ export default function CompaniesPage() {
   }, [searchQuery, debouncedSearchQuery]);
 
   // Track previous filters to avoid duplicate API calls
-  const prevFiltersRef = useRef<GetCompaniesParams | null>(null);
-  const prevSearchRef = useRef<string>('');
+  const prevFiltersRef = useRef(null as GetCompaniesParams | null);
+  const prevSearchRef = useRef('' as string);
 
   // Fetch companies when filters or debounced search change
   useEffect(() => {

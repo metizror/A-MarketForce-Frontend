@@ -145,13 +145,13 @@ export default function CustomerInvoices() {
                 type="text"
                 placeholder="Search invoices by ID, amount, or date..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e: { target: { value: string } }) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent"
               />
             </div>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              onChange={(e: { target: { value: string } }) => setFilterStatus(e.target.value)}
               className="px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent bg-white"
             >
               <option value="all">All Status</option>

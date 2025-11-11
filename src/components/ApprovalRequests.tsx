@@ -32,8 +32,8 @@ export function ApprovalRequests({
   // Use Redux state if available, otherwise fall back to props
   const approvalRequests = requests.length > 0 ? requests : (propApprovalRequests || []);
   
-  const [selectedRequest, setSelectedRequest] = useState<ApprovalRequest | null>(null);
-  const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState(null as ApprovalRequest | null);
+  const [actionType, setActionType] = useState(null as 'approve' | 'reject' | null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageLimit, setPageLimit] = useState(25);
@@ -418,7 +418,7 @@ export function ApprovalRequests({
                     id="rejection-reason"
                     placeholder="Provide a reason for rejection..."
                     value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
+                    onChange={(e: { target: { value: string } }) => setRejectionReason(e.target.value)}
                     rows={3}
                     required
                     className={!rejectionReason.trim() ? 'border-red-300' : ''}

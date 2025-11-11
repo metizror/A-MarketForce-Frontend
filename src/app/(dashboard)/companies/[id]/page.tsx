@@ -17,9 +17,9 @@ export default function CompanyDetailPage() {
   const { user } = useAppSelector((state) => state.auth);
   const { companies: reduxCompanies } = useAppSelector((state) => state.companies);
   const dispatch = useAppDispatch();
-  const [company, setCompany] = useState<Company | null>(null);
+  const [company, setCompany] = useState(null as Company | null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null as string | null);
 
   const dashboardUser: User | null = user ? {
     id: user.id,

@@ -6,7 +6,7 @@ import { Textarea } from './ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Building, ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { User } from '../App';
+import type { User } from '@/types/dashboard.types';
 
 interface AddCompanyFormProps {
   onSave: (company: any) => void;
@@ -61,7 +61,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     
     // Validate required fields
@@ -111,7 +111,11 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: typeof formData) => ({ ...prev, [field]: value }));
+  };
+
+  const handleChange = (field: string) => (e: { target: { value: string } }) => {
+    handleInputChange(field, e.target.value);
   };
 
   const canDelete = currentUser.role === 'superadmin';
@@ -159,7 +163,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Input
                     id="companyName"
                     value={formData.companyName}
-                    onChange={(e) => handleInputChange('companyName', e.target.value)}
+                    onChange={handleChange('companyName')}
                     placeholder="Enter company name"
                     className="h-11"
                     required
@@ -172,7 +176,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                     id="website"
                     type="url"
                     value={formData.website}
-                    onChange={(e) => handleInputChange('website', e.target.value)}
+                    onChange={handleChange('website')}
                     placeholder="https://www.example.com"
                     className={`h-11 ${formData.website && !validateWebsite(formData.website) ? 'border-red-500' : ''}`}
                   />
@@ -186,7 +190,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Input
                     id="industry"
                     value={formData.industry}
-                    onChange={(e) => handleInputChange('industry', e.target.value)}
+                    onChange={handleChange('industry')}
                     placeholder="e.g., Technology, Healthcare"
                     className="h-11"
                   />
@@ -198,7 +202,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                     id="phone"
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    onChange={handleChange('phone')}
                     placeholder="+1 (555) 123-4567"
                     className={`h-11 ${formData.phone && !validatePhone(formData.phone) ? 'border-red-500' : ''}`}
                   />
@@ -212,7 +216,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Input
                     id="employeeSize"
                     value={formData.employeeSize}
-                    onChange={(e) => handleInputChange('employeeSize', e.target.value)}
+                    onChange={handleChange('employeeSize')}
                     placeholder="e.g., 100-500, 1000+"
                     className="h-11"
                   />
@@ -223,7 +227,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Input
                     id="revenue"
                     value={formData.revenue}
-                    onChange={(e) => handleInputChange('revenue', e.target.value)}
+                    onChange={handleChange('revenue')}
                     placeholder="e.g., $10M-$50M"
                     className="h-11"
                   />
@@ -235,7 +239,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                     id="companyLinkedIn"
                     type="url"
                     value={formData.companyLinkedIn}
-                    onChange={(e) => handleInputChange('companyLinkedIn', e.target.value)}
+                    onChange={handleChange('companyLinkedIn')}
                     placeholder="https://www.linkedin.com/company/..."
                     className="h-11"
                   />
@@ -246,7 +250,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Input
                     id="technology"
                     value={formData.technology}
-                    onChange={(e) => handleInputChange('technology', e.target.value)}
+                    onChange={handleChange('technology')}
                     placeholder="e.g., Salesforce, AWS, React"
                     className="h-11"
                   />
@@ -270,7 +274,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Input
                     id="address"
                     value={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    onChange={handleChange('address')}
                     placeholder="Street address"
                     className="h-11"
                   />
@@ -281,7 +285,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Input
                     id="address2"
                     value={formData.address2}
-                    onChange={(e) => handleInputChange('address2', e.target.value)}
+                    onChange={handleChange('address2')}
                     placeholder="Apt, suite, building (optional)"
                     className="h-11"
                   />
@@ -292,7 +296,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Input
                     id="city"
                     value={formData.city}
-                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    onChange={handleChange('city')}
                     placeholder="City"
                     className="h-11"
                   />
@@ -303,7 +307,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Input
                     id="state"
                     value={formData.state}
-                    onChange={(e) => handleInputChange('state', e.target.value)}
+                    onChange={handleChange('state')}
                     placeholder="State / Province"
                     className="h-11"
                   />
@@ -314,7 +318,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Input
                     id="zipCode"
                     value={formData.zipCode}
-                    onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                    onChange={handleChange('zipCode')}
                     placeholder="Postal code"
                     className="h-11"
                   />
@@ -325,7 +329,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                   <Input
                     id="country"
                     value={formData.country}
-                    onChange={(e) => handleInputChange('country', e.target.value)}
+                    onChange={handleChange('country')}
                     placeholder="Country"
                     className="h-11"
                   />
@@ -348,7 +352,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
                 <Textarea
                   id="amfNotes"
                   value={formData.amfNotes}
-                  onChange={(e) => handleInputChange('amfNotes', e.target.value)}
+                  onChange={handleChange('amfNotes')}
                   placeholder="Add internal notes about this company..."
                   rows={4}
                   className="resize-none"

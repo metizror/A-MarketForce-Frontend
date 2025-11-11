@@ -67,12 +67,12 @@ export function ContactsTable({
   const dispatch = useAppDispatch();
   const { isCreating, isUpdating, isDeleting } = useAppSelector((state) => state.contacts);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingContact, setEditingContact] = useState<Contact | null>(null);
-  const [viewingContact, setViewingContact] = useState<Contact | null>(null);
-  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
-  const [sortField, setSortField] = useState<SortField>('firstName');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [viewMode, setViewMode] = useState<'table' | 'list'>('table');
+  const [editingContact, setEditingContact] = useState(null as Contact | null);
+  const [viewingContact, setViewingContact] = useState(null as Contact | null);
+  const [selectedContacts, setSelectedContacts] = useState([] as string[]);
+  const [sortField, setSortField] = useState('firstName' as SortField);
+  const [sortDirection, setSortDirection] = useState('asc' as SortDirection);
+  const [viewMode, setViewMode] = useState('table' as 'table' | 'list');
   const [showExportAllDialog, setShowExportAllDialog] = useState(false);
   const [isExportingAll, setIsExportingAll] = useState(false);
 
@@ -1049,7 +1049,7 @@ export function ContactsTable({
       toast.success('Contact deleted successfully');
 
       // Clear selection if this contact was selected
-      setSelectedContacts(selectedContacts.filter(selectedId => selectedId !== contactId));
+      setSelectedContacts(selectedContacts.filter((selectedId: string) => selectedId !== contactId));
 
       // Refetch contacts to update the list
       const fetchParams: GetContactsParams = {
@@ -1295,7 +1295,7 @@ export function ContactsTable({
     if (checked) {
       setSelectedContacts([...selectedContacts, contactId]);
     } else {
-      setSelectedContacts(selectedContacts.filter(id => id !== contactId));
+      setSelectedContacts(selectedContacts.filter((id: string) => id !== contactId));
     }
   };
 
@@ -1308,7 +1308,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-firstName" : "firstName"}
           value={newContact.firstName}
-          onChange={(e) => setNewContact({...newContact, firstName: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, firstName: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1316,7 +1316,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-lastName" : "lastName"}
           value={newContact.lastName}
-          onChange={(e) => setNewContact({...newContact, lastName: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, lastName: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1324,7 +1324,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-jobTitle" : "jobTitle"}
           value={newContact.jobTitle}
-          onChange={(e) => setNewContact({...newContact, jobTitle: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, jobTitle: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1332,7 +1332,7 @@ export function ContactsTable({
         <Select 
           key={`jobLevel-${contactId}`}
           value={newContact.jobLevel || ''} 
-          onValueChange={(value) => setNewContact({...newContact, jobLevel: value})}
+          onValueChange={(value: string) => setNewContact({...newContact, jobLevel: value})}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select level" />
@@ -1357,7 +1357,7 @@ export function ContactsTable({
         <Select 
           key={`jobRole-${contactId}`}
           value={newContact.jobRole || ''} 
-          onValueChange={(value) => setNewContact({...newContact, jobRole: value})}
+          onValueChange={(value: string) => setNewContact({...newContact, jobRole: value})}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select role" />
@@ -1397,7 +1397,7 @@ export function ContactsTable({
           id={isEdit ? "edit-email" : "email"}
           type="email"
           value={newContact.email}
-          onChange={(e) => setNewContact({...newContact, email: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, email: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1405,7 +1405,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-phone" : "phone"}
           value={newContact.phone}
-          onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, phone: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1413,7 +1413,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-directPhone" : "directPhone"}
           value={newContact.directPhone}
-          onChange={(e) => setNewContact({...newContact, directPhone: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, directPhone: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1421,7 +1421,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-address1" : "address1"}
           value={newContact.address1}
-          onChange={(e) => setNewContact({...newContact, address1: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, address1: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1429,7 +1429,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-address2" : "address2"}
           value={newContact.address2}
-          onChange={(e) => setNewContact({...newContact, address2: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, address2: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1437,7 +1437,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-city" : "city"}
           value={newContact.city}
-          onChange={(e) => setNewContact({...newContact, city: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, city: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1445,7 +1445,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-state" : "state"}
           value={newContact.state}
-          onChange={(e) => setNewContact({...newContact, state: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, state: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1453,7 +1453,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-zipCode" : "zipCode"}
           value={newContact.zipCode}
-          onChange={(e) => setNewContact({...newContact, zipCode: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, zipCode: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1461,7 +1461,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-country" : "country"}
           value={newContact.country}
-          onChange={(e) => setNewContact({...newContact, country: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, country: e.target.value})}
         />
       </div>
       <div className="space-y-2">
@@ -1469,7 +1469,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-website" : "website"}
           value={newContact.website}
-          onChange={(e) => setNewContact({...newContact, website: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, website: e.target.value})}
           placeholder="https://example.com"
         />
       </div>
@@ -1478,7 +1478,7 @@ export function ContactsTable({
         <Select 
           key={`industry-${contactId}`}
           value={newContact.industry || ''} 
-          onValueChange={(value) => {
+          onValueChange={(value: string) => {
             setNewContact({...newContact, industry: value, subIndustry: ''});
           }}
         >
@@ -1499,7 +1499,7 @@ export function ContactsTable({
           <Select 
             key={`subIndustry-${contactId}-${newContact.industry}`}
             value={newContact.subIndustry || ''} 
-            onValueChange={(value) => setNewContact({...newContact, subIndustry: value})}
+            onValueChange={(value: string) => setNewContact({...newContact, subIndustry: value})}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select sub-industry" />
@@ -1517,7 +1517,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-contactLinkedInUrl" : "contactLinkedInUrl"}
           value={newContact.contactLinkedInUrl}
-          onChange={(e) => setNewContact({...newContact, contactLinkedInUrl: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, contactLinkedInUrl: e.target.value})}
           placeholder="https://linkedin.com/in/username"
         />
       </div>
@@ -1527,7 +1527,7 @@ export function ContactsTable({
           id={isEdit ? "edit-lastUpdateDate" : "lastUpdateDate"}
           type="date"
           value={newContact.lastUpdateDate}
-          onChange={(e) => setNewContact({...newContact, lastUpdateDate: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, lastUpdateDate: e.target.value})}
         />
       </div>
       
@@ -1543,7 +1543,7 @@ export function ContactsTable({
         <Input
           id={isEdit ? "edit-companyName" : "companyName"}
           value={newContact.companyName}
-          onChange={(e) => setNewContact({...newContact, companyName: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, companyName: e.target.value})}
           placeholder="Enter company name"
           required
         />
@@ -1553,7 +1553,7 @@ export function ContactsTable({
         <Select 
           key={`employeeSize-${contactId}`}
           value={newContact.employeeSize || ''} 
-          onValueChange={(value) => setNewContact({...newContact, employeeSize: value})}
+          onValueChange={(value: string) => setNewContact({...newContact, employeeSize: value})}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select employee size" />
@@ -1577,7 +1577,7 @@ export function ContactsTable({
         <Select 
           key={`revenue-${contactId}`}
           value={newContact.revenue || ''} 
-          onValueChange={(value) => setNewContact({...newContact, revenue: value})}
+          onValueChange={(value: string) => setNewContact({...newContact, revenue: value})}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select revenue" />
@@ -1601,7 +1601,7 @@ export function ContactsTable({
         <Textarea
           id={isEdit ? "edit-amfNotes" : "amfNotes"}
           value={newContact.amfNotes}
-          onChange={(e) => setNewContact({...newContact, amfNotes: e.target.value})}
+          onChange={(e: { target: { value: string } }) => setNewContact({...newContact, amfNotes: e.target.value})}
           rows={3}
           placeholder="Additional notes about the contact..."
         />
@@ -1632,7 +1632,7 @@ export function ContactsTable({
               <Input
                 placeholder="Search contacts..."
                 value={searchQuery || ''}
-                onChange={(e) => {
+                onChange={(e: { target: { value: string } }) => {
                   const value = e.target.value;
                   handleSearchInputChange(value);
                 }}
@@ -1813,7 +1813,7 @@ export function ContactsTable({
                 <TableRow 
                   key={contact.id}
                   className="cursor-pointer hover:bg-gray-50"
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     // Don't trigger row click if clicking on interactive elements
                     const target = e.target as HTMLElement;
                     if (!target.closest('button') && !target.closest('[role="checkbox"]') && !target.closest('[role="menuitem"]')) {
@@ -1821,10 +1821,10 @@ export function ContactsTable({
                     }
                   }}
                 >
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+                  <TableCell onClick={(e: any) => e.stopPropagation()}>
                     <Checkbox 
                       checked={selectedContacts.includes(contact.id)}
-                      onCheckedChange={(checked) => handleSelectContact(contact.id, !!checked)}
+                      onCheckedChange={(checked: boolean) => handleSelectContact(contact.id, !!checked)}
                     />
                   </TableCell>
                   <TableCell>
@@ -1859,7 +1859,7 @@ export function ContactsTable({
                       }
                     })()}
                   </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+                  <TableCell onClick={(e: any) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -1960,7 +1960,7 @@ export function ContactsTable({
       </CardContent>
 
       {/* Edit Dialog */}
-      <Dialog open={editingContact !== null} onOpenChange={(open) => !open && setEditingContact(null)}>
+      <Dialog open={editingContact !== null} onOpenChange={(open: boolean) => !open && setEditingContact(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Edit Contact</DialogTitle>

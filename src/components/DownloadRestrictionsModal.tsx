@@ -21,7 +21,7 @@ export function DownloadRestrictionsModal({
   totalSelectedContacts 
 }: DownloadRestrictionsModalProps) {
   const [contactsToDownload, setContactsToDownload] = useState(totalSelectedContacts);
-  const [maxContactsPerCompany, setMaxContactsPerCompany] = useState<number[]>([10]);
+  const [maxContactsPerCompany, setMaxContactsPerCompany] = useState([10] as number[]);
   const [dailyLimit] = useState(10000);
   const [dailyUsed] = useState(245); // Mock current usage
   const [saveSearch, setSaveSearch] = useState(false);
@@ -123,7 +123,7 @@ export function DownloadRestrictionsModal({
                 min={MIN_DOWNLOAD}
                 max={Math.min(totalSelectedContacts, MAX_DOWNLOAD, remainingToday)}
                 value={contactsToDownload}
-                onChange={(e) => setContactsToDownload(Math.max(MIN_DOWNLOAD, parseInt(e.target.value) || MIN_DOWNLOAD))}
+                onChange={(e: { target: { value: string } }) => setContactsToDownload(Math.max(MIN_DOWNLOAD, parseInt(e.target.value) || MIN_DOWNLOAD))}
                 className="h-12 text-lg"
               />
               <div className="flex-shrink-0">
@@ -222,7 +222,7 @@ export function DownloadRestrictionsModal({
               <input
                 type="checkbox"
                 checked={saveSearch}
-                onChange={(e) => setSaveSearch(e.target.checked)}
+                onChange={(e: { target: { checked: boolean } }) => setSaveSearch(e.target.checked)}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
@@ -305,7 +305,7 @@ export function DownloadRestrictionsModal({
             <textarea
               id="request-message"
               value={requestMessage}
-              onChange={(e) => setRequestMessage(e.target.value)}
+              onChange={(e: { target: { value: string } }) => setRequestMessage(e.target.value)}
               placeholder="Please explain why you need more than 10,000 contacts per day..."
               className="w-full min-h-[120px] px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
             />

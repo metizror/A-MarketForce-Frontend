@@ -532,13 +532,13 @@ export function FilterPanel({ filters, setFilters, onFilterChange, onClose }: Fi
                     id="company-name"
                     placeholder="Search company..."
                     value={localFilters.companyName || ''}
-                    onChange={(e) => handleFilterChange('companyName', e.target.value)}
+                    onChange={(e: { target: { value: string } }) => handleFilterChange('companyName', e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm">Employee Size</Label>
-                  <Select value={localFilters.employeeSize || ''} onValueChange={(value) => handleFilterChange('employeeSize', value)}>
+                  <Select value={localFilters.employeeSize || ''} onValueChange={(value: string) => handleFilterChange('employeeSize', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select size" />
                     </SelectTrigger>
@@ -552,7 +552,7 @@ export function FilterPanel({ filters, setFilters, onFilterChange, onClose }: Fi
 
                 <div className="space-y-2">
                   <Label className="text-sm">Revenue</Label>
-                  <Select value={localFilters.revenue || ''} onValueChange={(value) => handleFilterChange('revenue', value)}>
+                  <Select value={localFilters.revenue || ''} onValueChange={(value: string) => handleFilterChange('revenue', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select revenue" />
                     </SelectTrigger>
@@ -566,7 +566,7 @@ export function FilterPanel({ filters, setFilters, onFilterChange, onClose }: Fi
 
                 <div className="space-y-2">
                   <Label className="text-sm">Industry</Label>
-                  <Select value={localFilters.industry || ''} onValueChange={(value) => handleFilterChange('industry', value)}>
+                  <Select value={localFilters.industry || ''} onValueChange={(value: string) => handleFilterChange('industry', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select industry" />
                     </SelectTrigger>
@@ -580,7 +580,7 @@ export function FilterPanel({ filters, setFilters, onFilterChange, onClose }: Fi
 
                 <div className="space-y-2">
                   <Label className="text-sm">Country</Label>
-                  <Select value={localFilters.country || ''} onValueChange={(value) => handleFilterChange('country', value)}>
+                  <Select value={localFilters.country || ''} onValueChange={(value: string) => handleFilterChange('country', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
@@ -594,7 +594,7 @@ export function FilterPanel({ filters, setFilters, onFilterChange, onClose }: Fi
 
                 <div className="space-y-2">
                   <Label className="text-sm">State</Label>
-                  <Select value={localFilters.state || ''} onValueChange={(value) => handleFilterChange('state', value)}>
+                  <Select value={localFilters.state || ''} onValueChange={(value: string) => handleFilterChange('state', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select state" />
                     </SelectTrigger>
@@ -623,13 +623,13 @@ export function FilterPanel({ filters, setFilters, onFilterChange, onClose }: Fi
                     id="job-title"
                     placeholder="Search job title..."
                     value={localFilters.jobTitle || ''}
-                    onChange={(e) => handleFilterChange('jobTitle', e.target.value)}
+                    onChange={(e: { target: { value: string } }) => handleFilterChange('jobTitle', e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm">Job Role</Label>
-                  <Select value={localFilters.jobRole || ''} onValueChange={(value) => handleFilterChange('jobRole', value)}>
+                  <Select value={localFilters.jobRole || ''} onValueChange={(value: string) => handleFilterChange('jobRole', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
@@ -643,7 +643,7 @@ export function FilterPanel({ filters, setFilters, onFilterChange, onClose }: Fi
 
                 <div className="space-y-2">
                   <Label className="text-sm">Job Level</Label>
-                  <Select value={localFilters.jobLevel || ''} onValueChange={(value) => handleFilterChange('jobLevel', value)}>
+                  <Select value={localFilters.jobLevel || ''} onValueChange={(value: string) => handleFilterChange('jobLevel', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select level" />
                     </SelectTrigger>

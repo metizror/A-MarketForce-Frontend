@@ -18,10 +18,10 @@ export default function ContactDetailPage() {
   const { user } = useAppSelector((state) => state.auth);
   const { contacts: reduxContacts } = useAppSelector((state) => state.contacts);
   const dispatch = useAppDispatch();
-  const [contact, setContact] = useState<Contact | null>(null);
-  const [company, setCompany] = useState<Company | null>(null);
+  const [contact, setContact] = useState(null as Contact | null);
+  const [company, setCompany] = useState(null as Company | null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null as string | null);
 
   const dashboardUser: User | null = user ? {
     id: user.id,

@@ -6,8 +6,8 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Button } from './button';
 import { cn } from './utils';
 
-interface PasswordInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
-  leftIcon?: ReactNode; // Icon to show on the left (like Lock icon)
+interface PasswordInputProps extends Omit<any, 'type'> {
+  leftIcon?: any; // Icon to show on the left (like Lock icon)
 }
 
 export function PasswordInput({ 
@@ -50,4 +50,3 @@ export function PasswordInput({
     </div>
   );
 }
-

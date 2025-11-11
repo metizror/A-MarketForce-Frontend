@@ -7,10 +7,10 @@ interface CustomerAllDownloadsProps {
 
 export default function CustomerAllDownloads({ onBack }: CustomerAllDownloadsProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'date' | 'size' | 'contacts'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [filterType, setFilterType] = useState<'all' | 'csv' | 'xlsx'>('all');
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [sortBy, setSortBy] = useState('date' as 'date' | 'size' | 'contacts');
+  const [sortOrder, setSortOrder] = useState('desc' as 'asc' | 'desc');
+  const [filterType, setFilterType] = useState('all' as 'all' | 'csv' | 'xlsx');
+  const [selectedItems, setSelectedItems] = useState([] as number[]);
 
   // Extended mock downloads data
   const allDownloads = [
@@ -51,8 +51,8 @@ export default function CustomerAllDownloads({ onBack }: CustomerAllDownloadsPro
   });
 
   const toggleSelectItem = (id: number) => {
-    setSelectedItems(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    setSelectedItems((prev: number[]) =>
+      prev.includes(id) ? prev.filter((item: number) => item !== id) : [...prev, id]
     );
   };
 
@@ -118,7 +118,7 @@ export default function CustomerAllDownloads({ onBack }: CustomerAllDownloadsPro
               type="text"
               placeholder="Search files..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e: { target: { value: string } }) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF8037] focus:border-transparent"
             />
             {searchTerm && (
@@ -135,7 +135,7 @@ export default function CustomerAllDownloads({ onBack }: CustomerAllDownloadsPro
             <Filter size={18} className="text-gray-600" />
             <select
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value as any)}
+              onChange={(e: { target: { value: string } }) => setFilterType(e.target.value as any)}
               className="bg-transparent border-none focus:outline-none text-gray-700"
             >
               <option value="all">All Types</option>
@@ -148,7 +148,7 @@ export default function CustomerAllDownloads({ onBack }: CustomerAllDownloadsPro
             <span className="text-gray-600 text-sm">Sort by:</span>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e: { target: { value: string } }) => setSortBy(e.target.value as any)}
               className="bg-transparent border-none focus:outline-none text-gray-700"
             >
               <option value="date">Date</option>

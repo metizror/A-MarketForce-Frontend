@@ -21,9 +21,9 @@ import { Label } from "@/components/ui/label";
  */
 export function ApiExample() {
   const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [token, setTokenState] = useState<string>("");
+  const [response, setResponse] = useState(null as any);
+  const [error, setError] = useState(null as string | null);
+  const [token, setTokenState] = useState("" as string);
 
   // Example: Public API call - Login
   const handlePublicLogin = async () => {

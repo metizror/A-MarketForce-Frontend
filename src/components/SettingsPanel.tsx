@@ -8,7 +8,7 @@ import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { Switch } from './ui/switch';
 import { Settings, Shield, Users, Bell, Key } from 'lucide-react';
-import { User } from '../App';
+import type { User } from '@/types/dashboard.types';
 import { toast } from 'sonner';
 
 interface SettingsPanelProps {
@@ -128,7 +128,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
               <Input
                 id="name"
                 value={profile.name}
-                onChange={(e) => setProfile({...profile, name: e.target.value})}
+                onChange={(e: { target: { value: string } }) => setProfile({...profile, name: e.target.value})}
               />
             </div>
             <div className="space-y-2">
@@ -137,7 +137,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
                 id="email"
                 type="email"
                 value={profile.email}
-                onChange={(e) => setProfile({...profile, email: e.target.value})}
+                onChange={(e: { target: { value: string } }) => setProfile({...profile, email: e.target.value})}
               />
             </div>
           </div>
@@ -235,7 +235,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
             <Switch
               id="email-notifications"
               checked={notifications.emailNotifications}
-              onCheckedChange={(checked) => setNotifications({...notifications, emailNotifications: checked})}
+              onCheckedChange={(checked: boolean) => setNotifications({...notifications, emailNotifications: checked})}
             />
           </div>
 
@@ -247,7 +247,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
             <Switch
               id="import-alerts"
               checked={notifications.importAlerts}
-              onCheckedChange={(checked) => setNotifications({...notifications, importAlerts: checked})}
+              onCheckedChange={(checked: boolean) => setNotifications({...notifications, importAlerts: checked})}
             />
           </div>
 
@@ -259,7 +259,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
             <Switch
               id="export-alerts"
               checked={notifications.exportAlerts}
-              onCheckedChange={(checked) => setNotifications({...notifications, exportAlerts: checked})}
+              onCheckedChange={(checked: boolean) => setNotifications({...notifications, exportAlerts: checked})}
             />
           </div>
 
@@ -271,7 +271,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
             <Switch
               id="weekly-reports"
               checked={notifications.weeklyReports}
-              onCheckedChange={(checked) => setNotifications({...notifications, weeklyReports: checked})}
+              onCheckedChange={(checked: boolean) => setNotifications({...notifications, weeklyReports: checked})}
             />
           </div>
 
