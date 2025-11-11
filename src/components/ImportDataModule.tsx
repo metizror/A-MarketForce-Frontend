@@ -59,7 +59,7 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
     'firstName', 'lastName', 'jobTitle', 'jobLevel', 'jobRole', 
     'email', 'phone', 'directPhone', 'contactLinkedIn',
     // Company Fields (14)
-    'companyName', 'address', 'address1', 'address2', 'city', 'state', 'zipCode', 'country',
+    'companyName', 'address1', 'address2', 'city', 'state', 'zipCode', 'country',
     'website', 'revenue', 'employeeSize', 'industry', 'subIndustry', 'companyLinkedIn', 'technology',
     // System Fields (2)
     'lastUpdateDate', 'LinkedInUrl'
