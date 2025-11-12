@@ -3,7 +3,7 @@ import { requireAdminAuth } from "../../../../services/jwt.service";
 import AdminAuth from "../../../../models/admin_auth.model";
 import { connectToDatabase } from "../../../../lib/db";
 import { AdminObject } from "@/types/auth.types";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 export async function GET(request: NextRequest) {
   try {
     const { error, admin } = await requireAdminAuth(request);

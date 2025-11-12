@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import adminAuthModel from "@/models/admin_auth.model";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { verifyAdminToken } from "../../../../services/jwt.service";
 
 export async function POST(request: NextRequest) {

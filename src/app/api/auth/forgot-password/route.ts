@@ -3,7 +3,7 @@ import customerAuthModel from "../../../../models/customer_auth.model";
 import Otp from "../../../../models/otp.model";
 import { sendMail } from "../../../../services/email.service";
 import { connectToDatabase } from "../../../../lib/db";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import adminAuthModel from "../../../../models/admin_auth.model";
 
 

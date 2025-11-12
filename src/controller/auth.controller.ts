@@ -1,6 +1,6 @@
 import customerAuthModel from "../models/customer_auth.model";
 import adminAuthModel from "../models/admin_auth.model";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import type {
   LoginPayload,
