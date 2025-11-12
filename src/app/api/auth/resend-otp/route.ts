@@ -7,8 +7,9 @@ import adminAuthModel from "../../../../models/admin_auth.model";
 
 
 export async function POST(request: NextRequest) {
-    await connectToDatabase();
-    const body = await request.json();
+    try {
+        await connectToDatabase();
+        const body = await request.json();
     const { email, role } = body;
 
     if (!email || !role) {
@@ -42,4 +43,11 @@ export async function POST(request: NextRequest) {
         text: `Your OTP is ${otp}`,
     });
     return NextResponse.json({ message: "OTP sent to email" }, { status: 200 });
+    } catch (error: any) {
+        console.error("Resend OTP route error:", error);
+        return NextResponse.json(
+            { message: error.message || "Failed to resend OTP" },
+            { status: 500 }
+        );
+    }
 }

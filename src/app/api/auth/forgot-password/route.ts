@@ -8,8 +8,9 @@ import adminAuthModel from "../../../../models/admin_auth.model";
 
 
 export async function POST(request: NextRequest) {
-  await connectToDatabase();
-  const body = await request.json();
+  try {
+    await connectToDatabase();
+    const body = await request.json();
   const { email, step, otp, newPassword, role } = body;
 
   let user: any;
@@ -76,4 +77,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Password reset" }, { status: 200 });
   }
   return NextResponse.json({ message: "Invalid step" }, { status: 400 });
+  } catch (error: any) {
+    console.error("Forgot password route error:", error);
+    return NextResponse.json(
+      { message: error.message || "Failed to process forgot password request" },
+      { status: 500 }
+    );
+  }
 }
