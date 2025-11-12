@@ -68,10 +68,16 @@ export interface Company {
 export interface ActivityLog {
   id: string;
   action: string;
-  details: string;
-  user: string;
-  role: string;
+  details?: string;
+  description?: string;
+  user?: string;
+  userName?: string;
+  createdBy?: string;
+  role?: string;
   timestamp: string;
+  createdAt?: string;
+  updatedAt?: string;
+  userId?: string;
 }
 
 export interface ApprovalRequest {
