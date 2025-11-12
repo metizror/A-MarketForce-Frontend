@@ -3,6 +3,7 @@ import { Activity, Upload, Edit, Trash2, UserPlus, Download, ChevronLeft, Chevro
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
+import { Skeleton } from './ui/skeleton';
 import type { ActivityLog } from '@/types/dashboard.types';
 
 interface ActivityLogsPanelProps {
@@ -179,9 +180,27 @@ export function ActivityLogsPanel({
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading activity logs...</p>
+            <div className="space-y-0 bg-white rounded-lg border border-gray-200">
+              {[...Array(10)].map((_, index) => (
+                <div key={index}>
+                  <div className="flex items-start gap-4 py-4 px-6">
+                    {/* Icon Skeleton */}
+                    <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
+                    
+                    {/* Content Skeleton */}
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-3/4" />
+                      <div className="flex items-center justify-between">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </div>
+                  </div>
+                  {index < 9 && <div className="border-b border-gray-100 mx-6" />}
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="text-center py-12">
@@ -329,9 +348,27 @@ export function ActivityLogsPanel({
         <div className="max-h-96 overflow-y-auto pr-4">
           <div className="space-y-0">
             {isLoading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                <p className="text-gray-500">Loading activity logs...</p>
+              <div className="space-y-0">
+                {[...Array(5)].map((_, index) => (
+                  <div key={index} className="py-4 px-1">
+                    <div className="flex items-start gap-4">
+                      {/* Icon Skeleton */}
+                      <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
+                      
+                      {/* Content Skeleton */}
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-3/4" />
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="h-3 w-16" />
+                        </div>
+                      </div>
+                    </div>
+                    {index < 4 && <div className="border-b border-gray-100 mx-1 mt-4" />}
+                  </div>
+                ))}
               </div>
             ) : error ? (
               <div className="text-center py-12">

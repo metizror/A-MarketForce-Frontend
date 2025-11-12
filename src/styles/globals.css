@@ -204,6 +204,15 @@ html {
   animation: caret-blink 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 /* Custom scrollbar for preview table */
 .preview-table-scroll::-webkit-scrollbar {
   width: 12px;
