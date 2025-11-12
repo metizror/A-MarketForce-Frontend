@@ -1,9 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { loginController } from "../../../../controller/auth.controller";
 import { LoginPayload } from "@/types/auth.types";
 import { connectToDatabase } from "@/lib/db";
 
-export async function POST(request: Request) {
+// Explicitly set runtime for Vercel
+export const runtime = 'nodejs';
+
+// Ensure this route is dynamic
+export const dynamic = 'force-dynamic';
+
+export async function POST(request: NextRequest) {
   try {
     await connectToDatabase();
     const data = await request.json();
