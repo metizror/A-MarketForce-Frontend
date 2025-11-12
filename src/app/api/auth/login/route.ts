@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { loginController } from "../../../../controller/auth.controller";
-import { LoginPayload } from "@/types/auth.types";
-import { connectToDatabase } from "@/lib/db";
+import type { LoginPayload } from "@/types/auth.types";
 
 // Route segment config for Vercel
 export const runtime = 'nodejs';
@@ -10,6 +8,10 @@ export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
+    // Lazy load imports to avoid module initialization errors on Vercel
+    const { loginController } = await import("../../../../controller/auth.controller");
+    const { connectToDatabase } = await import("../../../../lib/db");
+    
     await connectToDatabase();
     const data = await request.json();
     const response = await loginController(data as LoginPayload);
