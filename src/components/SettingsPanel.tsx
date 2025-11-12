@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { privateApiCall, privateApiPost } from '@/lib/api';
 import { useAppDispatch } from '@/store/hooks';
 import { updateUser } from '@/store/slices/auth.slice';
+import { Skeleton } from './ui/skeleton';
 
 interface SettingsPanelProps {
   user: User;
@@ -28,11 +29,11 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
     confirmPassword: ''
   });
 
-  const [currentUser, setCurrentUser] = useState<User>(user);
+  const [currentUser, setCurrentUser] = useState(user);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const hasFetchedUserData = useRef(false);
-  const originalValues = useRef<{ name: string; email: string }>({
+  const originalValues = useRef({
     name: user.name || '',
     email: user.email || ''
   });
@@ -275,9 +276,54 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-            </div>
+            <>
+              {/* User Info Card Skeleton */}
+              <div className="flex items-center space-x-4 mb-6 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200/50">
+                <Skeleton className="w-16 h-16 rounded-2xl flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-56" />
+                </div>
+              </div>
+
+              {/* Form Fields Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+
+              {/* Password Section Skeleton */}
+              <Separator className="my-6" />
+              <div className="flex items-center space-x-2 mb-4">
+                <Skeleton className="w-8 h-8 rounded-lg" />
+                <Skeleton className="h-5 w-32" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+
+              {/* Update Button Skeleton */}
+              <div className="pt-2">
+                <Skeleton className="h-10 w-32 rounded-md" />
+              </div>
+            </>
           ) : (
             <>
               <div className="flex items-center space-x-4 mb-6 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200/50">
@@ -290,7 +336,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
                   }}
                 >
                   <span className="text-white relative z-10 transition-transform duration-300 group-hover:scale-110">
-                    {currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'}
+                    {currentUser.name ? currentUser.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'U'}
                   </span>
                   <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300"></div>
                 </div>
@@ -299,34 +345,28 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
                   <p className="text-sm text-gray-600">{currentUser.email || ''}</p>
                 </div>
               </div>
-            </>
-          )}
 
-          {!isLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={profile.name}
-                  onChange={(e: { target: { value: string } }) => setProfile({...profile, name: e.target.value})}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={profile.name}
+                    onChange={(e: { target: { value: string } }) => setProfile({...profile, name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={profile.email}
+                    disabled
+                    className="bg-gray-100 cursor-not-allowed"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={profile.email}
-                  disabled
-                  className="bg-gray-100 cursor-not-allowed"
-                />
-              </div>
-            </div>
-          )}
 
-          {!isLoading && (
-            <>
               <Separator className="my-6" />
 
               <div className="flex items-center space-x-2 mb-4">
