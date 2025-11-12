@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAuth } from "../../../../services/jwt.service";
 import { connectToDatabase } from "../../../../lib/db";
 import Activity from "../../../../models/activity.model";
-await connectToDatabase();
+
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdminAuth(request);
   if (auth.error) return auth.error;
+  await connectToDatabase();
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);

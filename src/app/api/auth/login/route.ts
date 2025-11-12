@@ -3,9 +3,9 @@ import { loginController } from "../../../../controller/auth.controller";
 import { LoginPayload } from "@/types/auth.types";
 import { connectToDatabase } from "@/lib/db";
 
-await connectToDatabase();
 
 export async function POST(request: Request) {
+  await connectToDatabase();
   try {
     const data = await request.json();
     const response = await loginController(data as LoginPayload);

@@ -3,9 +3,9 @@ import { connectToDatabase } from "../../../../lib/db";
 import Contacts from "@/models/contacts.model";
 import { verifyAdminToken } from "../../../../services/jwt.service";
 
-await connectToDatabase();
 
 export async function GET(request: NextRequest) {
+  await connectToDatabase();
   const tokenVerification = await verifyAdminToken(request);
   if (!tokenVerification.valid) {
     return NextResponse.json(
@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -104,6 +103,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  await connectToDatabase();
   const tokenVerification = await verifyAdminToken(request);
   if (!tokenVerification.valid) {
     return NextResponse.json(
@@ -141,6 +141,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  await connectToDatabase();
   const tokenVerification = await verifyAdminToken(request);
   if (!tokenVerification.valid) {
     return NextResponse.json(
@@ -150,7 +151,6 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await connectToDatabase();
     const { ids } = await request.json();
 
     if (!Array.isArray(ids) || ids.length === 0) {
@@ -177,7 +177,8 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const tokenVerification = await verifyAdminToken(request);
+  await connectToDatabase();
+    const tokenVerification = await verifyAdminToken(request);
   if (!tokenVerification.valid) {
     return NextResponse.json(
       { message: "Unauthorized: Invalid or missing JWT token" },

@@ -5,9 +5,9 @@ import { sendMail } from "../../../../services/email.service";
 import customerAuthModel from "../../../../models/customer_auth.model";
 import adminAuthModel from "../../../../models/admin_auth.model";
 
-await connectToDatabase();
 
 export async function POST(request: NextRequest) {
+    await connectToDatabase();
     const body = await request.json();
     const { email, role } = body;
 

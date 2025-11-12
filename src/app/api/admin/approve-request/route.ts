@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAuth } from "../../../../services/jwt.service";
 import CustomerAuth from "../../../../models/customer_auth.model";
 import { connectToDatabase } from "../../../../lib/db";
-await connectToDatabase();
+
 
 export async function POST(request: NextRequest) {
+  await connectToDatabase();
   try {
     const auth = await requireAdminAuth(request);
     if (auth.error) return auth.error;
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  await connectToDatabase();
   try {
     const auth = await requireAdminAuth(request);
     if (auth.error) return auth.error;

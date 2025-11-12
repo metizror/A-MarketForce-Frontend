@@ -4,9 +4,8 @@ import adminAuthModel from "@/models/admin_auth.model";
 import bcrypt from "bcrypt";
 import { verifyAdminToken } from "../../../../services/jwt.service";
 
-await connectToDatabase();
-
 export async function POST(request: NextRequest) {
+  await connectToDatabase();
   const { valid, admin, decoded } = await verifyAdminToken(request);
   try {
     if (admin?.role == "superadmin") {
@@ -84,6 +83,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  await connectToDatabase();
   const { valid, admin, decoded } = await verifyAdminToken(request);
   if (!valid || admin?.role !== "superadmin") {
     return NextResponse.json(
@@ -146,6 +146,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  await connectToDatabase();
   const { valid, admin, decoded } = await verifyAdminToken(request);
   if (!valid || admin?.role !== "superadmin") {
     return NextResponse.json(
@@ -179,6 +180,7 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  await connectToDatabase();
   const { valid, admin, decoded } = await verifyAdminToken(request);
   if (!valid || admin?.role !== "superadmin") {
     return NextResponse.json(

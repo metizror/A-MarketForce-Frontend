@@ -4,12 +4,11 @@ import { connectToDatabase } from "../../../../lib/db";
 import { requireAdminAuth } from "../../../../services/jwt.service";
 import { createActivity } from "../../../../services/activity.service";
 
-await connectToDatabase();
 
 export async function GET(request: NextRequest) {
+  await connectToDatabase();
   const auth = await requireAdminAuth(request);
   if (auth.error) return auth.error;
-
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -88,6 +87,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  await connectToDatabase();
   const auth = await requireAdminAuth(request);
   if (auth.error) return auth.error;
 
@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  await connectToDatabase();
   const auth = await requireAdminAuth(request);
   if (auth.error) return auth.error;
 
@@ -158,6 +159,7 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  await connectToDatabase();
   const auth = await requireAdminAuth(request);
   if (auth.error) return auth.error;
   try {

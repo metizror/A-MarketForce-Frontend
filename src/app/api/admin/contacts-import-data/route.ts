@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "../../../../lib/db";
 import Contacts from "@/models/contacts.model";
 import { requireAdminAuth } from "../../../../services/jwt.service";
-
-await connectToDatabase();
+  
 
 export async function POST(request: NextRequest) {
+  await connectToDatabase();
   const { error, admin } = await requireAdminAuth(request);
   if (error) {
     return error;

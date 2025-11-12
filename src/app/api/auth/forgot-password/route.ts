@@ -6,9 +6,9 @@ import { connectToDatabase } from "../../../../lib/db";
 import bcrypt from "bcrypt";
 import adminAuthModel from "../../../../models/admin_auth.model";
 
-await connectToDatabase();
 
 export async function POST(request: NextRequest) {
+  await connectToDatabase();
   const body = await request.json();
   const { email, step, otp, newPassword, role } = body;
 
