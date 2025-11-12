@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { PasswordInput } from './ui/password-input';
@@ -11,12 +11,15 @@ import { Settings, Shield, Users, Bell, Key } from 'lucide-react';
 import type { User } from '@/types/dashboard.types';
 import { toast } from 'sonner';
 import { privateApiCall, privateApiPost } from '@/lib/api';
+import { useAppDispatch } from '@/store/hooks';
+import { updateUser } from '@/store/slices/auth.slice';
 
 interface SettingsPanelProps {
   user: User;
 }
 
 export function SettingsPanel({ user }: SettingsPanelProps) {
+  const dispatch = useAppDispatch();
   const [profile, setProfile] = useState({
     name: user.name || '',
     email: user.email || '',
@@ -28,12 +31,23 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
   const [currentUser, setCurrentUser] = useState<User>(user);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const hasFetchedUserData = useRef(false);
+  const originalValues = useRef<{ name: string; email: string }>({
+    name: user.name || '',
+    email: user.email || ''
+  });
 
-  // Fetch user data from API on component mount
+  // Fetch user data from API on component mount (only once)
   useEffect(() => {
+    // Prevent multiple fetches
+    if (hasFetchedUserData.current) {
+      return;
+    }
+
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
+        hasFetchedUserData.current = true;
         const response = await privateApiCall<{ admin: any }>('/auth/me');
         
         if (response.admin) {
@@ -46,6 +60,13 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
           };
           
           setCurrentUser(fetchedUser);
+          
+          // Store original values for comparison
+          originalValues.current = {
+            name: adminData.name || '',
+            email: adminData.email || ''
+          };
+          
           setProfile({
             name: adminData.name || '',
             email: adminData.email || '',
@@ -53,17 +74,26 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
             newPassword: '',
             confirmPassword: ''
           });
+
+          // Only update Redux if the data is different
+          if (user.name !== adminData.name || user.email !== adminData.email) {
+            dispatch(updateUser({
+              name: adminData.name || '',
+              email: adminData.email || ''
+            }));
+          }
         }
       } catch (error: any) {
         console.error('Failed to fetch user data:', error);
         toast.error(error.message || 'Failed to load user data');
+        hasFetchedUserData.current = false; // Reset on error so we can retry
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchUserData();
-  }, []);
+  }, [dispatch, user.name, user.email]);
 
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
@@ -75,6 +105,16 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
   const handleProfileUpdate = async () => {
     if (!profile.name) {
       toast.error('Please fill in your full name');
+      return;
+    }
+
+    // Check if there are any changes
+    const hasNameChange = profile.name !== originalValues.current.name;
+    const hasPasswordChange = profile.currentPassword && profile.newPassword;
+
+    // If no changes, show message and return
+    if (!hasNameChange && !hasPasswordChange) {
+      toast.info('No changes to update');
       return;
     }
 
@@ -101,18 +141,21 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
     try {
       // Prepare request data according to API format
       const requestData: any = {
-        data: {
-          fullName: profile.name
-        }
+        data: {}
       };
 
-      // Add password fields if new password is provided
-      if (profile.newPassword) {
+      // Only include name if it has changed
+      if (hasNameChange) {
+        requestData.data.name = profile.name;
+      }
+
+      // Add password fields if password change is requested
+      if (hasPasswordChange) {
         requestData.data.password = profile.currentPassword;
         requestData.data.newPassword = profile.newPassword;
       }
 
-      // Make API call
+      // Make API call to update profile
       const response = await privateApiPost<{ message: string; admin?: any }>(
         '/auth/me',
         requestData
@@ -121,33 +164,50 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
       // Show success message
       toast.success(response.message || 'Profile updated successfully');
 
-      // Refresh user data after successful update
-      if (response.admin) {
-        const adminData = response.admin;
-        const updatedUser: User = {
-          id: adminData._id || adminData.id,
-          name: adminData.name || '',
-          email: adminData.email || '',
-          role: adminData.role || currentUser.role || 'admin'
-        };
-        setCurrentUser(updatedUser);
-        setProfile({
-          ...profile,
-          name: adminData.name || profile.name,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
-        });
-      } else {
-        // Clear password fields after successful update
-        if (profile.newPassword) {
+      // Fetch updated user data from GET API
+      try {
+        const updatedUserResponse = await privateApiCall<{ admin: any }>('/auth/me');
+        
+        if (updatedUserResponse.admin) {
+          const adminData = updatedUserResponse.admin;
+          const updatedUser: User = {
+            id: adminData._id || adminData.id,
+            name: adminData.name || '',
+            email: adminData.email || '',
+            role: adminData.role || currentUser.role || 'admin'
+          };
+          
+          // Update original values to reflect the new state
+          originalValues.current = {
+            name: adminData.name || '',
+            email: adminData.email || ''
+          };
+          
+          // Update local state
+          setCurrentUser(updatedUser);
           setProfile({
-            ...profile,
+            name: adminData.name || '',
+            email: adminData.email || '',
             currentPassword: '',
             newPassword: '',
             confirmPassword: ''
           });
+
+          // Update Redux store to refresh sidebar and header
+          dispatch(updateUser({
+            name: adminData.name,
+            email: adminData.email
+          }));
         }
+      } catch (error: any) {
+        console.error('Failed to fetch updated user data:', error);
+        // Still clear password fields even if fetch fails
+        setProfile({
+          ...profile,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
       }
     } catch (error: any) {
       console.error('Profile update error:', error);

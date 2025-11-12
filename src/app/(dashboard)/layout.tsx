@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRoleBasedDashboard } from "@/hooks/useRoleBasedDashboard";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { logout } from "@/store/slices/auth.slice";
+import { logout, updateUser } from "@/store/slices/auth.slice";
 import { useRouter, usePathname } from "next/navigation";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { useState } from "react";
@@ -13,6 +13,7 @@ import { SupportContactForm } from "@/components/SupportContactForm";
 import { Button } from "@/components/ui/button";
 import { LogOut, Filter } from "lucide-react";
 import { FilterPanel } from "@/components/FilterPanel";
+import { privateApiCall } from "@/lib/api";
 
 export default function DashboardLayout({
   children,
@@ -27,6 +28,7 @@ export default function DashboardLayout({
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({});
   const [showSupportModal, setShowSupportModal] = useState(false);
+  const hasSyncedUserData = useRef(false);
 
   // State for dashboard data (can be replaced with API calls later)
   const [contacts] = useState([] as Contact[]);
@@ -65,6 +67,41 @@ export default function DashboardLayout({
     // Navigate to root login page
     router.push("/");
   };
+
+  // Fetch and sync user data from API on mount (only once)
+  useEffect(() => {
+    const syncUserData = async () => {
+      // Only sync once and only if we haven't synced yet
+      if (hasSyncedUserData.current || isLoading) {
+        return;
+      }
+
+      if (isAuthenticated && user && token && (role === "admin" || role === "superadmin")) {
+        try {
+          const response = await privateApiCall<{ admin: any }>('/auth/me');
+          if (response.admin) {
+            // Only update if the data is different to prevent unnecessary updates
+            const apiName = response.admin.name || '';
+            const apiEmail = response.admin.email || '';
+            
+            if (user.name !== apiName || user.email !== apiEmail) {
+              // Update Redux store with latest user data from API
+              dispatch(updateUser({
+                name: apiName,
+                email: apiEmail
+              }));
+            }
+            hasSyncedUserData.current = true;
+          }
+        } catch (error) {
+          console.error('Failed to sync user data:', error);
+          // Don't show error toast here as it's a background sync
+        }
+      }
+    };
+
+    syncUserData();
+  }, [isLoading, isAuthenticated, user?.name, user?.email, token, role, dispatch]);
 
   // Redirect unauthenticated users to login and customers to their dashboard
   useEffect(() => {

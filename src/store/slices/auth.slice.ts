@@ -236,6 +236,17 @@ const authSlice = createSlice({
         sessionStorage.removeItem("canAccessOtpVerify");
       }
     },
+    updateUser: (state, action: PayloadAction<{ name?: string; email?: string }>) => {
+      if (state.user) {
+        state.user = {
+          ...state.user,
+          ...(action.payload.name !== undefined && { name: action.payload.name }),
+          ...(action.payload.email !== undefined && { email: action.payload.email }),
+        };
+        // Update localStorage
+        saveAuthState({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated });
+      }
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(login.pending, (state) => {
@@ -316,7 +327,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, initializeAuth, clearVerifiedCustomer, resetAuthState } = authSlice.actions;
+export const { logout, clearError, initializeAuth, clearVerifiedCustomer, resetAuthState, updateUser } = authSlice.actions;
 
 export default authSlice.reducer;
 
