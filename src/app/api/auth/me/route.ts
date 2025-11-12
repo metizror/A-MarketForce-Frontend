@@ -55,29 +55,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!adminAuth.password) {
+    // Handle password update if newPassword is provided
+    if (data.newPassword) {
+      if (!data.password) {
+        return NextResponse.json(
+          { message: "Current password is required to change password" },
+          { status: 400 }
+        );
+      }
+
+      if (!adminAuth.password) {
+        return NextResponse.json(
+          { message: "Password not found for this account" },
+          { status: 400 }
+        );
+      }
+
+      const currentPassword = await bcrypt.compare(data.password, adminAuth.password);
+      if (!currentPassword) {
+        return NextResponse.json(
+          { message: "Current password is incorrect" },
+          { status: 400 }
+        );
+      }
+
+      const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+      const updateData = { ...data };
+      delete updateData.password;
+      delete updateData.newPassword;
+      updateData.password = hashedPassword;
+
+      await AdminAuth.findByIdAndUpdate(
+        admin?._id,
+        updateData,
+        { new: true }
+      );
       return NextResponse.json(
-        { message: "Password not found for this account" },
-        { status: 400 }
+        { message: "Password updated successfully" },
+        { status: 200 }
       );
     }
 
-    let currentPassword = await bcrypt.compare(data.password, adminAuth.password);
-    if (!currentPassword) {
-      return NextResponse.json(
-        { message: "Current password is incorrect" },
-        { status: 400 }
-      );
-    }
+    // Handle profile update (without password change)
+    const updateData = { ...data };
+    delete updateData.password;
+    delete updateData.newPassword;
 
-    const hashedPassword = await bcrypt.hash(data.newPassword, 10);
     await AdminAuth.findByIdAndUpdate(
       admin?._id,
-      { ...data, password: hashedPassword },
+      updateData,
       { new: true }
     );
     return NextResponse.json(
-      { message: "Password updated successfully" },
+      { message: "Profile updated successfully" },
       { status: 200 }
     );
   } catch (error) {
