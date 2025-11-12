@@ -1,5 +1,4 @@
 import React from 'react';
-import { Badge } from './ui/badge';
 import { Activity, Upload, Edit, Trash2, UserPlus, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -173,12 +172,6 @@ export function ActivityLogsPanel({
                 </div>
               </div>
               
-              {/* Activity Count Badge */}
-              <Badge variant="outline" className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200/50">
-                <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-semibold">
-                  {totalCount} {totalCount === 1 ? 'Activity' : 'Activities'}
-                </span>
-              </Badge>
             </div>
           </div>
         </div>
@@ -213,13 +206,12 @@ export function ActivityLogsPanel({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5">
                           <p className="text-sm font-semibold text-gray-900">{log.action}</p>
-                          <Badge variant="outline" className="text-xs px-2 py-0.5">
-                            {log.role}
-                          </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mb-2.5 leading-relaxed">{log.details}</p>
+                        <p className="text-sm text-gray-600 mb-2.5 leading-relaxed">
+                          {log.description || log.details || log.action}
+                        </p>
                         <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span className="font-medium">by {log.user}</span>
+                          <span className="font-medium">Created by: {log.createdBy || log.userName || log.user || "Unknown"}</span>
                           <span className="font-medium">{formatTimestamp(log.timestamp)}</span>
                         </div>
                       </div>
@@ -331,12 +323,6 @@ export function ActivityLogsPanel({
             </div>
           </div>
           
-          {/* Activity Count Badge */}
-          <Badge variant="outline" className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200/50">
-            <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              {logs.length} {logs.length === 1 ? 'Activity' : 'Activities'}
-            </span>
-          </Badge>
         </div>
       </div>
       <div className="relative px-6 pb-6">
@@ -369,13 +355,12 @@ export function ActivityLogsPanel({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5">
                           <p className="text-sm font-semibold text-gray-900">{log.action}</p>
-                          <Badge variant="outline" className="text-xs px-2 py-0.5">
-                            {log.role}
-                          </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mb-2.5 leading-relaxed">{log.details}</p>
+                        <p className="text-sm text-gray-600 mb-2.5 leading-relaxed">
+                          {log.description || log.details || log.action}
+                        </p>
                         <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span className="font-medium">by {log.user}</span>
+                          <span className="font-medium">Created by: {log.createdBy || log.userName || log.user || "Unknown"}</span>
                           <span className="font-medium">{formatTimestamp(log.timestamp)}</span>
                         </div>
                       </div>
