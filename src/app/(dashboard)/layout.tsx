@@ -70,38 +70,42 @@ export default function DashboardLayout({
 
   // Fetch and sync user data from API on mount (only once)
   useEffect(() => {
-    const syncUserData = async () => {
-      // Only sync once and only if we haven't synced yet
-      if (hasSyncedUserData.current || isLoading) {
-        return;
-      }
+    // Prevent duplicate calls - check ref first
+    if (hasSyncedUserData.current || isLoading) {
+      return;
+    }
 
-      if (isAuthenticated && user && token && (role === "admin" || role === "superadmin")) {
-        try {
-          const response = await privateApiCall<{ admin: any }>('/auth/me');
-          if (response.admin) {
-            // Only update if the data is different to prevent unnecessary updates
-            const apiName = response.admin.name || '';
-            const apiEmail = response.admin.email || '';
-            
-            if (user.name !== apiName || user.email !== apiEmail) {
-              // Update Redux store with latest user data from API
-              dispatch(updateUser({
-                name: apiName,
-                email: apiEmail
-              }));
-            }
-            hasSyncedUserData.current = true;
+    // Only sync once when component mounts and auth is ready
+    if (!isAuthenticated || !user || !token || (role !== "admin" && role !== "superadmin")) {
+      return;
+    }
+
+    const syncUserData = async () => {
+      try {
+        hasSyncedUserData.current = true; // Set immediately to prevent duplicate calls
+        const response = await privateApiCall<{ admin: any }>('/auth/me');
+        if (response.admin) {
+          // Only update if the data is different to prevent unnecessary updates
+          const apiName = response.admin.name || '';
+          const apiEmail = response.admin.email || '';
+          
+          if (user.name !== apiName || user.email !== apiEmail) {
+            // Update Redux store with latest user data from API
+            dispatch(updateUser({
+              name: apiName,
+              email: apiEmail
+            }));
           }
-        } catch (error) {
-          console.error('Failed to sync user data:', error);
-          // Don't show error toast here as it's a background sync
         }
+      } catch (error) {
+        console.error('Failed to sync user data:', error);
+        hasSyncedUserData.current = false; // Reset on error to allow retry
+        // Don't show error toast here as it's a background sync
       }
     };
 
     syncUserData();
-  }, [isLoading, isAuthenticated, user?.name, user?.email, token, role, dispatch]);
+  }, [isLoading, isAuthenticated, user, token, role, dispatch]);
 
   // Redirect unauthenticated users to login and customers to their dashboard
   useEffect(() => {

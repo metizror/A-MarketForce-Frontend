@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DashboardStats } from "@/components/DashboardStats";
 import { ImportDataModule } from "@/components/ImportDataModule";
 import { ActivityLogsPanel } from "@/components/ActivityLogsPanel";
@@ -29,11 +29,18 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const role = user?.role || null;
+  const hasFetchedDashboard = useRef(false);
 
-  // Fetch all dashboard data from single API endpoint
+  // Fetch all dashboard data from single API endpoint (only once)
   useEffect(() => {
+    // Prevent duplicate calls
+    if (hasFetchedDashboard.current) {
+      return;
+    }
+
     if (role === "admin" || role === "superadmin") {
       setIsLoading(true);
+      hasFetchedDashboard.current = true;
       
       // Fetch all dashboard data from single endpoint
       privateApiCall<DashboardData>("/admin/dashboard")
@@ -48,6 +55,7 @@ export default function DashboardPage() {
         .catch((error) => {
           console.error("Failed to fetch dashboard data:", error);
           setIsLoading(false);
+          hasFetchedDashboard.current = false; // Reset on error to allow retry
         });
     } else {
       // For customers, set loading to false immediately

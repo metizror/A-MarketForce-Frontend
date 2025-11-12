@@ -30,71 +30,46 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
   });
 
   const [currentUser, setCurrentUser] = useState(user);
-  const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const hasFetchedUserData = useRef(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const originalValues = useRef({
     name: user.name || '',
     email: user.email || ''
   });
 
-  // Fetch user data from API on component mount (only once)
+  // Update local state when user prop changes (from Redux, synced by layout)
   useEffect(() => {
-    // Prevent multiple fetches
-    if (hasFetchedUserData.current) {
-      return;
+    // Check if user data is available (from Redux, synced by layout)
+    if (user && user.name && user.email) {
+      const updatedUser: User = {
+        id: user.id,
+        name: user.name || '',
+        email: user.email || '',
+        role: user.role || 'admin'
+      };
+      
+      setCurrentUser(updatedUser);
+      
+      // Update original values and profile when user data changes
+      originalValues.current = {
+        name: user.name || '',
+        email: user.email || ''
+      };
+      
+      setProfile({
+        name: user.name || '',
+        email: user.email || '',
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      
+      setIsInitializing(false);
+    } else if (user && user.id) {
+      // User exists but name/email might be loading, keep skeleton visible
+      setIsInitializing(true);
     }
-
-    const fetchUserData = async () => {
-      try {
-        setIsLoading(true);
-        hasFetchedUserData.current = true;
-        const response = await privateApiCall<{ admin: any }>('/auth/me');
-        
-        if (response.admin) {
-          const adminData = response.admin;
-          const fetchedUser: User = {
-            id: adminData._id || adminData.id,
-            name: adminData.name || '',
-            email: adminData.email || '',
-            role: adminData.role || 'admin'
-          };
-          
-          setCurrentUser(fetchedUser);
-          
-          // Store original values for comparison
-          originalValues.current = {
-            name: adminData.name || '',
-            email: adminData.email || ''
-          };
-          
-          setProfile({
-            name: adminData.name || '',
-            email: adminData.email || '',
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: ''
-          });
-
-          // Only update Redux if the data is different
-          if (user.name !== adminData.name || user.email !== adminData.email) {
-            dispatch(updateUser({
-              name: adminData.name || '',
-              email: adminData.email || ''
-            }));
-          }
-        }
-      } catch (error: any) {
-        console.error('Failed to fetch user data:', error);
-        toast.error(error.message || 'Failed to load user data');
-        hasFetchedUserData.current = false; // Reset on error so we can retry
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, [dispatch, user.name, user.email]);
+  }, [user]);
 
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
@@ -275,7 +250,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isLoading ? (
+          {isInitializing ? (
             <>
               {/* User Info Card Skeleton */}
               <div className="flex items-center space-x-4 mb-6 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200/50">
@@ -412,7 +387,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
               <div className="pt-2">
                 <Button 
                   onClick={handleProfileUpdate}
-                  disabled={isUpdating || isLoading}
+                  disabled={isUpdating || isInitializing}
                   className="shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ 
                     background: currentUser.role === 'superadmin' 
