@@ -3,11 +3,10 @@ import { loginController } from "../../../../controller/auth.controller";
 import { LoginPayload } from "@/types/auth.types";
 import { connectToDatabase } from "@/lib/db";
 
-// Explicitly set runtime for Vercel
+// Route segment config for Vercel
 export const runtime = 'nodejs';
-
-// Ensure this route is dynamic
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
