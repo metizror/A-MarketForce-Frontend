@@ -29,6 +29,47 @@ interface ContactsListViewProps {
   onViewContact?: (contact: Contact) => void;
 }
 
+// Helper function to format revenue with $ sign
+const formatRevenue = (revenue: string | undefined | null): string => {
+  if (!revenue || revenue === '-') return '-';
+  
+  // If already has $ sign, return as is
+  if (revenue.includes('$')) return revenue;
+  
+  // Map revenue values to formatted strings
+  const revenueMap: { [key: string]: string } = {
+    'Lessthan1M': 'Less than $1M',
+    '1Mto5M': '$1M-$5M',
+    '5Mto10M': '$5M-$10M',
+    '10Mto50M': '$10M-$50M',
+    '50Mto100M': '$50M-$100M',
+    '100Mto250M': '$100M-$250M',
+    '250Mto500M': '$250M-$500M',
+    '500Mto1B': '$500M-$1B',
+    'Morethan1B': 'More than $1B',
+  };
+  
+  // Check if it's a known format
+  if (revenueMap[revenue]) {
+    return revenueMap[revenue];
+  }
+  
+  // If it's in format like "1Mto5M" or "1M-5M", add $ signs
+  const rangeMatch = revenue.match(/^(\d+(?:\.\d+)?[MB]?)to(\d+(?:\.\d+)?[MB]?)$/i) || revenue.match(/^(\d+(?:\.\d+)?[MB]?)-(\d+(?:\.\d+)?[MB]?)$/i);
+  if (rangeMatch) {
+    return `$${rangeMatch[1]}-$${rangeMatch[2]}`;
+  }
+  
+  // If it starts with a number and M/B, add $ sign
+  const singleMatch = revenue.match(/^(\d+(?:\.\d+)?)([MB])$/i);
+  if (singleMatch) {
+    return `$${singleMatch[1]}${singleMatch[2]}`;
+  }
+  
+  // Default: return as is
+  return revenue;
+};
+
 export function ContactsListView({ contacts, companies, onViewContact }: ContactsListViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedContact, setExpandedContact] = useState(null as string | null);
@@ -245,7 +286,7 @@ export function ContactsListView({ contacts, companies, onViewContact }: Contact
                             <InfoField
                               icon={DollarSign}
                               label="Revenue"
-                              value={company.revenue}
+                              value={formatRevenue(company.revenue)}
                             />
                             <InfoField
                               icon={MapPin}

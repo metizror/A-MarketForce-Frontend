@@ -64,6 +64,47 @@ interface ViewContactDetailsProps {
   onContactUpdated?: () => void; // Callback to refresh contact data after update
 }
 
+// Helper function to format revenue with $ sign
+const formatRevenue = (revenue: string | undefined | null): string => {
+  if (!revenue || revenue === '-') return '-';
+  
+  // If already has $ sign, return as is
+  if (revenue.includes('$')) return revenue;
+  
+  // Map revenue values to formatted strings
+  const revenueMap: { [key: string]: string } = {
+    'Less-than-1M': 'Less than $1M',
+    '1M-5M': '$1M-$5M',
+    '5M-10M': '$5M-$10M',
+    '10M-50M': '$10M-$50M',
+    '50M-100M': '$50M-$100M',
+    '100M-250M': '$100M-$250M',
+    '250M-500M': '$250M-$500M',
+    '500M-1B': '$500M-$1B',
+    'More-than-1B': 'More than $1B',
+  };
+  
+  // Check if it's a known format
+  if (revenueMap[revenue]) {
+    return revenueMap[revenue];
+  }
+  
+  // If it's in format like "1Mto5M" or "1M-5M", add $ signs
+  const rangeMatch = revenue.match(/^(\d+(?:\.\d+)?[MB]?)to(\d+(?:\.\d+)?[MB]?)$/i) || revenue.match(/^(\d+(?:\.\d+)?[MB]?)-(\d+(?:\.\d+)?[MB]?)$/i);
+  if (rangeMatch) {
+    return `$${rangeMatch[1]}-$${rangeMatch[2]}`;
+  }
+  
+  // If it starts with a number and M/B, add $ sign
+  const singleMatch = revenue.match(/^(\d+(?:\.\d+)?)([MB])$/i);
+  if (singleMatch) {
+    return `$${singleMatch[1]}${singleMatch[2]}`;
+  }
+  
+  // Default: return as is
+  return revenue;
+};
+
 export function ViewContactDetails({
   contact,
   user,
@@ -462,17 +503,43 @@ export function ViewContactDetails({
     if (!value) return '';
     const trimmed = value.trim();
     if (!trimmed) return '';
+    
+    // Valid Revenue options - exact values as they appear in SelectItem (new format with "to")
     const validRevenues = [
-      'Less-than-1M', '1M-5M', '5M-10M', '10M-50M', '50M-100M',
-      '100M-250M', '250M-500M', '500M-1B', 'More-than-1B'
+      'Lessthan1M', '1Mto5M', '5Mto10M', '10Mto50M', '50Mto100M',
+      '100Mto250M', '250Mto500M', '500Mto1B', 'Morethan1B'
     ];
+    
+    // First check for exact match (case-sensitive) - new format
     const exactMatch = validRevenues.find(rev => rev === trimmed);
     if (exactMatch) return exactMatch;
-    if (trimmed === 'Less than $1M' || trimmed.toLowerCase() === 'less than $1m' || trimmed === 'Less-than-$1M') return 'Less-than-1M';
-    if (trimmed === 'More than $1B' || trimmed.toLowerCase() === 'more than $1b' || trimmed === 'More-than-$1B') return 'More-than-1B';
-    let normalized = trimmed.replace(/\$/g, '').replace(/\s+to\s+/gi, '-');
+    
+    // Handle old format - convert to new format
+    const oldToNewMap: { [key: string]: string } = {
+      'Less-than-1M': 'Lessthan1M',
+      '1M-5M': '1Mto5M',
+      '5M-10M': '5Mto10M',
+      '10M-50M': '10Mto50M',
+      '50M-100M': '50Mto100M',
+      '100M-250M': '100Mto250M',
+      '250M-500M': '250Mto500M',
+      '500M-1B': '500Mto1B',
+      'More-than-1B': 'Morethan1B',
+    };
+    
+    if (oldToNewMap[trimmed]) return oldToNewMap[trimmed];
+    
+    // Handle special cases - remove $ signs and convert to new format
+    if (trimmed === 'Less than $1M' || trimmed.toLowerCase() === 'less than $1m' || trimmed === 'Less-than-$1M') return 'Lessthan1M';
+    if (trimmed === 'More than $1B' || trimmed.toLowerCase() === 'more than $1b' || trimmed === 'More-than-$1B') return 'Morethan1B';
+    
+    // Remove $ signs and replace " to " or "-" with "to"
+    let normalized = trimmed.replace(/\$/g, '').replace(/\s+to\s+/gi, 'to').replace(/-/g, 'to');
+    
+    // Check if normalized value matches any valid option
     const normalizedMatch = validRevenues.find(rev => rev === normalized);
     if (normalizedMatch) return normalizedMatch;
+    
     return '';
   };
 
@@ -480,16 +547,43 @@ export function ViewContactDetails({
     if (!value) return '';
     const trimmed = value.trim();
     if (!trimmed) return '';
+    
+    // Valid Employee Size options - exact values as they appear in SelectItem (new format with "to")
     const validSizes = [
-      '1-25', '26-50', '51-100', '101-250', '251-500',
-      '501-1000', '1001-2500', '2501-5000', '5001-10000', 'over-10001'
+      '1to25', '26to50', '51to100', '101to250', '251to500',
+      '501to1000', '1001to2500', '2501to5000', '5001to10000', 'over10001'
     ];
+    
+    // First check for exact match (case-sensitive) - new format
     const exactMatch = validSizes.find(size => size === trimmed);
     if (exactMatch) return exactMatch;
-    if (trimmed === 'over 10,001' || trimmed.toLowerCase() === 'over 10,001') return 'over-10001';
-    const normalized = trimmed.replace(/\s+to\s+/gi, '-');
+    
+    // Handle old format - convert to new format
+    const oldToNewMap: { [key: string]: string } = {
+      '1-25': '1to25',
+      '26-50': '26to50',
+      '51-100': '51to100',
+      '101-250': '101to250',
+      '251-500': '251to500',
+      '501-1000': '501to1000',
+      '1001-2500': '1001to2500',
+      '2501-5000': '2501to5000',
+      '5001-10000': '5001to10000',
+      'over-10001': 'over10001',
+    };
+    
+    if (oldToNewMap[trimmed]) return oldToNewMap[trimmed];
+    
+    // Handle special case
+    if (trimmed === 'over 10,001' || trimmed.toLowerCase() === 'over 10,001') return 'over10001';
+    
+    // Remove spaces and replace " to " or "-" with "to"
+    let normalized = trimmed.replace(/\s+to\s+/gi, 'to').replace(/-/g, 'to').replace(/\s+/g, '');
+    
+    // Check if normalized value matches any valid option
     const normalizedMatch = validSizes.find(size => size === normalized);
     if (normalizedMatch) return normalizedMatch;
+    
     return '';
   };
 
@@ -888,16 +982,16 @@ export function ViewContactDetails({
               <SelectValue placeholder="Select employee size" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1-25">1 to 25</SelectItem>
-              <SelectItem value="26-50">26 to 50</SelectItem>
-              <SelectItem value="51-100">51 to 100</SelectItem>
-              <SelectItem value="101-250">101 to 250</SelectItem>
-              <SelectItem value="251-500">251 to 500</SelectItem>
-              <SelectItem value="501-1000">501 to 1000</SelectItem>
-              <SelectItem value="1001-2500">1001 to 2500</SelectItem>
-              <SelectItem value="2501-5000">2501 to 5000</SelectItem>
-              <SelectItem value="5001-10000">5001 to 10000</SelectItem>
-              <SelectItem value="over-10001">over 10,001</SelectItem>
+              <SelectItem value="1to25">1 to 25</SelectItem>
+              <SelectItem value="26to50">26 to 50</SelectItem>
+              <SelectItem value="51to100">51 to 100</SelectItem>
+              <SelectItem value="101to250">101 to 250</SelectItem>
+              <SelectItem value="251to500">251 to 500</SelectItem>
+              <SelectItem value="501to1000">501 to 1000</SelectItem>
+              <SelectItem value="1001to2500">1001 to 2500</SelectItem>
+              <SelectItem value="2501to5000">2501 to 5000</SelectItem>
+              <SelectItem value="5001to10000">5001 to 10000</SelectItem>
+              <SelectItem value="over10001">over 10,001</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -911,15 +1005,15 @@ export function ViewContactDetails({
               <SelectValue placeholder="Select revenue" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Less-than-1M">Less than $1M</SelectItem>
-              <SelectItem value="1M-5M">$1M to $5M</SelectItem>
-              <SelectItem value="5M-10M">$5M to $10M</SelectItem>
-              <SelectItem value="10M-50M">$10M to $50M</SelectItem>
-              <SelectItem value="50M-100M">$50M to $100M</SelectItem>
-              <SelectItem value="100M-250M">$100M to $250M</SelectItem>
-              <SelectItem value="250M-500M">$250M to $500M</SelectItem>
-              <SelectItem value="500M-1B">$500M to $1B</SelectItem>
-              <SelectItem value="More-than-1B">More than $1B</SelectItem>
+              <SelectItem value="Lessthan1M">Less than $1M</SelectItem>
+              <SelectItem value="1Mto5M">$1M to $5M</SelectItem>
+              <SelectItem value="5Mto10M">$5M to $10M</SelectItem>
+              <SelectItem value="10Mto50M">$10M to $50M</SelectItem>
+              <SelectItem value="50Mto100M">$50M to $100M</SelectItem>
+              <SelectItem value="100Mto250M">$100M to $250M</SelectItem>
+              <SelectItem value="250Mto500M">$250M to $500M</SelectItem>
+              <SelectItem value="500Mto1B">$500M to $1B</SelectItem>
+              <SelectItem value="Morethan1B">More than $1B</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -1277,7 +1371,7 @@ export function ViewContactDetails({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-500 mb-0.5">Revenue</div>
-                      <div className="text-sm font-medium text-gray-900">{company?.revenue || contact.revenue || '-'}</div>
+                      <div className="text-sm font-medium text-gray-900">{formatRevenue(company?.revenue || contact.revenue)}</div>
                     </div>
                   </div>
                   

@@ -383,6 +383,47 @@ const industries = Object.keys(industrySubIndustryMap).map(industry => ({
   value: industry,
 }));
 
+// Helper function to format revenue with $ sign
+const formatRevenue = (revenue: string | undefined | null): string => {
+  if (!revenue || revenue === '-') return '-';
+  
+  // If already has $ sign, return as is
+  if (revenue.includes('$')) return revenue;
+  
+  // Map revenue values to formatted strings
+  const revenueMap: { [key: string]: string } = {
+    'Lessthan1M': 'Less than $1M',
+    '1Mto5M': '$1M-$5M',
+    '5Mto10M': '$5M-$10M',
+    '10Mto50M': '$10M-$50M',
+    '50Mto100M': '$50M-$100M',
+    '100Mto250M': '$100M-$250M',
+    '250Mto500M': '$250M-$500M',
+    '500Mto1B': '$500M-$1B',
+    'Morethan1B': 'More than $1B',
+  };
+  
+  // Check if it's a known format
+  if (revenueMap[revenue]) {
+    return revenueMap[revenue];
+  }
+  
+  // If it's in format like "1Mto5M" or "1M-5M", add $ signs
+  const rangeMatch = revenue.match(/^(\d+(?:\.\d+)?[MB]?)to(\d+(?:\.\d+)?[MB]?)$/i) || revenue.match(/^(\d+(?:\.\d+)?[MB]?)-(\d+(?:\.\d+)?[MB]?)$/i);
+  if (rangeMatch) {
+    return `$${rangeMatch[1]}-$${rangeMatch[2]}`;
+  }
+  
+  // If it starts with a number and M/B, add $ sign
+  const singleMatch = revenue.match(/^(\d+(?:\.\d+)?)([MB])$/i);
+  if (singleMatch) {
+    return `$${singleMatch[1]}${singleMatch[2]}`;
+  }
+  
+  // Default: return as is
+  return revenue;
+};
+
 export function CompaniesTable({ 
   companies, 
   user, 
@@ -969,16 +1010,16 @@ export function CompaniesTable({
             <SelectValue placeholder="Select employee size" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="1-25">1 to 25</SelectItem>
-            <SelectItem value="26-50">26 to 50</SelectItem>
-            <SelectItem value="51-100">51 to 100</SelectItem>
-            <SelectItem value="101-250">101 to 250</SelectItem>
-            <SelectItem value="251-500">251 to 500</SelectItem>
-            <SelectItem value="501-1000">501 to 1000</SelectItem>
-            <SelectItem value="1001-2500">1001 to 2500</SelectItem>
-            <SelectItem value="2501-5000">2501 to 5000</SelectItem>
-            <SelectItem value="5001-10000">5001 to 10000</SelectItem>
-            <SelectItem value="over-10001">over 10,001</SelectItem>
+            <SelectItem value="1to25">1 to 25</SelectItem>
+            <SelectItem value="26to50">26 to 50</SelectItem>
+            <SelectItem value="51to100">51 to 100</SelectItem>
+            <SelectItem value="101to250">101 to 250</SelectItem>
+            <SelectItem value="251to500">251 to 500</SelectItem>
+            <SelectItem value="501to1000">501 to 1000</SelectItem>
+            <SelectItem value="1001to2500">1001 to 2500</SelectItem>
+            <SelectItem value="2501to5000">2501 to 5000</SelectItem>
+            <SelectItem value="5001to10000">5001 to 10000</SelectItem>
+            <SelectItem value="over10001">over 10,001</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -989,15 +1030,15 @@ export function CompaniesTable({
             <SelectValue placeholder="Select revenue" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Less-than-1M">Less than $1M</SelectItem>
-            <SelectItem value="1M-5M">$1M to $5M</SelectItem>
-            <SelectItem value="5M-10M">$5M to $10M</SelectItem>
-            <SelectItem value="10M-50M">$10M to $50M</SelectItem>
-            <SelectItem value="50M-100M">$50M to $100M</SelectItem>
-            <SelectItem value="100M-250M">$100M to $250M</SelectItem>
-            <SelectItem value="250M-500M">$250M to $500M</SelectItem>
-            <SelectItem value="500M-1B">$500M to $1B</SelectItem>
-            <SelectItem value="More-than-1B">More than $1B</SelectItem>
+            <SelectItem value="Lessthan1M">Less than $1M</SelectItem>
+            <SelectItem value="1Mto5M">$1M to $5M</SelectItem>
+            <SelectItem value="5Mto10M">$5M to $10M</SelectItem>
+            <SelectItem value="10Mto50M">$10M to $50M</SelectItem>
+            <SelectItem value="50Mto100M">$50M to $100M</SelectItem>
+            <SelectItem value="100Mto250M">$100M to $250M</SelectItem>
+            <SelectItem value="250Mto500M">$250M to $500M</SelectItem>
+            <SelectItem value="500Mto1B">$500M to $1B</SelectItem>
+            <SelectItem value="Morethan1B">More than $1B</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -1271,7 +1312,7 @@ export function CompaniesTable({
                     <Badge variant="outline">{company.industry}</Badge>
                   </TableCell>
                   <TableCell>{company.city}, {company.state}</TableCell>
-                  <TableCell>{company.revenue}</TableCell>
+                  <TableCell>{formatRevenue(company.revenue)}</TableCell>
                   <TableCell>{company.employeeSize}</TableCell>
                   <TableCell className="max-w-xs truncate">{company.website}</TableCell>
                   <TableCell onClick={(e: any) => e.stopPropagation()}>

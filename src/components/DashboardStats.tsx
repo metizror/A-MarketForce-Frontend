@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from './ui/card';
-import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
-import 'react-loading-skeleton/dist/skeleton.css';
+import { Skeleton } from './ui/skeleton';
 import { Users, Building2, UserCheck, Upload, TrendingUp, Calendar } from 'lucide-react';
 import type { Contact, Company, User } from '@/types/dashboard.types';
 
@@ -118,6 +117,15 @@ export function DashboardStats({ contacts, companies, users, role, adminUsersCou
       if (index === 1) return isLoading?.companies ?? false;
       if (index === 2) return isLoading?.users ?? false;
       if (index === 3) return isLoading?.importDate ?? false;
+    } else {
+      // For admin role: same logic as superadmin - each card checks its loading state
+      // Cards 0 and 1 map to contacts and companies
+      // Cards 2 and 3 (Growth, Last Updated) show skeleton when any data is loading
+      if (index === 0) return isLoading?.contacts ?? false;
+      if (index === 1) return isLoading?.companies ?? false;
+      // For Growth This Month and Last Updated cards, show skeleton when dashboard data is loading
+      if (index === 2) return isLoading?.contacts ?? false; // Use contacts loading as indicator
+      if (index === 3) return isLoading?.contacts ?? false; // Use contacts loading as indicator
     }
     return false;
   };
@@ -144,25 +152,25 @@ export function DashboardStats({ contacts, companies, users, role, adminUsersCou
             
             <CardContent className="relative p-6">
               {isCardLoading ? (
-                // Skeleton Loading State
-                <SkeletonTheme baseColor="#f3f4f6" highlightColor="#e5e7eb">
+                // Skeleton Loading State with shimmer animation
+                <>
                   {/* Icon Badge Skeleton */}
                   <div className="flex items-start justify-between mb-4">
-                    <Skeleton width={56} height={56} borderRadius={12} />
+                    <Skeleton className="w-14 h-14 rounded-xl" />
                   </div>
 
                   {/* Title Skeleton */}
-                  <Skeleton height={16} width={96} style={{ marginBottom: '8px' }} />
+                  <Skeleton className="h-4 w-24 mb-2" />
 
                   {/* Value Skeleton */}
-                  <Skeleton height={36} width={64} style={{ marginBottom: '8px' }} />
+                  <Skeleton className="h-9 w-16 mb-2" />
 
                   {/* Label Skeleton */}
                   <div className="flex items-center gap-1">
-                    <Skeleton circle width={6} height={6} />
-                    <Skeleton height={12} width={128} />
+                    <Skeleton className="w-1.5 h-1.5 rounded-full" />
+                    <Skeleton className="h-3 w-32" />
                   </div>
-                </SkeletonTheme>
+                </>
               ) : (
                 // Actual Content
                 <>
