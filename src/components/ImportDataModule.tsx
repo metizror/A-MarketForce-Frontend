@@ -77,36 +77,135 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
     return value.replace(/\$/g, '').replace(/\s+/g, '').trim();
   };
 
-  // Check if an Excel column name matches a mandatory field
-  const isMandatoryColumn = (columnName: string): boolean => {
+  // Map Excel column name to system field name
+  const mapColumnToField = (columnName: string): string | null => {
+    if (!columnName || typeof columnName !== 'string') {
+      return null;
+    }
+    
     const normalized = normalizeColumnName(columnName);
     
-    // Map of mandatory fields to their common Excel column name variations
-    // These are exact matches only to avoid false positives
-    const mandatoryFieldMappings: Record<string, string[]> = {
-      'firstname': ['first', 'fname'],
-      'lastname': ['last', 'lname', 'surname'],
-      'jobtitle': ['title', 'position'],
-      'email': ['e-mail', 'mail', 'emailaddress'],
-      'companyname': ['company', 'org', 'organization'],
-      'employeesize': ['employees', 'headcount'],
-      'revenue': ['income', 'sales']
+    // Map of Excel column variations to system field names
+    const columnToFieldMap: Record<string, string> = {
+      'firstname': 'firstName',
+      'first': 'firstName',
+      'fname': 'firstName',
+      'lastname': 'lastName',
+      'last': 'lastName',
+      'lname': 'lastName',
+      'surname': 'lastName',
+      'jobtitle': 'jobTitle',
+      'title': 'jobTitle',
+      'position': 'jobTitle',
+      'joblevel': 'jobLevel',
+      'jobrole': 'jobRole',
+      'jobrole/department': 'jobRole',
+      'jobroledepartment': 'jobRole',
+      'jobroledept': 'jobRole',
+      'department': 'jobRole',
+      'role': 'jobRole',
+      'email': 'email',
+      'e-mail': 'email',
+      'mail': 'email',
+      'emailaddress': 'email',
+      'phone': 'phone',
+      'directphone': 'directPhone',
+      'directphone/ext': 'directPhone',
+      'directphoneext': 'directPhone',
+      'direct': 'directPhone',
+      'ext': 'directPhone',
+      'contactlinkedin': 'contactLinkedIn',
+      'contactlinkedinurl': 'contactLinkedIn',
+      'companyname': 'companyName',
+      'company': 'companyName',
+      'org': 'companyName',
+      'organization': 'companyName',
+      'address': 'address1',
+      'address1': 'address1',
+      'address2': 'address2',
+      'city': 'city',
+      'state': 'state',
+      'zipcode': 'zipCode',
+      'zip': 'zipCode',
+      'country': 'country',
+      'website': 'website',
+      'revenue': 'revenue',
+      'income': 'revenue',
+      'sales': 'revenue',
+      'employeesize': 'employeeSize',
+      'employees': 'employeeSize',
+      'headcount': 'employeeSize',
+      'industry': 'industry',
+      'subindustry': 'subIndustry',
+      'sub-industry': 'subIndustry',
+      'subindustryname': 'subIndustry',
+      'subindustrytype': 'subIndustry',
+      'companylinkedin': 'companyLinkedIn',
+      'companylinkedinurl': 'companyLinkedIn',
+      'technology': 'technology',
+      'technology-installedbase': 'technology',
+      'amfnotes': 'amfNotes',
+      'lastupdatedate': 'lastUpdateDate',
+      'lastupdate': 'lastUpdateDate',
     };
 
-    return requiredFields.some(field => {
+    // Check direct mapping
+    if (columnToFieldMap[normalized]) {
+      return columnToFieldMap[normalized];
+    }
+
+    // Check if it matches any available field directly
+    const matchedField = availableFields.find(field => {
+      const normalizedField = normalizeColumnName(field);
+      return normalized === normalizedField;
+    });
+
+    if (matchedField) {
+      return matchedField;
+    }
+
+    // Additional fuzzy matching for common patterns
+    // Sort fields by length (longest first) to prioritize more specific matches
+    // This ensures "subIndustry" matches before "industry" when both could match
+    const sortedFields = [...availableFields].sort((a, b) => {
+      const normalizedA = normalizeColumnName(a);
+      const normalizedB = normalizeColumnName(b);
+      return normalizedB.length - normalizedA.length; // Longer fields first
+    });
+    
+    for (const field of sortedFields) {
       const normalizedField = normalizeColumnName(field);
       
-      // Direct exact match (e.g., "First Name" → "firstname" matches "firstName" → "firstname")
-      if (normalized === normalizedField) return true;
+      // Exact match after normalization (should have been caught above, but double-check)
+      if (normalized === normalizedField) {
+        return field;
+      }
       
-      // Check against known variations for this mandatory field (exact match only)
-      const variations = mandatoryFieldMappings[normalizedField] || [];
-      return variations.some(variation => {
-        const normalizedVariation = normalizeColumnName(variation);
-        // Exact match with variation (e.g., "First" → "first" matches variation "first")
-        return normalized === normalizedVariation;
-      });
-    });
+      // Check if column name contains field name (e.g., "Job Role/Department" contains "jobrole")
+      // Prioritize longer matches (more specific) over shorter ones
+      if (normalized.includes(normalizedField)) {
+        // Only return if it's a reasonable match (field name is at least 3 chars)
+        if (normalizedField.length >= 3) {
+          return field;
+        }
+      }
+      
+      // Check if field name contains column name (e.g., "subIndustry" contains "subindustry")
+      if (normalizedField.includes(normalized)) {
+        // Only return if column name is at least 3 chars
+        if (normalized.length >= 3) {
+          return field;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  // Check if an Excel column name matches a mandatory field
+  const isMandatoryColumn = (columnName: string): boolean => {
+    const mappedField = mapColumnToField(columnName);
+    return mappedField ? requiredFields.includes(mappedField) : false;
   };
 
   const handleFileUpload = (event: { target: { files?: FileList | null } }) => {
@@ -151,6 +250,16 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
 
         setExcelHeaders(headers);
         setImportedRows(rows);
+        
+        // Auto-map mandatory columns
+        const autoMapping: ColumnMapping = {};
+        headers.forEach((header: string) => {
+          const mappedField = mapColumnToField(header);
+          if (mappedField && requiredFields.includes(mappedField)) {
+            autoMapping[header] = mappedField;
+          }
+        });
+        setColumnMapping(autoMapping);
         
         // Convert to old format for compatibility
         const csvFormat = [headers, ...rows.map(row => headers.map(h => row[h] || ''))];
@@ -451,49 +560,56 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
                 scrollbarColor: '#EF8037 #f1f1f1'
               }}
             >
-              {excelHeaders.map((column: string, index: number) => (
-                <div key={index} className="flex items-center space-x-4 bg-white p-3 rounded-md border border-gray-200 hover:border-orange-300 transition-colors">
-                  <div className="w-32 flex-shrink-0">
-                    <Badge variant="outline" className="font-medium">{column}</Badge>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <Select
-                    value={columnMapping[column] || 'skip'}
-                    onValueChange={(value: string) => 
-                      setColumnMapping((prev: ColumnMapping) => ({ ...prev, [column]: value }))
-                    }
-                  >
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent 
-                      className="max-h-[350px] overflow-y-auto select-dropdown-scroll"
-                      position="popper"
-                    >
-                      {/* Only show "Skip this column" if the column is not a mandatory field */}
-                      {!isMandatoryColumn(column) && (
-                        <SelectItem value="skip">Skip this column</SelectItem>
+              {excelHeaders.map((column: string, index: number) => {
+                const isMandatory = isMandatoryColumn(column);
+                const mappedField = mapColumnToField(column);
+                const currentMapping = columnMapping[column];
+                
+                return (
+                  <div key={index} className="flex items-center space-x-4 bg-white p-3 rounded-md border border-gray-200 hover:border-orange-300 transition-colors">
+                    <div className="w-32 flex-shrink-0">
+                      <Badge variant="outline" className="font-medium">{column}</Badge>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div className="flex items-center gap-2">
+                      {isMandatory ? (
+                        // For mandatory fields: Show read-only value
+                        <>
+                          <div className="w-48 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm font-medium text-gray-700">
+                            {currentMapping || mappedField || 'Not mapped'}
+                          </div>
+                          <Badge variant="outline" className="text-xs text-red-600 border-red-300 bg-red-50 font-medium">
+                            Required field
+                          </Badge>
+                        </>
+                      ) : (
+                        // For optional fields: Show dropdown with "Skip" and matching field (if found)
+                        <Select
+                          value={currentMapping || 'skip'}
+                          onValueChange={(value: string) => 
+                            setColumnMapping((prev: ColumnMapping) => ({ ...prev, [column]: value }))
+                          }
+                        >
+                          <SelectTrigger className="w-48">
+                            <SelectValue placeholder="Select field" />
+                          </SelectTrigger>
+                          <SelectContent 
+                            className="max-h-[350px] overflow-y-auto select-dropdown-scroll"
+                            position="popper"
+                          >
+                            <SelectItem value="skip">Skip this column</SelectItem>
+                            {mappedField && (
+                              <SelectItem value={mappedField}>
+                                {mappedField}
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
                       )}
-                      {/* Show required fields first with asterisk */}
-                      {availableFields
-                        .filter(field => requiredFields.includes(field))
-                        .map(field => (
-                          <SelectItem key={field} value={field} className="font-semibold text-orange-600">
-                            {field} *
-                          </SelectItem>
-                        ))}
-                      {/* Show other optional fields */}
-                      {availableFields
-                        .filter(field => !requiredFields.includes(field))
-                        .map(field => (
-                          <SelectItem key={field} value={field}>
-                            {field}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             <div className="sticky bottom-0 left-0 right-0 flex justify-end gap-3 pt-6 pb-4 mt-auto border-t-2 border-gray-300 bg-white shadow-lg z-50 flex-shrink-0">
               <Button 
