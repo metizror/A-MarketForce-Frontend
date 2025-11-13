@@ -126,6 +126,11 @@ const contactsSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    uploaderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+      required: [true, "Uploader ID is required"],
+    },
   },
   {
     timestamps: true,

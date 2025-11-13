@@ -1,16 +1,11 @@
+import { Company } from "@/types/dashboard.types";
 import mongoose from "mongoose";
 
-const companiesSchema = new mongoose.Schema(
+const companiesSchema: mongoose.Schema<Company> = new mongoose.Schema(
   {
     companyName: {
       type: String,
-      required: true,
-      validate: {
-        validator: function (v: string) {
-          return v.length > 0;
-        },
-        message: "Company name is required",
-      },
+      required: [true, "Company name is required"],
     },
     phone: {
       type: String,
@@ -59,6 +54,11 @@ const companiesSchema = new mongoose.Schema(
     },
     createdBy: {
       type: String,
+    },
+    uploaderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+      required: [true, "Uploader ID is required"],
     },
   },
   {

@@ -63,6 +63,7 @@ export interface Company {
   addedDate: string;
   updatedDate: string;
   createdBy?: string; // From API - who created the company
+  uploaderId?: string;
 }
 
 export interface ActivityLog {

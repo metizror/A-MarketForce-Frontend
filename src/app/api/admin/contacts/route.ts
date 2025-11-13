@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
     const contact = await Contacts.create({
       ...data,
       createdBy: tokenVerification.admin?.name,
+      uploaderId: tokenVerification.admin?._id,
     });
     return NextResponse.json(
       { message: "Contact created successfully", contact: contact },
