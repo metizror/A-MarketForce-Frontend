@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { data } = body;
     const company = await Companies.create(
-      { ...data, createdBy: `${auth.admin?.name} (${role})` },
+      { ...data, createdBy: `${auth.admin?.name} (${role})`, uploaderId: auth.admin?._id },
     );
     if (auth.admin) {
       await createActivity(
