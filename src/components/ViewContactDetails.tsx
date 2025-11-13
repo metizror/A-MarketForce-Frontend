@@ -64,6 +64,26 @@ interface ViewContactDetailsProps {
   onContactUpdated?: () => void; // Callback to refresh contact data after update
 }
 
+// Helper function to format LinkedIn URL with protocol
+const formatLinkedInUrl = (url: string | undefined | null): string => {
+  if (!url || !url.trim()) return '';
+  
+  const trimmedUrl = url.trim();
+  
+  // If URL already has a protocol, return as is
+  if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+    return trimmedUrl;
+  }
+  
+  // If URL starts with www. or linkedin.com, prepend https://
+  if (trimmedUrl.startsWith('www.') || trimmedUrl.startsWith('linkedin.com')) {
+    return `https://${trimmedUrl}`;
+  }
+  
+  // For any other case, prepend https://
+  return `https://${trimmedUrl}`;
+};
+
 // Helper function to format revenue with $ sign
 const formatRevenue = (revenue: string | undefined | null): string => {
   if (!revenue || revenue === '-') return '-';
@@ -1285,21 +1305,23 @@ export function ViewContactDetails({
                 )}
                 
                 {/* Contact LinkedIn */}
-                {contact.contactLinkedInUrl && (
-                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-200">
-                    <div className="mt-0.5">
-                      <Linkedin className="w-4 h-4 text-gray-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-500 mb-0.5">Contact_LinkedIn</div>
+                <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-200">
+                  <div className="mt-0.5">
+                    <Linkedin className="w-4 h-4 text-gray-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-gray-500 mb-0.5">Contact_LinkedIn</div>
+                    {contact.contactLinkedInUrl ? (
                       <div className="text-sm font-medium text-blue-600">
-                        <a href={contact.contactLinkedInUrl} target="_blank" rel="noopener noreferrer" className="hover:underline break-all">
+                        <a href={formatLinkedInUrl(contact.contactLinkedInUrl)} target="_blank" rel="noopener noreferrer" className="hover:underline break-all">
                           {contact.contactLinkedInUrl}
                         </a>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="text-sm font-medium text-gray-400">-</div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
@@ -1413,7 +1435,7 @@ export function ViewContactDetails({
                       <div className="flex-1 min-w-0">
                         <div className="text-xs text-gray-500 mb-0.5">Company_LinkedIn</div>
                         <div className="text-sm font-medium text-blue-600">
-                          <a href={(company as any)?.companyLinkedInUrl || contact.contactLinkedInUrl || '#'} target="_blank" rel="noopener noreferrer" className="hover:underline break-all">
+                          <a href={formatLinkedInUrl((company as any)?.companyLinkedInUrl || contact.contactLinkedInUrl || '')} target="_blank" rel="noopener noreferrer" className="hover:underline break-all">
                             {(company as any)?.companyLinkedInUrl || contact.contactLinkedInUrl}
                           </a>
                         </div>

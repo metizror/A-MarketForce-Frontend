@@ -85,6 +85,11 @@ export default function ContactDetailPage() {
         }
         
         // Map the API response to Contact type
+        // Handle contactLinkedIn field from database (contactLinkedIn) and legacy fields (LinkedInUrl, contactLinkedInUrl)
+        const linkedInValue = (contactData as any).contactLinkedIn || 
+                              (contactData as any).LinkedInUrl || 
+                              contactData.contactLinkedInUrl || '';
+        
         const mappedContact: Contact = {
           id: contactData._id?.toString() || contactData.id,
           firstName: contactData.firstName || '',
@@ -103,7 +108,7 @@ export default function ContactDetailPage() {
           country: contactData.country || '',
           website: contactData.website || '',
           industry: contactData.industry || '',
-          contactLinkedInUrl: (contactData as any).LinkedInUrl || contactData.contactLinkedInUrl || '',
+          contactLinkedInUrl: linkedInValue,
           amfNotes: contactData.amfNotes || '',
           lastUpdateDate: contactData.lastUpdateDate || (contactData as any).updatedAt || '',
           addedBy: contactData.addedBy || undefined,

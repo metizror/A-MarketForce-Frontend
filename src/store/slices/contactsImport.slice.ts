@@ -19,7 +19,7 @@ export interface ContactImportData {
   website: string;
   industry: string;
   subIndustry: string;
-  LinkedInUrl: string;
+  contactLinkedIn: string;
   companyName: string;
   employeeSize: string;
   revenue: string;

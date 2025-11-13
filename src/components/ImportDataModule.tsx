@@ -61,8 +61,8 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
     // Company Fields (14)
     'companyName', 'address1', 'address2', 'city', 'state', 'zipCode', 'country',
     'website', 'revenue', 'employeeSize', 'industry', 'subIndustry', 'companyLinkedIn', 'technology',
-    // System Fields (2)
-    'lastUpdateDate', 'LinkedInUrl'
+    // System Fields (1)
+    'lastUpdateDate'
   ];
 
   // Helper function to normalize column names for comparison
@@ -360,7 +360,7 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
           website: mappedData.website || '',
           industry: mappedData.industry || '',
           subIndustry: mappedData.subIndustry || '',
-          LinkedInUrl: mappedData.LinkedInUrl || mappedData.contactLinkedIn || mappedData.companyLinkedIn || '',
+          contactLinkedIn: mappedData.contactLinkedIn || mappedData.LinkedInUrl || mappedData.companyLinkedIn || '',
           companyName: mappedData.companyName || '',
           employeeSize: cleanValue(mappedData.employeeSize || ''),
           revenue: cleanValue(mappedData.revenue || '')
