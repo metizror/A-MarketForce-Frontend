@@ -11,9 +11,18 @@ import type { Contact, Company, ActivityLog } from "@/types/dashboard.types";
 interface DashboardData {
   totalContacts: number;
   totalCompanies: number;
-  totalUsers: number;
+  totalUsers?: number; // Optional, not returned by admin-dashboard
   lastImportDate: string | null;
   activityLogs: ActivityLog[];
+}
+
+interface AdminDashboardData {
+  addedContacts: number;
+  addedCompanies: number;
+  lastImportContact: {
+    createdAt?: string;
+  } | null;
+  activityLogs: any[];
 }
 
 export default function DashboardPage() {
@@ -42,21 +51,60 @@ export default function DashboardPage() {
       setIsLoading(true);
       hasFetchedDashboard.current = true;
       
-      // Fetch all dashboard data from single endpoint
-      privateApiCall<DashboardData>("/admin/dashboard")
-        .then((response) => {
-          setContactsCount(response.totalContacts || 0);
-          setCompaniesCount(response.totalCompanies || 0);
-          setAdminUsersCount(response.totalUsers || 0);
-          setLastImportDate(response.lastImportDate || null);
-          setActivityLogs(response.activityLogs || []);
-          setIsLoading(false);
-        })
-        .catch((error) => {
-          console.error("Failed to fetch dashboard data:", error);
-          setIsLoading(false);
-          hasFetchedDashboard.current = false; // Reset on error to allow retry
-        });
+      // Use different endpoints based on role
+      const apiEndpoint = role === "admin" ? "/admin/admin-dashboard" : "/admin/dashboard";
+      
+      if (role === "admin") {
+        // Call admin-dashboard API and map response
+        privateApiCall<AdminDashboardData>(apiEndpoint)
+          .then((response) => {
+            setContactsCount(response.addedContacts || 0);
+            setCompaniesCount(response.addedCompanies || 0);
+            setAdminUsersCount(0); // Admin dashboard doesn't return totalUsers
+            // Format lastImportContact to lastImportDate
+            const lastImportDate = response.lastImportContact?.createdAt 
+              ? new Date(response.lastImportContact.createdAt).toISOString()
+              : null;
+            setLastImportDate(lastImportDate);
+            // Format activity logs
+            const formattedActivityLogs = (response.activityLogs || []).map((log: any) => ({
+              id: log._id?.toString() || log.id,
+              action: log.action,
+              description: log.details || log.description || log.action,
+              details: log.details || log.description || log.action,
+              userId: log.userId?.toString() || log.userId,
+              userName: log.user || log.userName || "Unknown",
+              user: log.user || log.userName || "Unknown",
+              createdBy: log.user || log.userName || "Unknown",
+              timestamp: log.createdAt || log.timestamp,
+              createdAt: log.createdAt,
+              updatedAt: log.updatedAt,
+            }));
+            setActivityLogs(formattedActivityLogs);
+            setIsLoading(false);
+          })
+          .catch((error) => {
+            console.error("Failed to fetch admin dashboard data:", error);
+            setIsLoading(false);
+            hasFetchedDashboard.current = false; // Reset on error to allow retry
+          });
+      } else {
+        // Call superadmin dashboard API
+        privateApiCall<DashboardData>(apiEndpoint)
+          .then((response) => {
+            setContactsCount(response.totalContacts || 0);
+            setCompaniesCount(response.totalCompanies || 0);
+            setAdminUsersCount(response.totalUsers || 0);
+            setLastImportDate(response.lastImportDate || null);
+            setActivityLogs(response.activityLogs || []);
+            setIsLoading(false);
+          })
+          .catch((error) => {
+            console.error("Failed to fetch dashboard data:", error);
+            setIsLoading(false);
+            hasFetchedDashboard.current = false; // Reset on error to allow retry
+          });
+      }
     } else {
       // For customers, set loading to false immediately
       setIsLoading(false);
