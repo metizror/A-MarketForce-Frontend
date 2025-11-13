@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
     const contactsToInsert = data.map((contact: any) => ({
       ...contact,
       createdBy: admin?.name,
+      uploaderId: admin?._id,
     }));
 
     // Bulk insert all contacts

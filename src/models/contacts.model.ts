@@ -82,7 +82,7 @@ const contactsSchema = new mongoose.Schema(
     subIndustry: {
       type: String,
     },
-    LinkedInUrl: {
+    contactLinkedIn: {
       type: String,
     },
     lastUpdateDate: {
