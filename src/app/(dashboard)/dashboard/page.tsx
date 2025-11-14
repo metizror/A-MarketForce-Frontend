@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { DashboardStats } from "@/components/DashboardStats";
 import { ImportDataModule } from "@/components/ImportDataModule";
 import { ActivityLogsPanel } from "@/components/ActivityLogsPanel";
@@ -36,6 +37,7 @@ interface DashboardCache {
 
 export default function DashboardPage() {
   const { user } = useAppSelector((state) => state.auth);
+  const pathname = usePathname();
   
   const [contactsCount, setContactsCount] = useState(0);
   const [companiesCount, setCompaniesCount] = useState(0);
@@ -50,11 +52,12 @@ export default function DashboardPage() {
   const hasFetchedDashboard = useRef(false);
   const isFetching = useRef(false);
   const dashboardDataCache = useRef(null as DashboardCache | null);
+  const previousPathname = useRef(null as string | null);
 
   // Cache duration: 5 minutes (300000 ms)
   const CACHE_DURATION = 5 * 60 * 1000;
 
-  // Fetch all dashboard data from single API endpoint (only once)
+  // Fetch all dashboard data from single API endpoint on mount or navigation
   useEffect(() => {
     // Early return if no role
     if (!role || (role !== "admin" && role !== "superadmin")) {
@@ -62,33 +65,44 @@ export default function DashboardPage() {
       return;
     }
 
+    // Check if we navigated to this page (pathname changed to /dashboard)
+    const isNavigationToPage = previousPathname.current !== pathname && pathname === '/dashboard';
+
     // Check if cached data exists and is still valid
     const now = Date.now();
     const cacheValid = dashboardDataCache.current && 
                       (now - dashboardDataCache.current.timestamp) < CACHE_DURATION;
 
-    // Use cached data if valid and already fetched
-    if (cacheValid && hasFetchedDashboard.current) {
-      setContactsCount(dashboardDataCache.current.contactsCount);
-      setCompaniesCount(dashboardDataCache.current.companiesCount);
-      setAdminUsersCount(dashboardDataCache.current.adminUsersCount);
-      setLastImportDate(dashboardDataCache.current.lastImportDate);
-      setActivityLogs(dashboardDataCache.current.activityLogs);
-      setIsLoading(false);
-      return;
-    }
-
-    // Prevent duplicate calls if already fetching or already fetched with valid cache
-    if (isFetching.current) {
-      // If already fetching, don't start another call but ensure loading state is set
-      if (!isLoading) {
-        setIsLoading(true);
+    // If navigating to page, always fetch fresh data (ignore cache)
+    if (isNavigationToPage) {
+      // Reset cache and fetch flags to force fresh fetch
+      dashboardDataCache.current = null;
+      hasFetchedDashboard.current = false;
+      previousPathname.current = pathname;
+    } else {
+      // Use cached data if valid and already fetched (only when not navigating)
+      if (cacheValid && hasFetchedDashboard.current) {
+        setContactsCount(dashboardDataCache.current.contactsCount);
+        setCompaniesCount(dashboardDataCache.current.companiesCount);
+        setAdminUsersCount(dashboardDataCache.current.adminUsersCount);
+        setLastImportDate(dashboardDataCache.current.lastImportDate);
+        setActivityLogs(dashboardDataCache.current.activityLogs);
+        setIsLoading(false);
+        return;
       }
-      return;
-    }
-    
-    if (hasFetchedDashboard.current && cacheValid) {
-      return;
+
+      // Prevent duplicate calls if already fetching or already fetched with valid cache
+      if (isFetching.current) {
+        // If already fetching, don't start another call but ensure loading state is set
+        if (!isLoading) {
+          setIsLoading(true);
+        }
+        return;
+      }
+      
+      if (hasFetchedDashboard.current && cacheValid) {
+        return;
+      }
     }
 
     // Mark as fetching immediately to prevent duplicate calls
@@ -175,7 +189,7 @@ export default function DashboardPage() {
           dashboardDataCache.current = null; // Clear cache on error
         });
     }
-  }, [role]);
+  }, [role, pathname]);
 
   // Create mock arrays with correct length for DashboardStats component
   // The component uses .length, so we create arrays with the count length

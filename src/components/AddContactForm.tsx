@@ -139,7 +139,7 @@ export function AddContactForm({ onSave, onCancel, currentUser, existingCompanie
             
             {!canDelete && (
               <div className="text-sm text-gray-600 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
-                Only Super Admin can delete contacts
+                Only Owner can delete contacts
               </div>
             )}
           </div>

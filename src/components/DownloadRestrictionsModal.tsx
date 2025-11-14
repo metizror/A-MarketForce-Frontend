@@ -43,12 +43,12 @@ export function DownloadRestrictionsModal({
     }
 
     if (dailyUsed + contactsToDownload > dailyLimit) {
-      toast.error(`This download would exceed your daily limit of 10,000 contacts. Please contact Super Admin to request additional downloads.`);
+      toast.error(`This download would exceed your daily limit of 10,000 contacts. Please contact Owner to request additional downloads.`);
       return;
     }
 
     const totalCost = contactsToDownload * PRICE_PER_CONTACT;
-    toast.success(`Downloading ${contactsToDownload} contacts as XLS file for ${totalCost.toFixed(2)}. Super Admin has been notified.`);
+    toast.success(`Downloading ${contactsToDownload} contacts as XLS file for ${totalCost.toFixed(2)}. Owner has been notified.`);
     onDownload(contactsToDownload, maxContactsPerCompany[0]);
     onClose();
   };
@@ -59,7 +59,7 @@ export function DownloadRestrictionsModal({
 
   const handleRequestMoreDownloads = () => {
     if (requestMessage.trim()) {
-      toast.success('Your request has been sent to the Super Admin team');
+      toast.success('Your request has been sent to the Owner team');
       setShowRequestModal(false);
       setRequestMessage('');
     } else {
@@ -108,7 +108,7 @@ export function DownloadRestrictionsModal({
                   onClick={() => setShowRequestModal(true)}
                   className="text-xs text-blue-700 hover:text-blue-900 underline mt-2"
                 >
-                  Need more than 10,000 contacts? Request from Super Admin →
+                  Need more than 10,000 contacts? Request from Owner →
                 </button>
               </div>
             </div>
@@ -249,7 +249,7 @@ export function DownloadRestrictionsModal({
                 <div className="flex-1">
                   <p className="text-sm font-medium text-yellow-900 mb-1">Download History & Notifications</p>
                   <p className="text-sm text-yellow-800">
-                    Downloads are retained in "My Downloads" for 24 hours only. Super Admin will be notified of all downloads.
+                    Downloads are retained in "My Downloads" for 24 hours only. Owner will be notified of all downloads.
                   </p>
                 </div>
               </div>
@@ -287,7 +287,7 @@ export function DownloadRestrictionsModal({
             Request Additional Downloads
           </DialogTitle>
           <DialogDescription>
-            Need to download more than 10,000 contacts per day? Send your request to the Super Admin team.
+            Need to download more than 10,000 contacts per day? Send your request to the Owner team.
           </DialogDescription>
         </DialogHeader>
 
@@ -315,7 +315,7 @@ export function DownloadRestrictionsModal({
             <div className="flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
               <p className="text-xs text-yellow-800">
-                The Super Admin team will review your request and respond within 24 hours.
+                The Owner team will review your request and respond within 24 hours.
               </p>
             </div>
           </div>

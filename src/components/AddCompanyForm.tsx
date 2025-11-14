@@ -139,7 +139,7 @@ export function AddCompanyForm({ onSave, onCancel, currentUser }: AddCompanyForm
             
             {!canDelete && (
               <div className="text-sm text-gray-600 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
-                Only Super Admin can delete companies
+                Only Owner can delete companies
               </div>
             )}
           </div>

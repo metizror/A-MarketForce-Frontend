@@ -89,7 +89,7 @@ export function DashboardSidebar({
             className="text-xs"
           >
             {user.role === "superadmin" && <Shield className="w-3 h-3 mr-1" />}
-            {user.role === "superadmin" ? "Super Admin" : "Admin"}
+            {user.role === "superadmin" ? "Owner" : "Admin"}
           </Badge>
         </div>
       </div>
@@ -122,11 +122,7 @@ export function DashboardSidebar({
                     {item.badge}
                   </Badge>
                 )}
-                {item.exclusive && !item.badge && (
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    Pro
-                  </Badge>
-                )}
+               
               </Button>
             </Link>
           );

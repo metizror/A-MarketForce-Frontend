@@ -119,7 +119,7 @@ export function SuperAdminDashboard({
       icon: 'CheckCircle2', 
       ...(pendingRequestsCount > 0 && { badge: pendingRequestsCount })
     },
-    { id: 'users', label: 'Users', icon: 'UserCheck' },
+    { id: 'users', label: 'AMF Users', icon: 'UserCheck' },
     { id: 'import', label: 'Import Data', icon: 'Upload', exclusive: true },
     { id: 'activity', label: 'Activity Logs', icon: 'Activity' },
     { id: 'settings', label: 'Settings', icon: 'Settings' }
@@ -317,7 +317,7 @@ export function SuperAdminDashboard({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <h1 className="text-2xl font-semibold text-gray-900 capitalize">
-                  {activeView === 'dashboard' ? 'Super Admin Dashboard' : activeView === 'approve-requests' ? 'Approve Requests' : activeView}
+                  {activeView === 'dashboard' ? 'Owner Dashboard' : activeView === 'approve-requests' ? 'Approve Requests' : activeView}
                 </h1>
                 {(activeView === 'contacts' || activeView === 'companies') && (
                   <Button

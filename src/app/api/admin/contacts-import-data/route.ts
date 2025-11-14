@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "../../../../lib/db";
 import Contacts from "@/models/contacts.model";
+import Companies from "@/models/companies.model";
 import { requireAdminAuth } from "../../../../services/jwt.service";
   
 
@@ -65,6 +66,83 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Extract unique companies from import data
+    const companyMap = new Map<string, any>();
+    data.forEach((contact: any) => {
+      if (contact.companyName && contact.companyName.trim()) {
+        const companyName = contact.companyName.trim();
+        if (!companyMap.has(companyName)) {
+          // Create company object from contact data
+          companyMap.set(companyName, {
+            companyName: companyName,
+            phone: contact.phone || undefined,
+            address1: contact.address1 || undefined,
+            address2: contact.address2 || undefined,
+            city: contact.city || undefined,
+            state: contact.state || undefined,
+            zipCode: contact.zipCode || undefined,
+            country: contact.country || undefined,
+            website: contact.website || undefined,
+            revenue: contact.revenue || undefined,
+            employeeSize: contact.employeeSize || undefined,
+            industry: contact.industry || undefined,
+            subIndustry: contact.subIndustry || undefined,
+            technology: contact.technology || undefined,
+            companyLinkedInUrl: contact.companyLinkedIn || contact.companyLinkedInUrl || undefined,
+            createdBy: admin?.name,
+            uploaderId: admin?._id,
+          });
+        } else {
+          // Merge data - prefer non-empty values
+          const existing = companyMap.get(companyName);
+          Object.keys(existing).forEach((key) => {
+            if (key !== 'companyName' && key !== 'createdBy' && key !== 'uploaderId') {
+              const contactValue = contact[key] || contact[key === 'companyLinkedInUrl' ? 'companyLinkedIn' : key];
+              if (contactValue && !existing[key]) {
+                existing[key] = contactValue;
+              }
+            }
+          });
+        }
+      }
+    });
+
+    // Create or update companies
+    let companiesCreated = 0;
+    let companiesUpdated = 0;
+    const uniqueCompanies = Array.from(companyMap.values());
+
+    for (const companyData of uniqueCompanies) {
+      // Check if company exists by companyName
+      const existingCompany = await Companies.findOne({
+        companyName: companyData.companyName,
+      });
+
+      if (existingCompany) {
+        // Update existing company - merge data, prefer new non-empty values
+        const updateData: any = {};
+        Object.keys(companyData).forEach((key) => {
+          if (key !== 'companyName' && key !== 'createdBy' && key !== 'uploaderId') {
+            if (companyData[key] && companyData[key] !== existingCompany[key as keyof typeof existingCompany]) {
+              updateData[key] = companyData[key];
+            }
+          }
+        });
+        
+        if (Object.keys(updateData).length > 0) {
+          await Companies.updateOne(
+            { _id: existingCompany._id },
+            { $set: updateData }
+          );
+          companiesUpdated++;
+        }
+      } else {
+        // Create new company
+        await Companies.create(companyData);
+        companiesCreated++;
+      }
+    }
+
     // Prepare contacts for bulk insert with createdBy field
     const contactsToInsert = data.map((contact: any) => ({
       ...contact,
@@ -79,9 +157,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "Contacts imported successfully",
+        message: "Contacts and companies imported successfully",
         imported: insertedContacts.length,
         total: data.length,
+        companiesCreated: companiesCreated,
+        companiesUpdated: companiesUpdated,
+        companiesTotal: companiesCreated + companiesUpdated,
       },
       { status: 201 }
     );

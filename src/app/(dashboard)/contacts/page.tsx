@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { ContactsTable } from "@/components/ContactsTable";
 import { FilterPanel } from "@/components/FilterPanel";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
@@ -11,6 +11,7 @@ import type { Company, User, Contact } from "@/types/dashboard.types";
 export default function ContactsPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAppSelector((state) => state.auth);
   const [companies] = useState([] as Company[]);
   const [filters, setFilters] = useState({
@@ -20,6 +21,7 @@ export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const previousPathname = useRef(null as string | null);
 
   const dashboardUser: User | null = user ? {
     id: user.id,
@@ -55,7 +57,7 @@ export default function ContactsPage() {
     return true;
   };
 
-  // Fetch contacts when filters or debounced search change
+  // Fetch contacts when filters, debounced search change, or when navigating to this page
   // Note: Filters are only applied when "Apply Filters" is clicked, but pagination/search work immediately
   useEffect(() => {
     // Clean empty values before API call
@@ -72,20 +74,24 @@ export default function ContactsPage() {
       search: debouncedSearchQuery || undefined,
     };
 
-    // Check if we need to fetch:
-    // 1. No data exists AND we've never fetched before (contacts.length === 0 && lastFetchParams === null)
-    // 2. OR params changed (filters or search changed)
-    // This prevents infinite loops when all contacts are deleted
-    // Note: We check contacts.length inside the effect but don't include it in deps to prevent loops
+    // Check if we navigated to this page (pathname changed to /contacts)
+    const isNavigationToPage = previousPathname.current !== pathname && pathname === '/contacts';
+    
+    // Always fetch when:
+    // 1. Navigating to this page (pathname changed to /contacts)
+    // 2. No data exists AND we've never fetched before
+    // 3. Params changed (filters or search changed)
     const shouldFetch = 
+      isNavigationToPage ||
       (contacts.length === 0 && lastFetchParams === null) || 
       !paramsMatch(lastFetchParams, fetchParams);
     
     if (shouldFetch) {
       dispatch(getContacts(fetchParams));
+      previousPathname.current = pathname;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, filters, debouncedSearchQuery, lastFetchParams]);
+  }, [dispatch, filters, debouncedSearchQuery, lastFetchParams, pathname]);
 
   // Handle page change
   const handlePageChange = (page: number) => {

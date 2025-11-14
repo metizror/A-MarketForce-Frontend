@@ -33,6 +33,11 @@ export interface ImportContactsResponse {
   message: string;
   success?: number;
   failed?: number;
+  imported?: number;
+  total?: number;
+  companiesCreated?: number;
+  companiesUpdated?: number;
+  companiesTotal?: number;
   errors?: Array<{
     row: number;
     email: string;

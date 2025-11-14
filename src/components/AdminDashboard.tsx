@@ -198,7 +198,7 @@ export function AdminDashboard({
         return (
           <div className="bg-white rounded-lg border p-6">
             <h3 className="font-semibold mb-4">User Management</h3>
-            <p className="text-gray-600">Access restricted. Contact Super Admin for user management.</p>
+            <p className="text-gray-600">Access restricted. Contact Owner for user management.</p>
           </div>
         );
       case 'approve-requests':

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { CompaniesTable } from "@/components/CompaniesTable";
 import { CompanyFilterPanel } from "@/components/CompanyFilterPanel";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
@@ -11,6 +11,7 @@ import type { User, Company } from "@/types/dashboard.types";
 export default function CompaniesPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAppSelector((state) => state.auth);
   const [filters, setFilters] = useState({
     page: 1,
@@ -19,6 +20,7 @@ export default function CompaniesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const previousPathname = useRef(null as string | null);
 
   const dashboardUser: User | null = user ? {
     id: user.id,
@@ -54,7 +56,7 @@ export default function CompaniesPage() {
     return true;
   };
 
-  // Fetch companies when filters or debounced search change
+  // Fetch companies when filters, debounced search change, or when navigating to this page
   useEffect(() => {
     // Clean empty values before API call
     const cleanedFilters = Object.fromEntries(
@@ -70,20 +72,24 @@ export default function CompaniesPage() {
       search: debouncedSearchQuery || undefined,
     };
 
-    // Check if we need to fetch:
-    // 1. No data exists AND we've never fetched before (companies.length === 0 && lastFetchParams === null)
-    // 2. OR params changed (filters or search changed)
-    // This prevents infinite loops when all companies are deleted
-    // Note: We check companies.length inside the effect but don't include it in deps to prevent loops
+    // Check if we navigated to this page (pathname changed to /companies)
+    const isNavigationToPage = previousPathname.current !== pathname && pathname === '/companies';
+    
+    // Always fetch when:
+    // 1. Navigating to this page (pathname changed to /companies)
+    // 2. No data exists AND we've never fetched before
+    // 3. Params changed (filters or search changed)
     const shouldFetch = 
+      isNavigationToPage ||
       (companies.length === 0 && lastFetchParams === null) || 
       !paramsMatch(lastFetchParams, fetchParams);
     
     if (shouldFetch) {
       dispatch(getCompanies(fetchParams));
+      previousPathname.current = pathname;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, filters, debouncedSearchQuery, lastFetchParams]);
+  }, [dispatch, filters, debouncedSearchQuery, lastFetchParams, pathname]);
 
   // Handle page change
   const handlePageChange = (page: number) => {

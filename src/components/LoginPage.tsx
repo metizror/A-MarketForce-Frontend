@@ -202,7 +202,7 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
               <TabsList className="grid w-full grid-cols-3 mb-6">
                 <TabsTrigger value="superadmin" className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
-                  Super Admin
+                  Owner
                 </TabsTrigger>
                 <TabsTrigger value="admin" className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
@@ -252,7 +252,7 @@ export function LoginPage({ onLogin, onCreateApprovalRequest }: LoginPageProps) 
                     disabled={isLoading}
                   >
                     <Shield className="w-4 h-4 mr-2" />
-                    {isLoading ? 'Logging in...' : 'Login as Super Admin'}
+                    {isLoading ? 'Logging in...' : 'Login as Owner'}
                   </Button>
                   <div className="text-center pt-2">
                     <button

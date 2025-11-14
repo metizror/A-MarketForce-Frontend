@@ -172,7 +172,7 @@ export default function DashboardLayout({
       path: '/approve-requests',
       ...(pendingRequestsCount > 0 && { badge: pendingRequestsCount })
     },
-    ...(role === 'superadmin' ? [{ id: 'users', label: 'Users', icon: 'UserCheck', path: '/users' }] : []),
+    ...(role === 'superadmin' ? [{ id: 'users', label: 'AMF Users', icon: 'UserCheck', path: '/users' }] : []),
     ...(role === 'superadmin' ? [{ id: 'import', label: 'Import Data', icon: 'Upload', path: '/import', exclusive: true }] : []),
     { id: 'activity', label: 'Activity Logs', icon: 'Activity', path: '/activity' },
     { id: 'settings', label: 'Settings', icon: 'Settings', path: '/settings' }
@@ -194,7 +194,7 @@ export default function DashboardLayout({
   const activeView = getActiveView();
   const showFilterButton = activeView === 'contacts' || activeView === 'companies';
   const pageTitle = pathname === '/dashboard' 
-    ? (role === 'superadmin' ? 'Super Admin Dashboard' : role === 'admin' ? 'Admin Dashboard' : 'Customer Dashboard')
+    ? (role === 'superadmin' ? 'Owner Dashboard' : role === 'admin' ? 'Admin Dashboard' : 'Customer Dashboard')
     : activeView === 'approve-requests' 
     ? 'Approve Requests'
     : activeView.charAt(0).toUpperCase() + activeView.slice(1).replace('-', ' ');

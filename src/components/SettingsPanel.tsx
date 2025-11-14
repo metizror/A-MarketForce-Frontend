@@ -245,7 +245,7 @@ export function SettingsPanel({ user }: SettingsPanelProps) {
               className="px-3 py-1"
             >
               {currentUser.role === 'superadmin' && <Shield className="w-3 h-3 mr-1" />}
-              {currentUser.role === 'superadmin' ? 'Super Admin' : 'Admin'}
+              {currentUser.role === 'superadmin' ? 'Owner' : 'Admin'}
             </Badge>
           </CardTitle>
         </CardHeader>

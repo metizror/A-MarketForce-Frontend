@@ -8,8 +8,8 @@ export default function CustomerSettings() {
   const [deleteRequestSent, setDeleteRequestSent] = useState(false);
 
   const handleDeleteRequest = () => {
-    // Send delete request to Super Admin
-    console.log('Delete account request sent to Super Admin');
+    // Send delete request to Owner
+    console.log('Delete account request sent to Owner');
     setDeleteRequestSent(true);
     setShowDeleteConfirm(false);
     // In real implementation, this would make an API call
@@ -434,11 +434,11 @@ export default function CustomerSettings() {
                         <AlertCircle size={18} className="text-red-600" />
                         Delete Account
                       </h3>
-                      <p className="text-gray-700 mb-4 text-sm">Request account deletion. Your request will be sent to the Super Admin for review and approval.</p>
+                      <p className="text-gray-700 mb-4 text-sm">Request account deletion. Your request will be sent to the Owner for review and approval.</p>
                       {deleteRequestSent ? (
                         <div className="px-6 py-3 bg-green-100 text-green-700 rounded-xl border-2 border-green-300 flex items-center gap-2">
                           <CheckCircle size={18} />
-                          Request sent to Super Admin
+                          Request sent to Owner
                         </div>
                       ) : (
                         <button 
@@ -482,7 +482,7 @@ export default function CustomerSettings() {
             </div>
             <h3 className="text-[#030000] text-center mb-2">Request Account Deletion?</h3>
             <p className="text-gray-600 text-center mb-6">
-              Your deletion request will be sent to the Super Admin for review. You'll be notified once your request has been processed.
+              Your deletion request will be sent to the Owner for review. You'll be notified once your request has been processed.
             </p>
             <div className="flex gap-3">
               <button

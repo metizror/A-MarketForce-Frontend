@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { importContacts, type ContactImportData } from '@/store/slices/contactsImport.slice';
+import { getCompanies } from '@/store/slices/companies.slice';
+import { getContacts } from '@/store/slices/contacts.slice';
 
 interface ImportDataModuleProps {
   onImportComplete: (contacts: Contact[], companies: Company[]) => void;
@@ -385,17 +387,23 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
       setImportProgress(100);
 
       // Update results
-      const successCount = result.success || importData.length;
+      const successCount = result.success || result.imported || importData.length;
       const failedCount = result.failed || 0;
+      const companiesCount = result.companiesTotal || result.companiesCreated || 0;
       
       setImportResults({ 
         contacts: successCount, 
-        companies: 0 // API only imports contacts
+        companies: companiesCount
       });
 
+      // Refresh companies and contacts lists to show newly imported data
+      dispatch(getCompanies({ page: 1, limit: 25 }));
+      dispatch(getContacts({ page: 1, limit: 25 }));
+
       // Show success/error messages
-      if (result.success && result.success > 0) {
-        toast.success(`Successfully imported ${result.success} contact(s)`);
+      if (successCount > 0) {
+        const companyMsg = companiesCount > 0 ? ` and ${companiesCount} company/companies` : '';
+        toast.success(`Successfully imported ${successCount} contact(s)${companyMsg}`);
       }
       if (result.failed && result.failed > 0) {
         toast.warning(`${result.failed} contact(s) failed to import`);
@@ -768,10 +776,12 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
                   <div className="text-sm font-semibold text-green-600">{importResults.contacts}</div>
                   <div className="text-xs text-green-700">Contacts</div>
                 </div>
-                <div className="bg-blue-50 px-3 py-1 rounded-lg">
-                  <div className="text-sm font-semibold text-blue-600">{importResults.companies}</div>
-                  <div className="text-xs text-blue-700">Companies</div>
-                </div>
+                {importResults.companies > 0 && (
+                  <div className="bg-blue-50 px-3 py-1 rounded-lg">
+                    <div className="text-sm font-semibold text-blue-600">{importResults.companies}</div>
+                    <div className="text-xs text-blue-700">Companies</div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -968,11 +978,17 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
             <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">Import Complete!</h3>
             <p className="text-gray-600 mb-6">Your data has been successfully imported</p>
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center gap-4 mb-6">
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="text-2xl font-semibold text-green-600">{importResults.contacts}</div>
                 <div className="text-sm text-green-700">Contacts</div>
               </div>
+              {importResults.companies > 0 && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="text-2xl font-semibold text-blue-600">{importResults.companies}</div>
+                  <div className="text-sm text-blue-700">Companies</div>
+                </div>
+              )}
             </div>
             <Button onClick={resetImport} style={{ backgroundColor: '#EF8037' }}>
               Import Another File
@@ -1016,7 +1032,7 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
           {/* Decorative Badge */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/50">
             <div className="w-2 h-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 animate-pulse" />
-            <span className="text-xs font-medium text-orange-700">Super Admin Only</span>
+            <span className="text-xs font-medium text-orange-700">Owner Only</span>
           </div>
         </div>
       </CardHeader>

@@ -424,6 +424,49 @@ const formatRevenue = (revenue: string | undefined | null): string => {
   return revenue;
 };
 
+// Helper function to format employee size for display (add spaces)
+const formatEmployeeSize = (employeeSize: string | undefined | null): string => {
+  if (!employeeSize || employeeSize === '-') return '-';
+  
+  // Map employee size values to formatted strings with spaces
+  const employeeSizeMap: { [key: string]: string } = {
+    '1to25': '1 to 25',
+    '26to50': '26 to 50',
+    '51to100': '51 to 100',
+    '101to250': '101 to 250',
+    '251to500': '251 to 500',
+    '501to1000': '501 to 1000',
+    '1001to2500': '1001 to 2500',
+    '2501to5000': '2501 to 5000',
+    '5001to10000': '5001 to 10000',
+    'over10001': 'over 10,001',
+  };
+  
+  // Check if it's a known format
+  if (employeeSizeMap[employeeSize]) {
+    return employeeSizeMap[employeeSize];
+  }
+  
+  // If it's in format like "51to100", add spaces
+  const rangeMatch = employeeSize.match(/^(\d+)to(\d+)$/i);
+  if (rangeMatch) {
+    return `${rangeMatch[1]} to ${rangeMatch[2]}`;
+  }
+  
+  // If it starts with "over", format it
+  const overMatch = employeeSize.match(/^over(\d+)$/i);
+  if (overMatch) {
+    const num = parseInt(overMatch[1]);
+    if (num >= 1000) {
+      return `over ${num.toLocaleString()}`;
+    }
+    return `over ${overMatch[1]}`;
+  }
+  
+  // Default: return as is
+  return employeeSize;
+};
+
 export function CompaniesTable({ 
   companies, 
   user, 
@@ -1398,7 +1441,7 @@ export function CompaniesTable({
                   </TableCell>
                   <TableCell>{company.city}, {company.state}</TableCell>
                   <TableCell>{formatRevenue(company.revenue)}</TableCell>
-                  <TableCell>{company.employeeSize}</TableCell>
+                  <TableCell>{formatEmployeeSize(company.employeeSize)}</TableCell>
                   <TableCell className="max-w-xs truncate">{company.website}</TableCell>
                   <TableCell onClick={(e: any) => e.stopPropagation()}>
                     <DropdownMenu>

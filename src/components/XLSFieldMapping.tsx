@@ -162,7 +162,7 @@ export function XLSFieldMapping({ onMappingComplete, onCancel }: XLSFieldMapping
             
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/50">
               <div className="w-2 h-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 animate-pulse" />
-              <span className="text-xs font-medium text-orange-700">Super Admin Only</span>
+              <span className="text-xs font-medium text-orange-700">Owner Only</span>
             </div>
           </div>
         </CardHeader>

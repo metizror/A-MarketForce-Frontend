@@ -313,7 +313,7 @@ export function UsersTable({ users, setUsers }: UsersTableProps) {
                       ) : (
                         <Users className="w-3 h-3" />
                       )}
-                      <span>{user.role === 'superadmin' ? 'Super Admin' : 'Admin'}</span>
+                      <span>{user.role === 'superadmin' ? 'Owner' : 'Admin'}</span>
                     </Badge>
                   </TableCell>
                   <TableCell>
