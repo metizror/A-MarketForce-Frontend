@@ -45,6 +45,9 @@ interface ContactsState {
   isUpdating: boolean;
   isDeleting: boolean;
   error: string | null;
+  // Cache tracking
+  lastFetchParams: GetContactsParams | null;
+  lastFetchTime: number | null;
 }
 
 const initialState: ContactsState = {
@@ -55,6 +58,8 @@ const initialState: ContactsState = {
   isUpdating: false,
   isDeleting: false,
   error: null,
+  lastFetchParams: null,
+  lastFetchTime: null,
 };
 
 export const getContacts = createAsyncThunk<
@@ -308,9 +313,15 @@ const contactsSlice = createSlice({
       state.contacts = [];
       state.pagination = null;
       state.error = null;
+      state.lastFetchParams = null;
+      state.lastFetchTime = null;
     },
     clearError: (state) => {
       state.error = null;
+    },
+    invalidateCache: (state) => {
+      state.lastFetchParams = null;
+      state.lastFetchTime = null;
     },
   },
   extraReducers: (builder) => {
@@ -328,6 +339,9 @@ const contactsSlice = createSlice({
         createdBy: contact.createdBy || contact.addedBy || undefined,
       }));
       state.pagination = action.payload.pagination;
+      // Update cache tracking
+      state.lastFetchParams = action.meta.arg;
+      state.lastFetchTime = Date.now();
       state.error = null;
     });
     builder.addCase(getContacts.rejected, (state, action) => {
@@ -385,5 +399,5 @@ const contactsSlice = createSlice({
   },
 });
 
-export const { clearContacts, clearError } = contactsSlice.actions;
+export const { clearContacts, clearError, invalidateCache } = contactsSlice.actions;
 export default contactsSlice.reducer;

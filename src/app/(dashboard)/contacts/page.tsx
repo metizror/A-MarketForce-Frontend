@@ -12,7 +12,6 @@ export default function ContactsPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { user } = useAppSelector((state) => state.auth);
-  const { contacts, pagination, isLoading, error } = useAppSelector((state) => state.contacts);
   const [companies] = useState([] as Company[]);
   const [filters, setFilters] = useState({
     page: 1,
@@ -42,9 +41,19 @@ export default function ContactsPage() {
     return () => clearTimeout(timer);
   }, [searchQuery, debouncedSearchQuery]);
 
-  // Track previous filters to avoid duplicate API calls
-  const prevFiltersRef = useRef(null as GetContactsParams | null);
-  const prevSearchRef = useRef('' as string);
+  const { contacts, pagination, isLoading, error, lastFetchParams } = useAppSelector((state) => state.contacts);
+
+  // Helper function to check if params match
+  const paramsMatch = (params1: GetContactsParams | null, params2: GetContactsParams): boolean => {
+    if (!params1) return false;
+    const keys = new Set([...Object.keys(params1), ...Object.keys(params2)]);
+    for (const key of keys) {
+      if (params1[key as keyof GetContactsParams] !== params2[key as keyof GetContactsParams]) {
+        return false;
+      }
+    }
+    return true;
+  };
 
   // Fetch contacts when filters or debounced search change
   // Note: Filters are only applied when "Apply Filters" is clicked, but pagination/search work immediately
@@ -63,15 +72,19 @@ export default function ContactsPage() {
       search: debouncedSearchQuery || undefined,
     };
 
-    // Check if filters have actually changed
-    const filtersChanged = JSON.stringify(fetchParams) !== JSON.stringify(prevFiltersRef.current);
+    // Check if we need to fetch:
+    // 1. No data exists (contacts.length === 0)
+    // 2. Params changed (filters or search)
+    // 3. No cache exists (lastFetchParams is null)
+    const shouldFetch = 
+      contacts.length === 0 || 
+      !paramsMatch(lastFetchParams, fetchParams) ||
+      lastFetchParams === null;
     
-    if (filtersChanged) {
-      prevFiltersRef.current = fetchParams;
-      prevSearchRef.current = debouncedSearchQuery;
+    if (shouldFetch) {
       dispatch(getContacts(fetchParams));
     }
-  }, [dispatch, filters, debouncedSearchQuery]);
+  }, [dispatch, filters, debouncedSearchQuery, contacts.length, lastFetchParams]);
 
   // Handle page change
   const handlePageChange = (page: number) => {

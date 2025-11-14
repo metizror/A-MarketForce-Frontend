@@ -52,6 +52,9 @@ interface ApproveRequestsState {
   isApproving: boolean;
   isRejecting: boolean;
   error: string | null;
+  // Cache tracking
+  lastFetchParams: GetApproveRequestsParams | null;
+  lastFetchTime: number | null;
 }
 
 const initialState: ApproveRequestsState = {
@@ -66,6 +69,8 @@ const initialState: ApproveRequestsState = {
   isApproving: false,
   isRejecting: false,
   error: null,
+  lastFetchParams: null,
+  lastFetchTime: null,
 };
 
 // Helper function to safely convert date to ISO string
@@ -188,6 +193,10 @@ const approveRequestsSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    invalidateCache: (state) => {
+      state.lastFetchParams = null;
+      state.lastFetchTime = null;
+    },
   },
   extraReducers: (builder) => {
     // Get approve requests
@@ -206,6 +215,9 @@ const approveRequestsSlice = createSlice({
           approvedRequests: action.payload.approvedRequests || 0,
           rejectedRequests: action.payload.rejectedRequests || 0,
         };
+        // Update cache tracking
+        state.lastFetchParams = action.meta.arg;
+        state.lastFetchTime = Date.now();
         state.error = null;
       })
       .addCase(getApproveRequests.rejected, (state, action) => {
@@ -276,6 +288,6 @@ const approveRequestsSlice = createSlice({
   },
 });
 
-export const { clearError } = approveRequestsSlice.actions;
+export const { clearError, invalidateCache } = approveRequestsSlice.actions;
 export default approveRequestsSlice.reducer;
 

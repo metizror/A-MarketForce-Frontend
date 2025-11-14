@@ -70,7 +70,7 @@ const getActionColor = (action: string) => {
   }
 };
 
-export function ActivityLogsPanel({ 
+export const ActivityLogsPanel = React.memo(function ActivityLogsPanel({ 
   logs, 
   pagination,
   isLoading = false, 
@@ -427,4 +427,4 @@ export function ActivityLogsPanel({
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent" />
     </div>
   );
-}
+});

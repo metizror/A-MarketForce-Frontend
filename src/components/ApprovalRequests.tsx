@@ -28,7 +28,7 @@ export function ApprovalRequests({
   onApprove 
 }: ApprovalRequestsProps) {
   const dispatch = useAppDispatch();
-  const { requests, pagination, stats, isLoading, isApproving, isRejecting, error } = useAppSelector((state) => state.approveRequests);
+  const { requests, pagination, stats, isLoading, isApproving, isRejecting, error, lastFetchParams } = useAppSelector((state) => state.approveRequests);
   
   // Use Redux state if available, otherwise fall back to props
   const approvalRequests = requests.length > 0 ? requests : (propApprovalRequests || []);
@@ -39,10 +39,29 @@ export function ApprovalRequests({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageLimit, setPageLimit] = useState(25);
 
+  // Helper function to check if params match
+  const paramsMatch = (params1: { page?: number; limit?: number } | null, params2: { page?: number; limit?: number }): boolean => {
+    if (!params1) return false;
+    return params1.page === params2.page && params1.limit === params2.limit;
+  };
+
   // Fetch approve requests on component mount and when page/limit changes
   useEffect(() => {
-    dispatch(getApproveRequests({ page: currentPage, limit: pageLimit }));
-  }, [dispatch, currentPage, pageLimit]);
+    const currentParams = { page: currentPage, limit: pageLimit };
+    
+    // Check if we need to fetch:
+    // 1. No data exists (requests.length === 0)
+    // 2. Params changed (page or limit)
+    // 3. No cache exists (lastFetchParams is null)
+    const shouldFetch = 
+      requests.length === 0 || 
+      !paramsMatch(lastFetchParams, currentParams) ||
+      lastFetchParams === null;
+
+    if (shouldFetch) {
+      dispatch(getApproveRequests(currentParams));
+    }
+  }, [dispatch, currentPage, pageLimit, requests.length, lastFetchParams]);
 
   // Show error toast if there's an error
   useEffect(() => {

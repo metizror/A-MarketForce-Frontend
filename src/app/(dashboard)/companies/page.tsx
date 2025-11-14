@@ -12,7 +12,6 @@ export default function CompaniesPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { user } = useAppSelector((state) => state.auth);
-  const { companies, pagination, isLoading, error } = useAppSelector((state) => state.companies);
   const [filters, setFilters] = useState({
     page: 1,
     limit: 25,
@@ -41,9 +40,19 @@ export default function CompaniesPage() {
     return () => clearTimeout(timer);
   }, [searchQuery, debouncedSearchQuery]);
 
-  // Track previous filters to avoid duplicate API calls
-  const prevFiltersRef = useRef(null as GetCompaniesParams | null);
-  const prevSearchRef = useRef('' as string);
+  const { companies, pagination, isLoading, error, lastFetchParams } = useAppSelector((state) => state.companies);
+
+  // Helper function to check if params match
+  const paramsMatch = (params1: GetCompaniesParams | null, params2: GetCompaniesParams): boolean => {
+    if (!params1) return false;
+    const keys = new Set([...Object.keys(params1), ...Object.keys(params2)]);
+    for (const key of keys) {
+      if (params1[key as keyof GetCompaniesParams] !== params2[key as keyof GetCompaniesParams]) {
+        return false;
+      }
+    }
+    return true;
+  };
 
   // Fetch companies when filters or debounced search change
   useEffect(() => {
@@ -61,15 +70,19 @@ export default function CompaniesPage() {
       search: debouncedSearchQuery || undefined,
     };
 
-    // Check if filters have actually changed
-    const filtersChanged = JSON.stringify(fetchParams) !== JSON.stringify(prevFiltersRef.current);
+    // Check if we need to fetch:
+    // 1. No data exists (companies.length === 0)
+    // 2. Params changed (filters or search)
+    // 3. No cache exists (lastFetchParams is null)
+    const shouldFetch = 
+      companies.length === 0 || 
+      !paramsMatch(lastFetchParams, fetchParams) ||
+      lastFetchParams === null;
     
-    if (filtersChanged) {
-      prevFiltersRef.current = fetchParams;
-      prevSearchRef.current = debouncedSearchQuery;
+    if (shouldFetch) {
       dispatch(getCompanies(fetchParams));
     }
-  }, [dispatch, filters, debouncedSearchQuery]);
+  }, [dispatch, filters, debouncedSearchQuery, companies.length, lastFetchParams]);
 
   // Handle page change
   const handlePageChange = (page: number) => {

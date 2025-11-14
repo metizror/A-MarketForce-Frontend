@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useOptimistic, useTransition } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -67,6 +67,7 @@ export function ContactsTable({
 }: ContactsTableProps) {
   const dispatch = useAppDispatch();
   const { isCreating, isUpdating, isDeleting } = useAppSelector((state) => state.contacts);
+  const [isPending, startTransition] = useTransition();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState(null as Contact | null);
   const [viewingContact, setViewingContact] = useState(null as Contact | null);
@@ -470,8 +471,33 @@ export function ContactsTable({
     }
   };
 
-  // Use contacts directly from API (already filtered and paginated server-side)
-  const displayedContacts = contacts;
+  // Optimistic state for contacts
+  const [optimisticContacts, setOptimisticContacts] = useOptimistic(
+    contacts,
+    (currentContacts: Contact[], action: {
+      type: 'update' | 'delete';
+      contactId: string;
+      updatedContact?: Contact;
+    }) => {
+      if (action.type === 'delete') {
+        return currentContacts.filter(c => {
+          const cId = c.id || (c as any)._id;
+          return cId !== action.contactId;
+        });
+      }
+      if (action.type === 'update' && action.updatedContact) {
+        return currentContacts.map(c => {
+          const cId = c.id || (c as any)._id;
+          const updatedId = action.updatedContact!.id || (action.updatedContact as any)._id;
+          return cId === updatedId ? action.updatedContact! : c;
+        });
+      }
+      return currentContacts;
+    }
+  );
+
+  // Use optimistic contacts for display (immediate UI updates)
+  const displayedContacts = optimisticContacts;
   const startIndex = pagination ? (pagination.currentPage - 1) * pagination.limit : 0;
 
   const handleSort = (field: SortField) => {
@@ -1029,20 +1055,30 @@ export function ContactsTable({
         amfNotes: newContact.amfNotes || undefined,
       };
 
+      // Create optimistic updated contact
+      const updatedContact: Contact = {
+        ...editingContact,
+        ...payload,
+        id: contactId,
+      };
+
+      // Optimistically update UI immediately
+      startTransition(() => {
+        setOptimisticContacts({ type: 'update', contactId, updatedContact });
+      });
+
+      // Close dialog immediately for better UX
+      setEditingContact(null);
+      resetForm();
+
       // Dispatch updateContact action
       await dispatch(updateContact(payload)).unwrap();
 
       // If we reach here, the API call was successful
-      // Close dialog first
-      setEditingContact(null);
-
-      // Reset form
-      resetForm();
-
       // Show success message
       toast.success('Contact updated successfully');
 
-      // Refetch contacts to show updated data
+      // Refetch contacts to sync with server (optimistic update already shown)
       const fetchParams: GetContactsParams = {
         ...filters,
         page: pagination?.currentPage || 1, // Keep current page
@@ -1061,8 +1097,13 @@ export function ContactsTable({
       await dispatch(getContacts(cleanedFilters));
 
     } catch (error: any) {
-      // Error occurred - show error message
-      // Don't close dialog so user can fix and retry
+      // Error occurred - rollback optimistic update
+      startTransition(() => {
+        setOptimisticContacts({ type: 'update', contactId, updatedContact: editingContact });
+      });
+      // Reopen dialog so user can fix and retry
+      setEditingContact(editingContact);
+      // Show error message
       toast.error(error.message || 'Failed to update contact');
     }
   };
@@ -1073,6 +1114,20 @@ export function ContactsTable({
       return;
     }
 
+    // Find the contact to restore if deletion fails
+    const contactToDelete = contacts.find(c => {
+      const cId = c.id || (c as any)._id;
+      return cId === contactId;
+    });
+
+    // Optimistically remove from UI immediately
+    startTransition(() => {
+      setOptimisticContacts({ type: 'delete', contactId });
+    });
+
+    // Clear selection if this contact was selected
+    setSelectedContacts(selectedContacts.filter((selectedId: string) => selectedId !== contactId));
+
     try {
       // Dispatch deleteContacts action with single ID
       await dispatch(deleteContacts({ ids: [contactId] })).unwrap();
@@ -1080,10 +1135,7 @@ export function ContactsTable({
       // Show success message
       toast.success('Contact deleted successfully');
 
-      // Clear selection if this contact was selected
-      setSelectedContacts(selectedContacts.filter((selectedId: string) => selectedId !== contactId));
-
-      // Refetch contacts to update the list
+      // Refetch contacts to sync with server (optimistic delete already shown)
       const fetchParams: GetContactsParams = {
         ...filters,
         page: pagination?.currentPage || 1,
@@ -1101,7 +1153,14 @@ export function ContactsTable({
       // Dispatch refetch - this will update Redux state and parent will re-render
       await dispatch(getContacts(cleanedFilters));
     } catch (error: any) {
-      // Error occurred - show error message
+      // Error occurred - rollback optimistic delete
+      if (contactToDelete) {
+        startTransition(() => {
+          // Restore the contact by updating optimistic state back to original
+          setOptimisticContacts({ type: 'update', contactId, updatedContact: contactToDelete });
+        });
+      }
+      // Show error message
       toast.error(error.message || 'Failed to delete contact');
     }
   };
@@ -1116,12 +1175,25 @@ export function ContactsTable({
     const countToDelete = selectedContacts.length;
     const idsToDelete = [...selectedContacts];
 
+    // Find contacts to restore if deletion fails
+    const contactsToDelete = contacts.filter(c => {
+      const cId = c.id || (c as any)._id;
+      return idsToDelete.includes(cId);
+    });
+
+    // Optimistically remove all selected contacts from UI immediately
+    startTransition(() => {
+      idsToDelete.forEach(contactId => {
+        setOptimisticContacts({ type: 'delete', contactId });
+      });
+    });
+
+    // Clear selection immediately
+    setSelectedContacts([]);
+
     try {
       // Dispatch deleteContacts action with all selected IDs
       await dispatch(deleteContacts({ ids: idsToDelete })).unwrap();
-
-      // Clear selection
-      setSelectedContacts([]);
 
       // Show success message
       toast.success(`${countToDelete} contacts deleted successfully`);
@@ -1144,7 +1216,16 @@ export function ContactsTable({
       // Dispatch refetch - this will update Redux state and parent will re-render
       await dispatch(getContacts(cleanedFilters));
     } catch (error: any) {
-      // Error occurred - show error message
+      // Error occurred - rollback optimistic deletes
+      startTransition(() => {
+        contactsToDelete.forEach(contact => {
+          const contactId = contact.id || (contact as any)._id;
+          setOptimisticContacts({ type: 'update', contactId, updatedContact: contact });
+        });
+      });
+      // Restore selection
+      setSelectedContacts(idsToDelete);
+      // Show error message
       toast.error(error.message || 'Failed to delete contacts');
     }
   };

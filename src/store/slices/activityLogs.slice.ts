@@ -39,6 +39,9 @@ interface ActivityLogsState {
   } | null;
   isLoading: boolean;
   error: string | null;
+  // Cache tracking
+  lastFetchParams: GetActivityLogsParams | null;
+  lastFetchTime: number | null;
 }
 
 const initialState: ActivityLogsState = {
@@ -46,6 +49,8 @@ const initialState: ActivityLogsState = {
   pagination: null,
   isLoading: false,
   error: null,
+  lastFetchParams: null,
+  lastFetchTime: null,
 };
 
 // Get activity logs
@@ -76,6 +81,10 @@ const activityLogsSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    invalidateCache: (state) => {
+      state.lastFetchParams = null;
+      state.lastFetchTime = null;
+    },
   },
   extraReducers: (builder) => {
     // Get activity logs
@@ -104,6 +113,9 @@ const activityLogsSlice = createSlice({
           hasNextPage: action.payload.pagination.hasNextPage,
           hasPreviousPage: action.payload.pagination.hasPreviousPage,
         };
+        // Update cache tracking
+        state.lastFetchParams = action.meta.arg;
+        state.lastFetchTime = Date.now();
         state.error = null;
       })
       .addCase(getActivityLogs.rejected, (state, action) => {
@@ -115,6 +127,6 @@ const activityLogsSlice = createSlice({
   },
 });
 
-export const { clearError } = activityLogsSlice.actions;
+export const { clearError, invalidateCache } = activityLogsSlice.actions;
 export default activityLogsSlice.reducer;
 

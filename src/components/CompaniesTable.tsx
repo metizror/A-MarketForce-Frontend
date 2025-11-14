@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useOptimistic, useTransition } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -442,6 +442,7 @@ export function CompaniesTable({
 }: CompaniesTableProps) {
   const dispatch = useAppDispatch();
   const { isCreating, isUpdating, isDeleting } = useAppSelector((state) => state.companies);
+  const [isPending, startTransition] = useTransition();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null as Company | null);
   const [selectedCompanies, setSelectedCompanies] = useState([] as string[]);
@@ -467,14 +468,39 @@ export function CompaniesTable({
     lastUpdateDate: new Date().toISOString().split('T')[0]
   });
 
+  // Optimistic state for companies
+  const [optimisticCompanies, setOptimisticCompanies] = useOptimistic(
+    companies,
+    (currentCompanies: Company[], action: {
+      type: 'update' | 'delete';
+      companyId: string;
+      updatedCompany?: Company;
+    }) => {
+      if (action.type === 'delete') {
+        return currentCompanies.filter(c => {
+          const cId = c.id || (c as any)._id;
+          return cId !== action.companyId;
+        });
+      }
+      if (action.type === 'update' && action.updatedCompany) {
+        return currentCompanies.map(c => {
+          const cId = c.id || (c as any)._id;
+          const updatedId = action.updatedCompany!.id || (action.updatedCompany as any)._id;
+          return cId === updatedId ? action.updatedCompany! : c;
+        });
+      }
+      return currentCompanies;
+    }
+  );
+
   // Use pagination from API or default values
   const currentPage = pagination?.currentPage || 1;
   const rowsPerPage = pagination?.limit || 25;
   const totalPages = pagination?.totalPages || 1;
   const totalCount = pagination?.totalCount || 0;
   
-  // Use companies directly from API (already filtered and paginated server-side)
-  const displayedCompanies = companies;
+  // Use optimistic companies for display (immediate UI updates)
+  const displayedCompanies = optimisticCompanies;
   const startIndex = pagination ? (pagination.currentPage - 1) * pagination.limit : 0;
 
   const handleSort = (field: SortField) => {
@@ -705,12 +731,25 @@ export function CompaniesTable({
         lastUpdateDate: newCompany.lastUpdateDate || undefined,
       };
 
+      // Create optimistic updated company
+      const updatedCompany: Company = {
+        ...editingCompany,
+        ...payload,
+        id: companyId,
+      };
+
+      // Optimistically update UI immediately
+      startTransition(() => {
+        setOptimisticCompanies({ type: 'update', companyId, updatedCompany });
+      });
+
+      // Close dialog immediately for better UX
+      setEditingCompany(null);
+      resetForm();
+
       // Dispatch updateCompany action
       await dispatch(updateCompany(payload)).unwrap();
 
-      // Close dialog
-      setEditingCompany(null);
-      resetForm();
       toast.success('Company updated successfully');
 
       // Refetch companies
@@ -730,6 +769,12 @@ export function CompaniesTable({
       await dispatch(getCompanies(cleanedFilters));
 
     } catch (error: any) {
+      // Error occurred - rollback optimistic update
+      startTransition(() => {
+        setOptimisticCompanies({ type: 'update', companyId, updatedCompany: editingCompany });
+      });
+      // Reopen dialog so user can fix and retry
+      setEditingCompany(editingCompany);
       toast.error(error.message || 'Failed to update company');
     }
   };
@@ -740,16 +785,27 @@ export function CompaniesTable({
       return;
     }
 
+    // Find the company to restore if deletion fails
+    const companyToDelete = companies.find(c => {
+      const cId = c.id || (c as any)._id;
+      return cId === companyId;
+    });
+
+    // Optimistically remove from UI immediately
+    startTransition(() => {
+      setOptimisticCompanies({ type: 'delete', companyId });
+    });
+
+    // Clear selection if this company was selected
+    setSelectedCompanies(selectedCompanies.filter((selectedId: string) => selectedId !== companyId));
+
     try {
       // Dispatch deleteCompanies action with single ID
       await dispatch(deleteCompanies({ ids: [companyId] })).unwrap();
 
       toast.success('Company deleted successfully');
 
-      // Clear selection if this company was selected
-      setSelectedCompanies(selectedCompanies.filter((selectedId: string) => selectedId !== companyId));
-
-      // Refetch companies
+      // Refetch companies to sync with server (optimistic delete already shown)
       const fetchParams: GetCompaniesParams = {
         ...filters,
         page: pagination?.currentPage || 1,
@@ -765,6 +821,13 @@ export function CompaniesTable({
       
       await dispatch(getCompanies(cleanedFilters));
     } catch (error: any) {
+      // Error occurred - rollback optimistic delete
+      if (companyToDelete) {
+        startTransition(() => {
+          // Restore the company by updating optimistic state back to original
+          setOptimisticCompanies({ type: 'update', companyId, updatedCompany: companyToDelete });
+        });
+      }
       toast.error(error.message || 'Failed to delete company');
     }
   };
@@ -779,12 +842,25 @@ export function CompaniesTable({
     const countToDelete = selectedCompanies.length;
     const idsToDelete = [...selectedCompanies];
 
+    // Find companies to restore if deletion fails
+    const companiesToDelete = companies.filter(c => {
+      const cId = c.id || (c as any)._id;
+      return idsToDelete.includes(cId);
+    });
+
+    // Optimistically remove all selected companies from UI immediately
+    startTransition(() => {
+      idsToDelete.forEach(companyId => {
+        setOptimisticCompanies({ type: 'delete', companyId });
+      });
+    });
+
+    // Clear selection immediately
+    setSelectedCompanies([]);
+
     try {
       // Dispatch deleteCompanies action
       await dispatch(deleteCompanies({ ids: idsToDelete })).unwrap();
-
-      // Clear selection
-      setSelectedCompanies([]);
       toast.success(`${countToDelete} companies deleted successfully`);
 
       // Refetch companies
@@ -803,6 +879,15 @@ export function CompaniesTable({
       
       await dispatch(getCompanies(cleanedFilters));
     } catch (error: any) {
+      // Error occurred - rollback optimistic deletes
+      startTransition(() => {
+        companiesToDelete.forEach(company => {
+          const companyId = company.id || (company as any)._id;
+          setOptimisticCompanies({ type: 'update', companyId, updatedCompany: company });
+        });
+      });
+      // Restore selection
+      setSelectedCompanies(idsToDelete);
       toast.error(error.message || 'Failed to delete companies');
     }
   };

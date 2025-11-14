@@ -43,6 +43,9 @@ interface CompaniesState {
   isUpdating: boolean;
   isDeleting: boolean;
   error: string | null;
+  // Cache tracking
+  lastFetchParams: GetCompaniesParams | null;
+  lastFetchTime: number | null;
 }
 
 const initialState: CompaniesState = {
@@ -53,6 +56,8 @@ const initialState: CompaniesState = {
   isUpdating: false,
   isDeleting: false,
   error: null,
+  lastFetchParams: null,
+  lastFetchTime: null,
 };
 
 export const getCompanies = createAsyncThunk<
@@ -275,9 +280,15 @@ const companiesSlice = createSlice({
       state.companies = [];
       state.pagination = null;
       state.error = null;
+      state.lastFetchParams = null;
+      state.lastFetchTime = null;
     },
     clearError: (state) => {
       state.error = null;
+    },
+    invalidateCache: (state) => {
+      state.lastFetchParams = null;
+      state.lastFetchTime = null;
     },
   },
   extraReducers: (builder) => {
@@ -295,6 +306,9 @@ const companiesSlice = createSlice({
         createdBy: company.createdBy || company.addedBy || undefined,
       }));
       state.pagination = action.payload.pagination;
+      // Update cache tracking
+      state.lastFetchParams = action.meta.arg;
+      state.lastFetchTime = Date.now();
       state.error = null;
     });
     builder.addCase(getCompanies.rejected, (state, action) => {
@@ -352,6 +366,6 @@ const companiesSlice = createSlice({
   },
 });
 
-export const { clearCompanies, clearError } = companiesSlice.actions;
+export const { clearCompanies, clearError, invalidateCache } = companiesSlice.actions;
 export default companiesSlice.reducer;
 

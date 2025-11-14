@@ -39,75 +39,139 @@ export default function DashboardPage() {
 
   const role = user?.role || null;
   const hasFetchedDashboard = useRef(false);
+  const isFetching = useRef(false);
+  const dashboardDataCache = useRef<{
+    contactsCount: number;
+    companiesCount: number;
+    adminUsersCount: number;
+    lastImportDate: string | null;
+    activityLogs: ActivityLog[];
+    timestamp: number;
+  } | null>(null);
+
+  // Cache duration: 5 minutes (300000 ms)
+  const CACHE_DURATION = 5 * 60 * 1000;
 
   // Fetch all dashboard data from single API endpoint (only once)
   useEffect(() => {
-    // Prevent duplicate calls
-    if (hasFetchedDashboard.current) {
+    // Early return if no role
+    if (!role || (role !== "admin" && role !== "superadmin")) {
+      setIsLoading(false);
       return;
     }
 
-    if (role === "admin" || role === "superadmin") {
-      setIsLoading(true);
-      hasFetchedDashboard.current = true;
-      
-      // Use different endpoints based on role
-      const apiEndpoint = role === "admin" ? "/admin/admin-dashboard" : "/admin/dashboard";
-      
-      if (role === "admin") {
-        // Call admin-dashboard API and map response
-        privateApiCall<AdminDashboardData>(apiEndpoint)
+    // Check if cached data exists and is still valid
+    const now = Date.now();
+    const cacheValid = dashboardDataCache.current && 
+                      (now - dashboardDataCache.current.timestamp) < CACHE_DURATION;
+
+    // Use cached data if valid and already fetched
+    if (cacheValid && hasFetchedDashboard.current) {
+      setContactsCount(dashboardDataCache.current.contactsCount);
+      setCompaniesCount(dashboardDataCache.current.companiesCount);
+      setAdminUsersCount(dashboardDataCache.current.adminUsersCount);
+      setLastImportDate(dashboardDataCache.current.lastImportDate);
+      setActivityLogs(dashboardDataCache.current.activityLogs);
+      setIsLoading(false);
+      return;
+    }
+
+    // Prevent duplicate calls if already fetching or already fetched with valid cache
+    if (isFetching.current) {
+      // If already fetching, don't start another call but ensure loading state is set
+      if (!isLoading) {
+        setIsLoading(true);
+      }
+      return;
+    }
+    
+    if (hasFetchedDashboard.current && cacheValid) {
+      return;
+    }
+
+    // Mark as fetching immediately to prevent duplicate calls
+    isFetching.current = true;
+    setIsLoading(true);
+    
+    // Use different endpoints based on role
+    const apiEndpoint = role === "admin" ? "/admin/admin-dashboard" : "/admin/dashboard";
+    
+    if (role === "admin") {
+      // Call admin-dashboard API and map response
+      privateApiCall<AdminDashboardData>(apiEndpoint)
           .then((response) => {
-            setContactsCount(response.addedContacts || 0);
-            setCompaniesCount(response.addedCompanies || 0);
-            setAdminUsersCount(0); // Admin dashboard doesn't return totalUsers
-            // Format lastImportContact to lastImportDate
-            const lastImportDate = response.lastImportContact?.createdAt 
-              ? new Date(response.lastImportContact.createdAt).toISOString()
-              : null;
-            setLastImportDate(lastImportDate);
-            // Format activity logs
-            const formattedActivityLogs = (response.activityLogs || []).map((log: any) => ({
-              id: log._id?.toString() || log.id,
-              action: log.action,
-              description: log.details || log.description || log.action,
-              details: log.details || log.description || log.action,
-              userId: log.userId?.toString() || log.userId,
-              userName: log.user || log.userName || "Unknown",
-              user: log.user || log.userName || "Unknown",
-              createdBy: log.user || log.userName || "Unknown",
-              timestamp: log.createdAt || log.timestamp,
-              createdAt: log.createdAt,
-              updatedAt: log.updatedAt,
-            }));
-            setActivityLogs(formattedActivityLogs);
+            const data = {
+              contactsCount: response.addedContacts || 0,
+              companiesCount: response.addedCompanies || 0,
+              adminUsersCount: 0,
+              lastImportDate: response.lastImportContact?.createdAt 
+                ? new Date(response.lastImportContact.createdAt).toISOString()
+                : null,
+              activityLogs: (response.activityLogs || []).map((log: any) => ({
+                id: log._id?.toString() || log.id,
+                action: log.action,
+                description: log.details || log.description || log.action,
+                details: log.details || log.description || log.action,
+                userId: log.userId?.toString() || log.userId,
+                userName: log.user || log.userName || "Unknown",
+                user: log.user || log.userName || "Unknown",
+                createdBy: log.user || log.userName || "Unknown",
+                timestamp: log.createdAt || log.timestamp,
+                createdAt: log.createdAt,
+                updatedAt: log.updatedAt,
+              })),
+              timestamp: now,
+            };
+            
+            // Update all state and cache
+            dashboardDataCache.current = data;
+            setContactsCount(data.contactsCount);
+            setCompaniesCount(data.companiesCount);
+            setAdminUsersCount(data.adminUsersCount);
+            setLastImportDate(data.lastImportDate);
+            setActivityLogs(data.activityLogs);
             setIsLoading(false);
+            isFetching.current = false;
+            hasFetchedDashboard.current = true; // Mark as fetched only after successful API call
           })
           .catch((error) => {
             console.error("Failed to fetch admin dashboard data:", error);
             setIsLoading(false);
-            hasFetchedDashboard.current = false; // Reset on error to allow retry
+            isFetching.current = false;
+            hasFetchedDashboard.current = false; // Keep as false on error to allow retry
+            dashboardDataCache.current = null; // Clear cache on error
           });
-      } else {
-        // Call superadmin dashboard API
-        privateApiCall<DashboardData>(apiEndpoint)
-          .then((response) => {
-            setContactsCount(response.totalContacts || 0);
-            setCompaniesCount(response.totalCompanies || 0);
-            setAdminUsersCount(response.totalUsers || 0);
-            setLastImportDate(response.lastImportDate || null);
-            setActivityLogs(response.activityLogs || []);
-            setIsLoading(false);
-          })
-          .catch((error) => {
-            console.error("Failed to fetch dashboard data:", error);
-            setIsLoading(false);
-            hasFetchedDashboard.current = false; // Reset on error to allow retry
-          });
-      }
     } else {
-      // For customers, set loading to false immediately
-      setIsLoading(false);
+      // Call superadmin dashboard API
+      privateApiCall<DashboardData>(apiEndpoint)
+        .then((response) => {
+          const data = {
+            contactsCount: response.totalContacts || 0,
+            companiesCount: response.totalCompanies || 0,
+            adminUsersCount: response.totalUsers || 0,
+            lastImportDate: response.lastImportDate || null,
+            activityLogs: response.activityLogs || [],
+            timestamp: now,
+          };
+          
+          // Update all state and cache
+          dashboardDataCache.current = data;
+          setContactsCount(data.contactsCount);
+          setCompaniesCount(data.companiesCount);
+          setAdminUsersCount(data.adminUsersCount);
+          setLastImportDate(data.lastImportDate);
+          setActivityLogs(data.activityLogs);
+          setIsLoading(false);
+          isFetching.current = false;
+          hasFetchedDashboard.current = true; // Mark as fetched only after successful API call
+        })
+        .catch((error) => {
+          console.error("Failed to fetch dashboard data:", error);
+          setIsLoading(false);
+          isFetching.current = false;
+          hasFetchedDashboard.current = false; // Keep as false on error to allow retry
+          dashboardDataCache.current = null; // Clear cache on error
+        });
     }
   }, [role]);
 
@@ -139,14 +203,27 @@ export default function DashboardPage() {
             onImportComplete={(newContacts, newCompanies) => {
               // Handle import complete - can be connected to state management later
               console.log("Import complete", { newContacts, newCompanies });
-              // Update last import date to current date
-              setLastImportDate(new Date().toISOString());
+              // Invalidate cache and refetch
+              hasFetchedDashboard.current = false;
+              dashboardDataCache.current = null;
               // Refresh dashboard data after import
               privateApiCall<DashboardData>("/admin/dashboard")
                 .then((response) => {
-                  setContactsCount(response.totalContacts || 0);
-                  setCompaniesCount(response.totalCompanies || 0);
-                  setLastImportDate(response.lastImportDate || null);
+                  const now = Date.now();
+                  const data = {
+                    contactsCount: response.totalContacts || 0,
+                    companiesCount: response.totalCompanies || 0,
+                    adminUsersCount: response.totalUsers || 0,
+                    lastImportDate: response.lastImportDate || null,
+                    activityLogs: response.activityLogs || [],
+                    timestamp: now,
+                  };
+                  dashboardDataCache.current = data;
+                  setContactsCount(data.contactsCount);
+                  setCompaniesCount(data.companiesCount);
+                  setAdminUsersCount(data.adminUsersCount);
+                  setLastImportDate(data.lastImportDate);
+                  setActivityLogs(data.activityLogs);
                 })
                 .catch((error) => {
                   console.error("Failed to refresh dashboard data:", error);
