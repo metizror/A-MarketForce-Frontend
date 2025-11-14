@@ -81,7 +81,6 @@ const customerAuthSchema = new mongoose.Schema(
     },
     rejectionReason: {
       type: String,
-      default: null,
     },
   },
   { timestamps: true }
