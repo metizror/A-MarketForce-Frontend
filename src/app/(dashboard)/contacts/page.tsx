@@ -73,18 +73,19 @@ export default function ContactsPage() {
     };
 
     // Check if we need to fetch:
-    // 1. No data exists (contacts.length === 0)
-    // 2. Params changed (filters or search)
-    // 3. No cache exists (lastFetchParams is null)
+    // 1. No data exists AND we've never fetched before (contacts.length === 0 && lastFetchParams === null)
+    // 2. OR params changed (filters or search changed)
+    // This prevents infinite loops when all contacts are deleted
+    // Note: We check contacts.length inside the effect but don't include it in deps to prevent loops
     const shouldFetch = 
-      contacts.length === 0 || 
-      !paramsMatch(lastFetchParams, fetchParams) ||
-      lastFetchParams === null;
+      (contacts.length === 0 && lastFetchParams === null) || 
+      !paramsMatch(lastFetchParams, fetchParams);
     
     if (shouldFetch) {
       dispatch(getContacts(fetchParams));
     }
-  }, [dispatch, filters, debouncedSearchQuery, contacts.length, lastFetchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, filters, debouncedSearchQuery, lastFetchParams]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
