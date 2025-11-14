@@ -968,14 +968,10 @@ export function ImportDataModule({ onImportComplete }: ImportDataModuleProps) {
             <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">Import Complete!</h3>
             <p className="text-gray-600 mb-6">Your data has been successfully imported</p>
-            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mb-6">
+            <div className="flex justify-center mb-6">
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="text-2xl font-semibold text-green-600">{importResults.contacts}</div>
                 <div className="text-sm text-green-700">Contacts</div>
-              </div>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="text-2xl font-semibold text-blue-600">{importResults.companies}</div>
-                <div className="text-sm text-blue-700">Companies</div>
               </div>
             </div>
             <Button onClick={resetImport} style={{ backgroundColor: '#EF8037' }}>
