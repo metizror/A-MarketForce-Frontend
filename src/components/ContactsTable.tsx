@@ -1019,14 +1019,14 @@ export function ContactsTable({
       return;
     }
 
-    try {
-      // Get contact ID (handle both _id and id fields)
-      const contactId = editingContact.id || (editingContact as any)._id;
-      if (!contactId) {
-        toast.error('Contact ID is missing');
-        return;
-      }
+    // Get contact ID (outside try block so it's accessible in catch)
+    const contactId = editingContact.id || (editingContact as any)._id;
+    if (!contactId) {
+      toast.error('Contact ID is missing');
+      return;
+    }
 
+    try {
       // Prepare payload for API
       const payload = {
         id: contactId,
@@ -1398,7 +1398,7 @@ export function ContactsTable({
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedContacts(displayedContacts.map(contact => contact.id));
+      setSelectedContacts(displayedContacts.map((contact: Contact) => contact.id));
     } else {
       setSelectedContacts([]);
     }
@@ -1946,7 +1946,7 @@ export function ContactsTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                displayedContacts.map((contact) => {
+                displayedContacts.map((contact: Contact) => {
                   return (
                 <TableRow 
                   key={contact.id}

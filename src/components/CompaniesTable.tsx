@@ -702,14 +702,14 @@ export function CompaniesTable({
       return;
     }
 
-    try {
-      // Get company ID
-      const companyId = editingCompany.id || (editingCompany as any)._id;
-      if (!companyId) {
-        toast.error('Company ID is missing');
-        return;
-      }
+    // Get company ID (outside try block so it's accessible in catch)
+    const companyId = editingCompany.id || (editingCompany as any)._id;
+    if (!companyId) {
+      toast.error('Company ID is missing');
+      return;
+    }
 
+    try {
       // Prepare payload for API
       const payload = {
         id: companyId,
@@ -1272,7 +1272,7 @@ export function CompaniesTable({
                     checked={selectedCompanies.length === displayedCompanies.length && displayedCompanies.length > 0}
                     onCheckedChange={(checked: boolean) => {
                       if (checked) {
-                        setSelectedCompanies(displayedCompanies.map(company => company.id));
+                        setSelectedCompanies(displayedCompanies.map((company: Company) => company.id));
                       } else {
                         setSelectedCompanies([]);
                       }
@@ -1360,7 +1360,7 @@ export function CompaniesTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                displayedCompanies.map((company) => {
+                displayedCompanies.map((company: Company) => {
                   return (
                 <TableRow 
                   key={company.id}
