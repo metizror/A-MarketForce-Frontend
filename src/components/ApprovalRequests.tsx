@@ -50,18 +50,18 @@ export function ApprovalRequests({
     const currentParams = { page: currentPage, limit: pageLimit };
     
     // Check if we need to fetch:
-    // 1. No data exists (requests.length === 0)
-    // 2. Params changed (page or limit)
-    // 3. No cache exists (lastFetchParams is null)
+    // 1. No data exists AND we've never fetched before (requests.length === 0 && lastFetchParams === null)
+    // 2. Params changed (page or limit changed)
+    // Note: We check requests.length inside the effect but don't include it in deps to prevent loops
     const shouldFetch = 
-      requests.length === 0 || 
-      !paramsMatch(lastFetchParams, currentParams) ||
-      lastFetchParams === null;
+      (requests.length === 0 && lastFetchParams === null) || 
+      !paramsMatch(lastFetchParams, currentParams);
 
     if (shouldFetch) {
       dispatch(getApproveRequests(currentParams));
     }
-  }, [dispatch, currentPage, pageLimit, requests.length, lastFetchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, currentPage, pageLimit, lastFetchParams]);
 
   // Show error toast if there's an error
   useEffect(() => {
