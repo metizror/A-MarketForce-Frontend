@@ -55,13 +55,11 @@ export const verifyAdminToken = async (
     }
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
-
-    if (decoded.role !== "admin" && decoded.role !== "superadmin") {
+    if (!decoded.id) {
       return { valid: false };
     }
-
     await connectToDatabase();
-    const admin = await AdminAuth.findById(decoded.adminId).select("-password");
+    const admin = await AdminAuth.findById(decoded.id).select("-password");
 
     if (!admin) {
       return { valid: false };
@@ -93,12 +91,12 @@ export const verifyCustomerToken = async (
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
 
-    if (decoded.role !== "customer") {
+    if (!decoded.id) {
       return { valid: false };
     }
 
     await connectToDatabase();
-    const customer = await CustomerAuth.findById(decoded.customerId).select(
+    const customer = await CustomerAuth.findById(decoded.id).select(
       "-password"
     );
 

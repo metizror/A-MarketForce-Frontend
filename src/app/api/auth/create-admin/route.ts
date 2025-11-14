@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/db";
 import adminAuthModel from "@/models/admin_auth.model";
 import bcrypt from "bcryptjs";
 import { verifyAdminToken } from "../../../../services/jwt.service";
+import customerAuthModel from "../../../../models/customer_auth.model";
 
 export async function POST(request: NextRequest) {
   await connectToDatabase();
@@ -39,12 +40,14 @@ export async function POST(request: NextRequest) {
       const existingAdmin = await adminAuthModel.findOne({
         email: normalizedEmail,
       });
-
-      if (existingAdmin) {
+      const existingCustomer = await customerAuthModel.findOne({
+        email: normalizedEmail,
+      });
+      if (existingAdmin || existingCustomer) {
         return NextResponse.json({
-          message: "Admin account already exists",
-        });
-      } else {
+          message: "Admin or customer already exists with this email",
+        }, { status: 400 });
+      }
         const newAdmin = await adminAuthModel.create({
           name,
           email: normalizedEmail,
@@ -63,7 +66,6 @@ export async function POST(request: NextRequest) {
           },
           { status: 201 }
         );
-      }
     } else {
       return NextResponse.json(
         { message: "You are not authorized to create an admin account" },
